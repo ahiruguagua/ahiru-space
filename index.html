@@ -469,78 +469,6 @@
       line-height: 1;
     }
 
-    /* ===== GIANT DUCK ===== */
-    .giant-section {
-      background: linear-gradient(135deg, #FFF9C4, #FFF176, #FFEB3B);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .giant-section::before {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      height: 40%;
-      background: linear-gradient(0deg, rgba(2, 136, 209, 0.15) 0%, transparent 100%);
-    }
-
-    .giant-content {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 4rem;
-      align-items: center;
-      position: relative;
-      z-index: 2;
-    }
-
-    .giant-text h3 {
-      font-size: 1.5rem;
-      font-weight: 800;
-      color: var(--text-dark);
-      margin-bottom: 1rem;
-    }
-
-    .giant-text p {
-      line-height: 2;
-      color: var(--text-mid);
-      font-size: 1.05rem;
-      margin-bottom: 1.5rem;
-    }
-
-    .city-tags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-    }
-
-    .city-tag {
-      background: white;
-      padding: 0.4rem 1rem;
-      border-radius: 20px;
-      font-size: 0.85rem;
-      font-weight: 700;
-      color: var(--water-dark);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    }
-
-    .giant-visual {
-      display: flex;
-      justify-content: center;
-    }
-
-    .giant-duck-scene {
-      position: relative;
-      width: 100%;
-      max-width: 400px;
-    }
-
-    .giant-duck-scene svg {
-      width: 100%;
-      filter: drop-shadow(0 20px 40px rgba(0,0,0,0.15));
-    }
-
     /* ===== DUCK GALLERY ===== */
     .gallery-section {
       background: white;
@@ -699,8 +627,7 @@
         display: none;
       }
 
-      .about-grid,
-      .giant-content {
+      .about-grid {
         grid-template-columns: 1fr;
         gap: 2rem;
       }
@@ -765,7 +692,6 @@
         <li><a href="#about">ラバーダックとは</a></li>
         <li><a href="#history">歴史</a></li>
         <li><a href="#facts">豆知識</a></li>
-        <li><a href="#giant">巨大ダック</a></li>
         <li><a href="#quack">Quack!</a></li>
       </ul>
     </div>
@@ -984,91 +910,6 @@
           <span class="fact-icon">💻</span>
           <h4>ラバーダックデバッグ</h4>
           <p>プログラマーの世界では、ラバーダックにコードを説明することでバグを見つける「ラバーダックデバッグ」という手法があります。</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Giant Duck -->
-  <section class="giant-section" id="giant">
-    <div class="container">
-      <div class="section-header fade-up">
-        <h2>世界を旅する巨大ダック</h2>
-        <div class="accent-line"></div>
-        <p>高さ26メートル。国境を越えて癒しを届けるアート。</p>
-      </div>
-      <div class="giant-content">
-        <div class="giant-text fade-up">
-          <h3>フロレンティン・ホフマンの「Rubber Duck」</h3>
-          <p>
-            2007年、オランダのアーティスト、フロレンティン・ホフマンは
-            巨大な黄色いラバーダックを制作しました。
-            公共の水辺をバスタブに見立てたこの作品は、
-            政治的な国境もなく、年齢も人種も関係なく、
-            すべての人に子どもの頃の記憶と癒しを届けます。
-          </p>
-          <p>
-            2013年の香港展示では800万人以上が訪れ、
-            2023年には「Double Ducks」として2羽のダックが
-            ヴィクトリアハーバーに登場しました。
-            日本では2009年に大阪で初登場し、大きな話題に。
-          </p>
-          <h3>巡った都市</h3>
-          <div class="city-tags">
-            <span class="city-tag">大阪</span>
-            <span class="city-tag">香港</span>
-            <span class="city-tag">シドニー</span>
-            <span class="city-tag">北京</span>
-            <span class="city-tag">ピッツバーグ</span>
-            <span class="city-tag">オークランド</span>
-            <span class="city-tag">サンパウロ</span>
-            <span class="city-tag">ソウル</span>
-            <span class="city-tag">尾道</span>
-          </div>
-        </div>
-        <div class="giant-visual fade-up">
-          <div class="giant-duck-scene">
-            <svg viewBox="0 0 400 350" xmlns="http://www.w3.org/2000/svg">
-              <!-- Sky -->
-              <rect width="400" height="200" fill="#87CEEB"/>
-              <!-- Clouds -->
-              <g opacity="0.7">
-                <ellipse cx="80" cy="50" rx="40" ry="15" fill="white"/>
-                <ellipse cx="60" cy="45" rx="25" ry="12" fill="white"/>
-                <ellipse cx="100" cy="45" rx="25" ry="12" fill="white"/>
-              </g>
-              <g opacity="0.5">
-                <ellipse cx="320" cy="70" rx="35" ry="12" fill="white"/>
-                <ellipse cx="340" cy="65" rx="20" ry="10" fill="white"/>
-              </g>
-              <!-- Water -->
-              <rect y="200" width="400" height="150" fill="#4FC3F7"/>
-              <path d="M0 210 Q50 200 100 210 Q150 220 200 210 Q250 200 300 210 Q350 220 400 210 L400 350 L0 350 Z" fill="#29B6F6" opacity="0.5"/>
-              <!-- City skyline -->
-              <rect x="10" y="150" width="30" height="60" fill="#78909C" rx="2"/>
-              <rect x="50" y="120" width="25" height="90" fill="#607D8B" rx="2"/>
-              <rect x="80" y="140" width="35" height="70" fill="#78909C" rx="2"/>
-              <rect x="290" y="130" width="30" height="80" fill="#78909C" rx="2"/>
-              <rect x="325" y="155" width="25" height="55" fill="#607D8B" rx="2"/>
-              <rect x="360" y="140" width="30" height="70" fill="#78909C" rx="2"/>
-              <!-- Giant Duck -->
-              <ellipse cx="200" cy="230" rx="80" ry="55" fill="#FFD700"/>
-              <ellipse cx="200" cy="240" rx="65" ry="35" fill="#FFC107" opacity="0.5"/>
-              <circle cx="200" cy="160" r="45" fill="#FFD700"/>
-              <circle cx="180" cy="150" r="18" fill="#FFE44D" opacity="0.4"/>
-              <circle cx="185" cy="148" r="7" fill="#2C3E50"/>
-              <circle cx="187" cy="146" r="2.5" fill="white"/>
-              <circle cx="212" cy="148" r="7" fill="#2C3E50"/>
-              <circle cx="214" cy="146" r="2.5" fill="white"/>
-              <ellipse cx="200" cy="170" rx="22" ry="8" fill="#FF8C00"/>
-              <ellipse cx="200" cy="168" rx="20" ry="6" fill="#FFA726"/>
-              <!-- Water reflection -->
-              <ellipse cx="200" cy="270" rx="90" ry="15" fill="rgba(255,215,0,0.2)"/>
-              <!-- Boats for scale -->
-              <path d="M30 250 L50 250 L45 240 L35 240 Z" fill="white" opacity="0.6"/>
-              <path d="M340 240 L365 240 L360 230 L345 230 Z" fill="white" opacity="0.6"/>
-            </svg>
-          </div>
         </div>
       </div>
     </div>
