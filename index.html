@@ -1,0 +1,1383 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quack! - 黄色いラバーダックの世界</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Noto+Sans+JP:wght@400;500;700;900&display=swap');
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --duck-yellow: #FFD700;
+      --duck-orange: #FF8C00;
+      --duck-light: #FFF8DC;
+      --duck-cream: #FFFAED;
+      --water-blue: #4FC3F7;
+      --water-dark: #0288D1;
+      --water-light: #E1F5FE;
+      --text-dark: #2C3E50;
+      --text-mid: #546E7A;
+      --bubble-white: rgba(255, 255, 255, 0.6);
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Nunito', 'Noto Sans JP', sans-serif;
+      color: var(--text-dark);
+      background: var(--duck-cream);
+      overflow-x: hidden;
+    }
+
+    /* ===== NAV ===== */
+    nav {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      z-index: 1000;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 3px solid var(--duck-yellow);
+      transition: box-shadow 0.3s;
+    }
+
+    nav.scrolled {
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+
+    .nav-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0.8rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .nav-logo {
+      font-size: 1.5rem;
+      font-weight: 900;
+      color: var(--duck-orange);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .nav-logo svg {
+      width: 32px;
+      height: 32px;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      color: var(--text-mid);
+      font-weight: 700;
+      font-size: 0.95rem;
+      transition: color 0.3s;
+      position: relative;
+    }
+
+    .nav-links a::after {
+      content: '';
+      position: absolute;
+      bottom: -4px;
+      left: 0;
+      width: 0;
+      height: 3px;
+      background: var(--duck-yellow);
+      border-radius: 2px;
+      transition: width 0.3s;
+    }
+
+    .nav-links a:hover {
+      color: var(--duck-orange);
+    }
+
+    .nav-links a:hover::after {
+      width: 100%;
+    }
+
+    /* ===== HERO ===== */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(180deg, #87CEEB 0%, #4FC3F7 40%, #29B6F6 60%, #0288D1 100%);
+    }
+
+    .hero-content {
+      text-align: center;
+      z-index: 10;
+      padding: 2rem;
+    }
+
+    .hero-duck {
+      width: 280px;
+      height: 280px;
+      margin: 0 auto 2rem;
+      animation: float 4s ease-in-out infinite;
+      filter: drop-shadow(0 20px 40px rgba(0,0,0,0.15));
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0) rotate(-2deg); }
+      50% { transform: translateY(-20px) rotate(2deg); }
+    }
+
+    .hero h1 {
+      font-size: clamp(2.5rem, 6vw, 5rem);
+      font-weight: 900;
+      color: white;
+      text-shadow: 0 4px 20px rgba(0,0,0,0.15);
+      margin-bottom: 1rem;
+      line-height: 1.2;
+    }
+
+    .hero h1 span {
+      color: var(--duck-yellow);
+      display: block;
+      font-size: 0.5em;
+      letter-spacing: 0.1em;
+    }
+
+    .hero-subtitle {
+      font-size: clamp(1rem, 2.5vw, 1.4rem);
+      color: rgba(255,255,255,0.9);
+      font-weight: 600;
+      max-width: 600px;
+      margin: 0 auto 2.5rem;
+      line-height: 1.8;
+    }
+
+    .hero-cta {
+      display: inline-block;
+      background: var(--duck-yellow);
+      color: var(--text-dark);
+      padding: 1rem 2.5rem;
+      border-radius: 50px;
+      text-decoration: none;
+      font-weight: 800;
+      font-size: 1.1rem;
+      transition: all 0.3s;
+      box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+    }
+
+    .hero-cta:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(255, 215, 0, 0.5);
+      background: #FFE44D;
+    }
+
+    /* Water waves */
+    .waves {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 120px;
+      z-index: 5;
+    }
+
+    /* Bubbles */
+    .bubbles {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .bubble {
+      position: absolute;
+      border-radius: 50%;
+      background: var(--bubble-white);
+      animation: rise linear infinite;
+    }
+
+    @keyframes rise {
+      0% { transform: translateY(100vh) scale(0); opacity: 0; }
+      10% { opacity: 0.6; }
+      90% { opacity: 0.3; }
+      100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+    }
+
+    /* ===== SECTIONS ===== */
+    section {
+      padding: 6rem 2rem;
+    }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: 4rem;
+    }
+
+    .section-header h2 {
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 900;
+      color: var(--text-dark);
+      margin-bottom: 0.5rem;
+    }
+
+    .section-header .accent-line {
+      width: 80px;
+      height: 5px;
+      background: var(--duck-yellow);
+      border-radius: 3px;
+      margin: 1rem auto;
+    }
+
+    .section-header p {
+      color: var(--text-mid);
+      font-size: 1.1rem;
+      font-weight: 500;
+      max-width: 600px;
+      margin: 0 auto;
+      line-height: 1.8;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    /* ===== ABOUT ===== */
+    .about {
+      background: white;
+    }
+
+    .about-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      align-items: center;
+    }
+
+    .about-text h3 {
+      font-size: 1.6rem;
+      font-weight: 800;
+      margin-bottom: 1rem;
+      color: var(--duck-orange);
+    }
+
+    .about-text p {
+      line-height: 2;
+      color: var(--text-mid);
+      font-size: 1.05rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .about-visual {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .duck-card {
+      background: linear-gradient(135deg, #FFF9C4, #FFF176);
+      border-radius: 30px;
+      padding: 3rem;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(255, 215, 0, 0.2);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .duck-card::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -50%;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 60%);
+    }
+
+    .duck-card svg {
+      width: 200px;
+      height: 200px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .duck-card p {
+      font-weight: 800;
+      font-size: 1.3rem;
+      color: var(--duck-orange);
+      margin-top: 1rem;
+      position: relative;
+      z-index: 2;
+    }
+
+    /* ===== TIMELINE ===== */
+    .timeline-section {
+      background: linear-gradient(135deg, #E3F2FD, #BBDEFB);
+    }
+
+    .timeline {
+      position: relative;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 4px;
+      height: 100%;
+      background: var(--duck-yellow);
+      border-radius: 2px;
+    }
+
+    .timeline-item {
+      display: flex;
+      justify-content: flex-end;
+      padding-right: calc(50% + 30px);
+      position: relative;
+      margin-bottom: 3rem;
+    }
+
+    .timeline-item:nth-child(even) {
+      justify-content: flex-start;
+      padding-right: 0;
+      padding-left: calc(50% + 30px);
+    }
+
+    .timeline-dot {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 20px;
+      height: 20px;
+      background: var(--duck-yellow);
+      border: 4px solid white;
+      border-radius: 50%;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      z-index: 2;
+    }
+
+    .timeline-card {
+      background: white;
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+      transition: transform 0.3s;
+      max-width: 340px;
+    }
+
+    .timeline-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .timeline-year {
+      font-size: 0.85rem;
+      font-weight: 800;
+      color: var(--water-dark);
+      background: var(--water-light);
+      display: inline-block;
+      padding: 0.2rem 0.8rem;
+      border-radius: 20px;
+      margin-bottom: 0.5rem;
+    }
+
+    .timeline-card h4 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      margin-bottom: 0.5rem;
+      color: var(--text-dark);
+    }
+
+    .timeline-card p {
+      font-size: 0.95rem;
+      color: var(--text-mid);
+      line-height: 1.7;
+    }
+
+    /* ===== FACTS ===== */
+    .facts-section {
+      background: var(--duck-cream);
+    }
+
+    .facts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+    }
+
+    .fact-card {
+      background: white;
+      border-radius: 20px;
+      padding: 2rem;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+      transition: all 0.3s;
+      border: 2px solid transparent;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .fact-card:hover {
+      transform: translateY(-5px);
+      border-color: var(--duck-yellow);
+      box-shadow: 0 12px 30px rgba(255, 215, 0, 0.15);
+    }
+
+    .fact-icon {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+      display: block;
+    }
+
+    .fact-card h4 {
+      font-size: 1.15rem;
+      font-weight: 800;
+      margin-bottom: 0.8rem;
+      color: var(--text-dark);
+    }
+
+    .fact-card p {
+      color: var(--text-mid);
+      line-height: 1.8;
+      font-size: 0.95rem;
+    }
+
+    .fact-number {
+      position: absolute;
+      top: -10px;
+      right: 10px;
+      font-size: 5rem;
+      font-weight: 900;
+      color: rgba(255, 215, 0, 0.1);
+      line-height: 1;
+    }
+
+    /* ===== GIANT DUCK ===== */
+    .giant-section {
+      background: linear-gradient(135deg, #FFF9C4, #FFF176, #FFEB3B);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .giant-section::before {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 40%;
+      background: linear-gradient(0deg, rgba(2, 136, 209, 0.15) 0%, transparent 100%);
+    }
+
+    .giant-content {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      align-items: center;
+      position: relative;
+      z-index: 2;
+    }
+
+    .giant-text h3 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--text-dark);
+      margin-bottom: 1rem;
+    }
+
+    .giant-text p {
+      line-height: 2;
+      color: var(--text-mid);
+      font-size: 1.05rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .city-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .city-tag {
+      background: white;
+      padding: 0.4rem 1rem;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--water-dark);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    .giant-visual {
+      display: flex;
+      justify-content: center;
+    }
+
+    .giant-duck-scene {
+      position: relative;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .giant-duck-scene svg {
+      width: 100%;
+      filter: drop-shadow(0 20px 40px rgba(0,0,0,0.15));
+    }
+
+    /* ===== DUCK GALLERY ===== */
+    .gallery-section {
+      background: white;
+    }
+
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.5rem;
+    }
+
+    .gallery-item {
+      border-radius: 20px;
+      overflow: hidden;
+      aspect-ratio: 1;
+      position: relative;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .gallery-item:hover {
+      transform: scale(1.05);
+      z-index: 2;
+    }
+
+    .gallery-item:hover .gallery-overlay {
+      opacity: 1;
+    }
+
+    .gallery-item svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .gallery-overlay {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 1.5rem 1rem 1rem;
+      background: linear-gradient(transparent, rgba(0,0,0,0.6));
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .gallery-overlay p {
+      color: white;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    /* ===== QUACK COUNTER ===== */
+    .quack-section {
+      background: linear-gradient(135deg, var(--water-dark), #01579B);
+      text-align: center;
+      color: white;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .quack-section h2 {
+      color: white;
+    }
+
+    .quack-section .accent-line {
+      background: var(--duck-yellow);
+    }
+
+    .quack-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.8rem;
+      background: var(--duck-yellow);
+      color: var(--text-dark);
+      border: none;
+      padding: 1.2rem 3rem;
+      border-radius: 60px;
+      font-size: 1.3rem;
+      font-weight: 800;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 4px 20px rgba(255, 215, 0, 0.4);
+      margin-bottom: 2rem;
+    }
+
+    .quack-btn:hover {
+      transform: scale(1.08);
+      box-shadow: 0 8px 30px rgba(255, 215, 0, 0.5);
+    }
+
+    .quack-btn:active {
+      transform: scale(0.95);
+    }
+
+    .quack-counter-display {
+      font-size: clamp(3rem, 8vw, 6rem);
+      font-weight: 900;
+      color: var(--duck-yellow);
+      text-shadow: 0 4px 20px rgba(255, 215, 0, 0.3);
+      margin-bottom: 0.5rem;
+    }
+
+    .quack-label {
+      font-size: 1.1rem;
+      opacity: 0.8;
+      font-weight: 600;
+    }
+
+    .quack-floating {
+      position: fixed;
+      pointer-events: none;
+      font-size: 2rem;
+      font-weight: 900;
+      color: var(--duck-yellow);
+      z-index: 9999;
+      animation: quackFloat 1.5s ease-out forwards;
+    }
+
+    @keyframes quackFloat {
+      0% { opacity: 1; transform: translateY(0) scale(1); }
+      100% { opacity: 0; transform: translateY(-120px) scale(1.5); }
+    }
+
+    /* ===== FOOTER ===== */
+    footer {
+      background: #1A1A2E;
+      color: rgba(255,255,255,0.7);
+      text-align: center;
+      padding: 3rem 2rem;
+    }
+
+    footer .footer-duck {
+      margin-bottom: 1rem;
+    }
+
+    footer .footer-duck svg {
+      width: 60px;
+      height: 60px;
+      opacity: 0.8;
+    }
+
+    footer p {
+      font-size: 0.9rem;
+      line-height: 1.8;
+    }
+
+    footer a {
+      color: var(--duck-yellow);
+      text-decoration: none;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 768px) {
+      .nav-links {
+        display: none;
+      }
+
+      .about-grid,
+      .giant-content {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+      }
+
+      .gallery-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .timeline::before {
+        left: 20px;
+      }
+
+      .timeline-item,
+      .timeline-item:nth-child(even) {
+        padding-left: 60px;
+        padding-right: 0;
+        justify-content: flex-start;
+      }
+
+      .timeline-dot {
+        left: 20px;
+      }
+
+      .timeline-card {
+        max-width: 100%;
+      }
+
+      section {
+        padding: 4rem 1.5rem;
+      }
+    }
+
+    /* ===== ANIMATIONS ===== */
+    .fade-up {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .fade-up.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation -->
+  <nav id="navbar">
+    <div class="nav-inner">
+      <a href="#" class="nav-logo">
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <ellipse cx="50" cy="65" rx="35" ry="28" fill="#FFD700"/>
+          <circle cx="50" cy="35" r="22" fill="#FFD700"/>
+          <ellipse cx="55" cy="38" rx="12" ry="5" fill="#FF8C00"/>
+          <circle cx="42" cy="30" r="3.5" fill="#2C3E50"/>
+          <circle cx="43" cy="29" r="1.2" fill="white"/>
+          <ellipse cx="50" cy="68" rx="28" ry="8" fill="#FFC107" opacity="0.5"/>
+        </svg>
+        Quack!
+      </a>
+      <ul class="nav-links">
+        <li><a href="#about">ラバーダックとは</a></li>
+        <li><a href="#history">歴史</a></li>
+        <li><a href="#facts">豆知識</a></li>
+        <li><a href="#giant">巨大ダック</a></li>
+        <li><a href="#quack">Quack!</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero" id="home">
+    <div class="bubbles" id="bubbles"></div>
+    <div class="hero-content">
+      <div class="hero-duck">
+        <svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+          <!-- Water reflection -->
+          <ellipse cx="150" cy="260" rx="120" ry="20" fill="rgba(255,255,255,0.2)"/>
+          <!-- Body -->
+          <ellipse cx="150" cy="200" rx="100" ry="70" fill="#FFD700"/>
+          <ellipse cx="150" cy="210" rx="85" ry="50" fill="#FFC107" opacity="0.5"/>
+          <!-- Wing -->
+          <ellipse cx="100" cy="190" rx="35" ry="50" fill="#FFC107" transform="rotate(-10 100 190)"/>
+          <!-- Tail -->
+          <path d="M240 170 Q270 140 260 170 Q280 155 265 180 Q250 175 250 190" fill="#FFC107"/>
+          <!-- Head -->
+          <circle cx="150" cy="110" r="60" fill="#FFD700"/>
+          <!-- Head highlight -->
+          <circle cx="130" cy="90" r="25" fill="#FFE44D" opacity="0.5"/>
+          <!-- Eye (left) -->
+          <circle cx="125" cy="100" r="10" fill="#2C3E50"/>
+          <circle cx="128" cy="97" r="3.5" fill="white"/>
+          <!-- Eye (right) -->
+          <circle cx="170" cy="100" r="10" fill="#2C3E50"/>
+          <circle cx="173" cy="97" r="3.5" fill="white"/>
+          <!-- Beak -->
+          <ellipse cx="150" cy="125" rx="30" ry="12" fill="#FF8C00"/>
+          <ellipse cx="150" cy="122" rx="28" ry="9" fill="#FFA726"/>
+          <!-- Cheeks -->
+          <circle cx="110" cy="115" r="8" fill="#FFB74D" opacity="0.4"/>
+          <circle cx="190" cy="115" r="8" fill="#FFB74D" opacity="0.4"/>
+        </svg>
+      </div>
+      <h1>
+        QUACK!
+        <span>黄色いラバーダックの世界へようこそ</span>
+      </h1>
+      <p class="hero-subtitle">
+        お風呂に浮かぶ小さな友だち。<br>
+        世界中で愛される黄色いアヒルの、<br>
+        かわいくて奥深い物語。
+      </p>
+      <a href="#about" class="hero-cta">ダックの世界へ飛びこむ</a>
+    </div>
+
+    <!-- Waves -->
+    <svg class="waves" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 120" preserveAspectRatio="none">
+      <path fill="white" fill-opacity="0.3" d="M0,60 C360,120 720,0 1080,60 C1260,90 1380,70 1440,60 L1440,120 L0,120 Z"/>
+      <path fill="white" fill-opacity="0.5" d="M0,80 C360,40 720,100 1080,60 C1260,40 1380,80 1440,70 L1440,120 L0,120 Z"/>
+      <path fill="white" d="M0,90 C360,70 720,110 1080,80 C1260,70 1380,95 1440,85 L1440,120 L0,120 Z"/>
+    </svg>
+  </section>
+
+  <!-- About -->
+  <section class="about" id="about">
+    <div class="container">
+      <div class="section-header fade-up">
+        <h2>ラバーダックって？</h2>
+        <div class="accent-line"></div>
+        <p>お風呂の名脇役、黄色くてかわいいあの子のこと。</p>
+      </div>
+      <div class="about-grid">
+        <div class="about-text fade-up">
+          <h3>お風呂に浮かぶ、永遠のともだち</h3>
+          <p>
+            ラバーダック（Rubber Duck）は、黄色いゴム製のアヒルの形をした玩具です。
+            もともとはゴムや塩化ビニル（PVC）で作られ、中が空洞になっているのでお風呂に浮かべて遊べます。
+            握るとキュッと鳴るあの音は、世界共通の「かわいい」。
+          </p>
+          <p>
+            19世紀後半、チャールズ・グッドイヤーが加硫ゴムを発明したことから歴史が始まりました。
+            初期のラバーダックは硬くて浮かないものでしたが、時代とともに進化し、
+            今では世界中のお風呂場で愛されるアイコンになっています。
+          </p>
+          <p>
+            ちなみに現代のラバーダックの多くは実はゴムではなくビニール製。
+            でも「ラバー」ダックという名前は変わらず愛され続けています。
+          </p>
+        </div>
+        <div class="about-visual fade-up">
+          <div class="duck-card">
+            <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+              <!-- Bathtub -->
+              <rect x="20" y="100" rx="20" ry="20" width="160" height="80" fill="white" stroke="#E0E0E0" stroke-width="2"/>
+              <rect x="30" y="105" rx="15" ry="15" width="140" height="60" fill="#E1F5FE"/>
+              <!-- Bubbles -->
+              <circle cx="60" cy="100" r="10" fill="white" opacity="0.8"/>
+              <circle cx="80" cy="95" r="7" fill="white" opacity="0.7"/>
+              <circle cx="140" cy="98" r="9" fill="white" opacity="0.8"/>
+              <circle cx="120" cy="92" r="6" fill="white" opacity="0.6"/>
+              <circle cx="50" cy="90" r="5" fill="white" opacity="0.5"/>
+              <!-- Duck -->
+              <ellipse cx="100" cy="115" rx="30" ry="20" fill="#FFD700"/>
+              <circle cx="100" cy="85" r="18" fill="#FFD700"/>
+              <ellipse cx="105" cy="90" rx="10" ry="4" fill="#FF8C00"/>
+              <circle cx="94" cy="82" r="3" fill="#2C3E50"/>
+              <circle cx="95" cy="81" r="1" fill="white"/>
+              <!-- Steam -->
+              <path d="M50 75 Q55 65 50 55" stroke="rgba(255,255,255,0.5)" fill="none" stroke-width="2" stroke-linecap="round"/>
+              <path d="M150 70 Q155 60 150 50" stroke="rgba(255,255,255,0.5)" fill="none" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <p>Since 1800s</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- History Timeline -->
+  <section class="timeline-section" id="history">
+    <div class="container">
+      <div class="section-header fade-up">
+        <h2>ラバーダックの歴史</h2>
+        <div class="accent-line"></div>
+        <p>小さなアヒルの、大きな冒険の年表。</p>
+      </div>
+      <div class="timeline">
+        <div class="timeline-item fade-up">
+          <div class="timeline-dot"></div>
+          <div class="timeline-card">
+            <span class="timeline-year">1800年代後半</span>
+            <h4>ラバーダック誕生</h4>
+            <p>チャールズ・グッドイヤーの加硫ゴム発明により、ゴム製玩具の製造が可能に。初期のダックは硬くて浮かなかった。</p>
+          </div>
+        </div>
+        <div class="timeline-item fade-up">
+          <div class="timeline-dot"></div>
+          <div class="timeline-card">
+            <span class="timeline-year">1930年代</span>
+            <h4>お風呂のおともに</h4>
+            <p>ラバーダックがバスタイムの玩具として定着し始める。エレノア・シャナハンやディズニーとラテックスメーカーのコラボで進化。</p>
+          </div>
+        </div>
+        <div class="timeline-item fade-up">
+          <div class="timeline-dot"></div>
+          <div class="timeline-card">
+            <span class="timeline-year">1949年</span>
+            <h4>5000万個の大ヒット</h4>
+            <p>彫刻家ピーター・ガニーネが特許を取得し、浮くアヒルのおもちゃとして量産。5000万個以上を売り上げた。</p>
+          </div>
+        </div>
+        <div class="timeline-item fade-up">
+          <div class="timeline-dot"></div>
+          <div class="timeline-card">
+            <span class="timeline-year">1970年</span>
+            <h4>セサミストリートで大ブレイク</h4>
+            <p>アーニーが歌う「Rubber Duckie」がBillboard Hot 100で16位に。ラバーダックはポップカルチャーのアイコンに。</p>
+          </div>
+        </div>
+        <div class="timeline-item fade-up">
+          <div class="timeline-dot"></div>
+          <div class="timeline-card">
+            <span class="timeline-year">1992年</span>
+            <h4>28,800個の大冒険</h4>
+            <p>太平洋の嵐でコンテナから流出した28,800個のおもちゃが海を漂流。海洋学の研究に貢献し、一部は15年かけて世界中に漂着。</p>
+          </div>
+        </div>
+        <div class="timeline-item fade-up">
+          <div class="timeline-dot"></div>
+          <div class="timeline-card">
+            <span class="timeline-year">2007年〜</span>
+            <h4>巨大ラバーダック登場</h4>
+            <p>オランダのアーティスト、フロレンティン・ホフマンが高さ26mの巨大ラバーダックを制作。世界中の港を巡る旅が始まる。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Fun Facts -->
+  <section class="facts-section" id="facts">
+    <div class="container">
+      <div class="section-header fade-up">
+        <h2>おどろきの豆知識</h2>
+        <div class="accent-line"></div>
+        <p>知れば知るほど好きになる、ラバーダックのトリビア。</p>
+      </div>
+      <div class="facts-grid">
+        <div class="fact-card fade-up">
+          <span class="fact-number">01</span>
+          <span class="fact-icon">👑</span>
+          <h4>女王陛下のダック</h4>
+          <p>エリザベス女王のお風呂には、小さな王冠をかぶったラバーダックがいたと報道されました。このニュースで英国のダック売上が80%も急増！</p>
+        </div>
+        <div class="fact-card fade-up">
+          <span class="fact-number">02</span>
+          <span class="fact-icon">🏆</span>
+          <h4>世界記録コレクション</h4>
+          <p>シャーロット・リーさんは5,631個の異なるラバーダックを集め、ギネス世界記録に認定。すべて違うデザインです。</p>
+        </div>
+        <div class="fact-card fade-up">
+          <span class="fact-number">03</span>
+          <span class="fact-icon">🚀</span>
+          <h4>NASAも使った！</h4>
+          <p>2008年、NASAはグリーンランドの氷河に90個のラバーダックを投入。氷河の融水の流れを調べる科学実験に使用されました。</p>
+        </div>
+        <div class="fact-card fade-up">
+          <span class="fact-number">04</span>
+          <span class="fact-icon">📅</span>
+          <h4>ラバーダック記念日</h4>
+          <p>毎年1月13日は「ラバーダックの日」。世界中のダック愛好家がSNSでお気に入りのダックを共有してお祝いします。</p>
+        </div>
+        <div class="fact-card fade-up">
+          <span class="fact-number">05</span>
+          <span class="fact-icon">🏊</span>
+          <h4>チャリティーダックレース</h4>
+          <p>世界各地で開催されるダックレース。何千個ものダックを川に流し、1位のスポンサーに賞品が。楽しみながら寄付ができるイベントです。</p>
+        </div>
+        <div class="fact-card fade-up">
+          <span class="fact-number">06</span>
+          <span class="fact-icon">💻</span>
+          <h4>ラバーダックデバッグ</h4>
+          <p>プログラマーの世界では、ラバーダックにコードを説明することでバグを見つける「ラバーダックデバッグ」という手法があります。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Giant Duck -->
+  <section class="giant-section" id="giant">
+    <div class="container">
+      <div class="section-header fade-up">
+        <h2>世界を旅する巨大ダック</h2>
+        <div class="accent-line"></div>
+        <p>高さ26メートル。国境を越えて癒しを届けるアート。</p>
+      </div>
+      <div class="giant-content">
+        <div class="giant-text fade-up">
+          <h3>フロレンティン・ホフマンの「Rubber Duck」</h3>
+          <p>
+            2007年、オランダのアーティスト、フロレンティン・ホフマンは
+            巨大な黄色いラバーダックを制作しました。
+            公共の水辺をバスタブに見立てたこの作品は、
+            政治的な国境もなく、年齢も人種も関係なく、
+            すべての人に子どもの頃の記憶と癒しを届けます。
+          </p>
+          <p>
+            2013年の香港展示では800万人以上が訪れ、
+            2023年には「Double Ducks」として2羽のダックが
+            ヴィクトリアハーバーに登場しました。
+            日本では2009年に大阪で初登場し、大きな話題に。
+          </p>
+          <h3>巡った都市</h3>
+          <div class="city-tags">
+            <span class="city-tag">大阪</span>
+            <span class="city-tag">香港</span>
+            <span class="city-tag">シドニー</span>
+            <span class="city-tag">北京</span>
+            <span class="city-tag">ピッツバーグ</span>
+            <span class="city-tag">オークランド</span>
+            <span class="city-tag">サンパウロ</span>
+            <span class="city-tag">ソウル</span>
+            <span class="city-tag">尾道</span>
+          </div>
+        </div>
+        <div class="giant-visual fade-up">
+          <div class="giant-duck-scene">
+            <svg viewBox="0 0 400 350" xmlns="http://www.w3.org/2000/svg">
+              <!-- Sky -->
+              <rect width="400" height="200" fill="#87CEEB"/>
+              <!-- Clouds -->
+              <g opacity="0.7">
+                <ellipse cx="80" cy="50" rx="40" ry="15" fill="white"/>
+                <ellipse cx="60" cy="45" rx="25" ry="12" fill="white"/>
+                <ellipse cx="100" cy="45" rx="25" ry="12" fill="white"/>
+              </g>
+              <g opacity="0.5">
+                <ellipse cx="320" cy="70" rx="35" ry="12" fill="white"/>
+                <ellipse cx="340" cy="65" rx="20" ry="10" fill="white"/>
+              </g>
+              <!-- Water -->
+              <rect y="200" width="400" height="150" fill="#4FC3F7"/>
+              <path d="M0 210 Q50 200 100 210 Q150 220 200 210 Q250 200 300 210 Q350 220 400 210 L400 350 L0 350 Z" fill="#29B6F6" opacity="0.5"/>
+              <!-- City skyline -->
+              <rect x="10" y="150" width="30" height="60" fill="#78909C" rx="2"/>
+              <rect x="50" y="120" width="25" height="90" fill="#607D8B" rx="2"/>
+              <rect x="80" y="140" width="35" height="70" fill="#78909C" rx="2"/>
+              <rect x="290" y="130" width="30" height="80" fill="#78909C" rx="2"/>
+              <rect x="325" y="155" width="25" height="55" fill="#607D8B" rx="2"/>
+              <rect x="360" y="140" width="30" height="70" fill="#78909C" rx="2"/>
+              <!-- Giant Duck -->
+              <ellipse cx="200" cy="230" rx="80" ry="55" fill="#FFD700"/>
+              <ellipse cx="200" cy="240" rx="65" ry="35" fill="#FFC107" opacity="0.5"/>
+              <circle cx="200" cy="160" r="45" fill="#FFD700"/>
+              <circle cx="180" cy="150" r="18" fill="#FFE44D" opacity="0.4"/>
+              <circle cx="185" cy="148" r="7" fill="#2C3E50"/>
+              <circle cx="187" cy="146" r="2.5" fill="white"/>
+              <circle cx="212" cy="148" r="7" fill="#2C3E50"/>
+              <circle cx="214" cy="146" r="2.5" fill="white"/>
+              <ellipse cx="200" cy="170" rx="22" ry="8" fill="#FF8C00"/>
+              <ellipse cx="200" cy="168" rx="20" ry="6" fill="#FFA726"/>
+              <!-- Water reflection -->
+              <ellipse cx="200" cy="270" rx="90" ry="15" fill="rgba(255,215,0,0.2)"/>
+              <!-- Boats for scale -->
+              <path d="M30 250 L50 250 L45 240 L35 240 Z" fill="white" opacity="0.6"/>
+              <path d="M340 240 L365 240 L360 230 L345 230 Z" fill="white" opacity="0.6"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Duck Gallery -->
+  <section class="gallery-section" id="gallery">
+    <div class="container">
+      <div class="section-header fade-up">
+        <h2>ダックギャラリー</h2>
+        <div class="accent-line"></div>
+        <p>いろんな表情のダックたち。あなたのお気に入りは？</p>
+      </div>
+      <div class="gallery-grid fade-up">
+        <!-- Classic Duck -->
+        <div class="gallery-item" style="background: linear-gradient(135deg, #E3F2FD, #BBDEFB);">
+          <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="100" cy="140" rx="55" ry="40" fill="#FFD700"/>
+            <circle cx="100" cy="85" r="35" fill="#FFD700"/>
+            <ellipse cx="105" cy="95" rx="16" ry="6" fill="#FF8C00"/>
+            <circle cx="88" cy="80" r="5" fill="#2C3E50"/>
+            <circle cx="89.5" cy="78.5" r="1.8" fill="white"/>
+          </svg>
+          <div class="gallery-overlay"><p>クラシック</p></div>
+        </div>
+        <!-- Cool Duck (sunglasses) -->
+        <div class="gallery-item" style="background: linear-gradient(135deg, #FFF9C4, #FFF176);">
+          <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="100" cy="140" rx="55" ry="40" fill="#FFD700"/>
+            <circle cx="100" cy="85" r="35" fill="#FFD700"/>
+            <ellipse cx="105" cy="100" rx="16" ry="6" fill="#FF8C00"/>
+            <!-- Sunglasses -->
+            <rect x="72" y="73" width="22" height="14" rx="3" fill="#2C3E50"/>
+            <rect x="106" y="73" width="22" height="14" rx="3" fill="#2C3E50"/>
+            <line x1="94" y1="80" x2="106" y2="80" stroke="#2C3E50" stroke-width="2.5"/>
+            <line x1="70" y1="78" x2="62" y2="74" stroke="#2C3E50" stroke-width="2.5"/>
+            <line x1="130" y1="78" x2="138" y2="74" stroke="#2C3E50" stroke-width="2.5"/>
+          </svg>
+          <div class="gallery-overlay"><p>クールダック</p></div>
+        </div>
+        <!-- Crown Duck -->
+        <div class="gallery-item" style="background: linear-gradient(135deg, #F3E5F5, #E1BEE7);">
+          <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="100" cy="145" rx="55" ry="40" fill="#FFD700"/>
+            <circle cx="100" cy="90" r="35" fill="#FFD700"/>
+            <ellipse cx="105" cy="100" rx="16" ry="6" fill="#FF8C00"/>
+            <circle cx="88" cy="85" r="5" fill="#2C3E50"/>
+            <circle cx="89.5" cy="83.5" r="1.8" fill="white"/>
+            <!-- Crown -->
+            <path d="M72 60 L75 45 L85 55 L100 38 L115 55 L125 45 L128 60 Z" fill="#FF6F00"/>
+            <circle cx="75" cy="44" r="3" fill="#FF6F00"/>
+            <circle cx="100" cy="37" r="3" fill="#FF6F00"/>
+            <circle cx="125" cy="44" r="3" fill="#FF6F00"/>
+            <rect x="72" y="57" width="56" height="6" fill="#FF8F00" rx="2"/>
+            <circle cx="86" cy="60" r="2" fill="#E53935"/>
+            <circle cx="100" cy="60" r="2" fill="#1E88E5"/>
+            <circle cx="114" cy="60" r="2" fill="#43A047"/>
+          </svg>
+          <div class="gallery-overlay"><p>ロイヤルダック</p></div>
+        </div>
+        <!-- Pirate Duck -->
+        <div class="gallery-item" style="background: linear-gradient(135deg, #FFCCBC, #FFAB91);">
+          <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="100" cy="145" rx="55" ry="40" fill="#FFD700"/>
+            <circle cx="100" cy="90" r="35" fill="#FFD700"/>
+            <ellipse cx="105" cy="100" rx="16" ry="6" fill="#FF8C00"/>
+            <circle cx="88" cy="85" r="5" fill="#2C3E50"/>
+            <circle cx="89.5" cy="83.5" r="1.8" fill="white"/>
+            <!-- Eye patch -->
+            <ellipse cx="112" cy="84" rx="8" ry="7" fill="#2C3E50"/>
+            <line x1="104" y1="78" x2="130" y2="68" stroke="#2C3E50" stroke-width="2"/>
+            <line x1="92" y1="78" x2="68" y2="68" stroke="#2C3E50" stroke-width="2"/>
+            <!-- Pirate hat -->
+            <ellipse cx="100" cy="62" rx="40" ry="8" fill="#2C3E50"/>
+            <path d="M65 62 Q65 30 100 25 Q135 30 135 62" fill="#2C3E50"/>
+            <!-- Skull -->
+            <circle cx="100" cy="44" r="6" fill="white"/>
+            <rect x="96" y="50" width="8" height="5" fill="white"/>
+            <circle cx="97" cy="43" r="1.5" fill="#2C3E50"/>
+            <circle cx="103" cy="43" r="1.5" fill="#2C3E50"/>
+          </svg>
+          <div class="gallery-overlay"><p>パイレーツダック</p></div>
+        </div>
+        <!-- Ninja Duck -->
+        <div class="gallery-item" style="background: linear-gradient(135deg, #C8E6C9, #A5D6A7);">
+          <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="100" cy="140" rx="55" ry="40" fill="#FFD700"/>
+            <circle cx="100" cy="85" r="35" fill="#FFD700"/>
+            <ellipse cx="105" cy="100" rx="16" ry="6" fill="#FF8C00"/>
+            <!-- Headband -->
+            <rect x="60" y="72" width="80" height="12" fill="#E53935" rx="2"/>
+            <path d="M140 78 L160 68 L155 82 L140 78" fill="#E53935"/>
+            <path d="M140 78 L162 72 L158 86 L140 82" fill="#C62828"/>
+            <!-- Eyes (determined) -->
+            <line x1="80" y1="83" x2="95" y2="80" stroke="#2C3E50" stroke-width="4" stroke-linecap="round"/>
+            <line x1="105" y1="80" x2="120" y2="83" stroke="#2C3E50" stroke-width="4" stroke-linecap="round"/>
+          </svg>
+          <div class="gallery-overlay"><p>ニンジャダック</p></div>
+        </div>
+        <!-- Bath Duck -->
+        <div class="gallery-item" style="background: linear-gradient(135deg, #E1F5FE, #B3E5FC);">
+          <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+            <!-- Bubbles -->
+            <circle cx="45" cy="150" r="15" fill="rgba(255,255,255,0.6)"/>
+            <circle cx="70" cy="135" r="10" fill="rgba(255,255,255,0.5)"/>
+            <circle cx="155" cy="145" r="12" fill="rgba(255,255,255,0.6)"/>
+            <circle cx="140" cy="130" r="8" fill="rgba(255,255,255,0.4)"/>
+            <circle cx="35" cy="130" r="8" fill="rgba(255,255,255,0.3)"/>
+            <circle cx="165" cy="160" r="6" fill="rgba(255,255,255,0.3)"/>
+            <!-- Duck in bubbles -->
+            <ellipse cx="100" cy="150" rx="50" ry="35" fill="#FFD700"/>
+            <circle cx="100" cy="95" r="35" fill="#FFD700"/>
+            <ellipse cx="105" cy="105" rx="16" ry="6" fill="#FF8C00"/>
+            <!-- Sleepy eyes -->
+            <path d="M82 88 Q88 82 94 88" stroke="#2C3E50" stroke-width="3" fill="none" stroke-linecap="round"/>
+            <path d="M106 88 Q112 82 118 88" stroke="#2C3E50" stroke-width="3" fill="none" stroke-linecap="round"/>
+            <!-- Blush -->
+            <circle cx="78" cy="95" r="5" fill="#FFB74D" opacity="0.5"/>
+            <circle cx="122" cy="95" r="5" fill="#FFB74D" opacity="0.5"/>
+          </svg>
+          <div class="gallery-overlay"><p>おふろダック</p></div>
+        </div>
+        <!-- Party Duck -->
+        <div class="gallery-item" style="background: linear-gradient(135deg, #FCE4EC, #F8BBD0);">
+          <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="100" cy="145" rx="55" ry="40" fill="#FFD700"/>
+            <circle cx="100" cy="90" r="35" fill="#FFD700"/>
+            <ellipse cx="105" cy="100" rx="16" ry="6" fill="#FF8C00"/>
+            <circle cx="88" cy="84" r="5" fill="#2C3E50"/>
+            <circle cx="89.5" cy="82.5" r="1.8" fill="white"/>
+            <circle cx="112" cy="84" r="5" fill="#2C3E50"/>
+            <circle cx="113.5" cy="82.5" r="1.8" fill="white"/>
+            <!-- Party hat -->
+            <path d="M80 65 L100 20 L120 65" fill="#E91E63"/>
+            <circle cx="100" cy="18" r="5" fill="#FFC107"/>
+            <line x1="85" y1="55" x2="115" y2="55" stroke="#4FC3F7" stroke-width="3"/>
+            <line x1="88" y1="42" x2="112" y2="42" stroke="#FFD700" stroke-width="3"/>
+            <!-- Confetti -->
+            <rect x="55" y="40" width="6" height="3" fill="#E91E63" transform="rotate(30 58 41)"/>
+            <rect x="140" y="50" width="6" height="3" fill="#4FC3F7" transform="rotate(-20 143 51)"/>
+            <rect x="45" y="65" width="6" height="3" fill="#FFD700" transform="rotate(45 48 66)"/>
+            <rect x="150" y="35" width="6" height="3" fill="#66BB6A" transform="rotate(15 153 36)"/>
+          </svg>
+          <div class="gallery-overlay"><p>パーティーダック</p></div>
+        </div>
+        <!-- Programmer Duck -->
+        <div class="gallery-item" style="background: linear-gradient(135deg, #E8EAF6, #C5CAE9);">
+          <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="100" cy="145" rx="55" ry="40" fill="#FFD700"/>
+            <circle cx="100" cy="90" r="35" fill="#FFD700"/>
+            <ellipse cx="105" cy="100" rx="16" ry="6" fill="#FF8C00"/>
+            <!-- Glasses -->
+            <circle cx="85" cy="83" r="10" fill="none" stroke="#2C3E50" stroke-width="2.5"/>
+            <circle cx="115" cy="83" r="10" fill="none" stroke="#2C3E50" stroke-width="2.5"/>
+            <line x1="95" y1="83" x2="105" y2="83" stroke="#2C3E50" stroke-width="2.5"/>
+            <circle cx="85" cy="83" r="4" fill="#2C3E50"/>
+            <circle cx="86" cy="81.5" r="1.5" fill="white"/>
+            <circle cx="115" cy="83" r="4" fill="#2C3E50"/>
+            <circle cx="116" cy="81.5" r="1.5" fill="white"/>
+            <!-- Laptop -->
+            <rect x="62" y="138" width="50" height="30" rx="3" fill="#546E7A"/>
+            <rect x="65" y="141" width="44" height="20" rx="2" fill="#263238"/>
+            <!-- Code on screen -->
+            <line x1="68" y1="146" x2="82" y2="146" stroke="#4FC3F7" stroke-width="1.5"/>
+            <line x1="70" y1="150" x2="90" y2="150" stroke="#66BB6A" stroke-width="1.5"/>
+            <line x1="70" y1="154" x2="78" y2="154" stroke="#FF8A65" stroke-width="1.5"/>
+            <line x1="68" y1="158" x2="85" y2="158" stroke="#CE93D8" stroke-width="1.5"/>
+            <rect x="55" y="168" width="64" height="4" rx="1" fill="#78909C"/>
+          </svg>
+          <div class="gallery-overlay"><p>デバッグダック</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Quack Counter -->
+  <section class="quack-section" id="quack">
+    <div class="container">
+      <div class="section-header">
+        <h2>Quack! ボタン</h2>
+        <div class="accent-line"></div>
+        <p style="color: rgba(255,255,255,0.8);">押すと幸せになれる（かもしれない）ボタン。</p>
+      </div>
+      <div>
+        <button class="quack-btn" id="quackBtn" aria-label="Quack!">
+          <svg width="36" height="36" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="50" cy="65" rx="35" ry="28" fill="#FFD700"/>
+            <circle cx="50" cy="35" r="22" fill="#FFD700"/>
+            <ellipse cx="55" cy="38" rx="12" ry="5" fill="#FF8C00"/>
+            <circle cx="42" cy="30" r="3.5" fill="#2C3E50"/>
+            <circle cx="43" cy="29" r="1.2" fill="white"/>
+          </svg>
+          Quack!
+        </button>
+      </div>
+      <div class="quack-counter-display" id="quackCount">0</div>
+      <p class="quack-label">回 クワッ！ と鳴きました</p>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-duck">
+      <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <ellipse cx="50" cy="65" rx="35" ry="28" fill="#FFD700"/>
+        <circle cx="50" cy="35" r="22" fill="#FFD700"/>
+        <ellipse cx="55" cy="38" rx="12" ry="5" fill="#FF8C00"/>
+        <circle cx="42" cy="30" r="3.5" fill="#2C3E50"/>
+        <circle cx="43" cy="29" r="1.2" fill="white"/>
+      </svg>
+    </div>
+    <p>
+      Made with Quack! by a duck lover.<br>
+      ラバーダック — 世界中のお風呂で愛される黄色い友だち。
+    </p>
+  </footer>
+
+  <script>
+    // === Bubble Generator ===
+    const bubblesContainer = document.getElementById('bubbles');
+    for (let i = 0; i < 20; i++) {
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+      const size = Math.random() * 20 + 8;
+      bubble.style.width = size + 'px';
+      bubble.style.height = size + 'px';
+      bubble.style.left = Math.random() * 100 + '%';
+      bubble.style.animationDuration = (Math.random() * 8 + 6) + 's';
+      bubble.style.animationDelay = (Math.random() * 10) + 's';
+      bubblesContainer.appendChild(bubble);
+    }
+
+    // === Scroll Animations ===
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+    document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+    // === Navbar scroll effect ===
+    window.addEventListener('scroll', () => {
+      const nav = document.getElementById('navbar');
+      if (window.scrollY > 50) {
+        nav.classList.add('scrolled');
+      } else {
+        nav.classList.remove('scrolled');
+      }
+    });
+
+    // === Quack Button ===
+    let quackCount = parseInt(localStorage.getItem('quackCount') || '0');
+    const quackDisplay = document.getElementById('quackCount');
+    const quackBtn = document.getElementById('quackBtn');
+    quackDisplay.textContent = quackCount.toLocaleString();
+
+    // Audio context for quack sound
+    function playQuack() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        // Quack-like sound: rapid pitch bend
+        osc.frequency.setValueAtTime(800, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 0.15);
+        osc.frequency.exponentialRampToValueAtTime(500, ctx.currentTime + 0.2);
+        gain.gain.setValueAtTime(0.3, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.3);
+      } catch(e) {}
+    }
+
+    quackBtn.addEventListener('click', (e) => {
+      quackCount++;
+      localStorage.setItem('quackCount', quackCount.toString());
+      quackDisplay.textContent = quackCount.toLocaleString();
+      playQuack();
+
+      // Floating "Quack!" text
+      const float = document.createElement('div');
+      float.className = 'quack-floating';
+      float.textContent = 'Quack!';
+      float.style.left = (e.clientX - 40) + 'px';
+      float.style.top = (e.clientY - 20) + 'px';
+      document.body.appendChild(float);
+      setTimeout(() => float.remove(), 1500);
+
+      // Button bounce
+      quackBtn.style.transform = 'scale(0.9)';
+      setTimeout(() => quackBtn.style.transform = '', 150);
+    });
+
+    // === Smooth scroll for nav links ===
+    document.querySelectorAll('a[href^="#"]').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const target = document.querySelector(link.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+  </script>
+</body>
+</html>
