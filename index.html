@@ -620,6 +620,13 @@
       line-height: 1.8;
     }
 
+    .game-buttons {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
     .game-play-btn {
       display: inline-block;
       background: var(--duck-yellow);
@@ -631,12 +638,81 @@
       font-size: 1.2rem;
       transition: all 0.3s;
       box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
     }
 
     .game-play-btn:hover {
       transform: scale(1.05);
       box-shadow: 0 8px 25px rgba(255, 215, 0, 0.5);
     }
+
+    .game-ranking-btn {
+      display: inline-block;
+      background: rgba(255,255,255,0.15);
+      color: #fff;
+      padding: 1rem 2.5rem;
+      border-radius: 50px;
+      text-decoration: none;
+      font-weight: 800;
+      font-size: 1.1rem;
+      transition: all 0.3s;
+      border: 2px solid rgba(255,255,255,0.3);
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .game-ranking-btn:hover {
+      background: rgba(255,255,255,0.25);
+      transform: scale(1.05);
+    }
+
+    /* Ranking overlay on top page */
+    .ranking-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      z-index: 2000;
+      background: rgba(0,0,0,0.7);
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .ranking-overlay.active { display: flex; }
+    .ranking-panel {
+      background: rgba(10,10,30,0.97);
+      border: 2px solid var(--duck-yellow);
+      border-radius: 20px;
+      padding: 1.5rem;
+      max-width: 420px;
+      width: 100%;
+      max-height: 80vh;
+      overflow-y: auto;
+      font-family: 'Nunito', 'Noto Sans JP', sans-serif;
+    }
+    .ranking-panel h2 { color: var(--duck-yellow); text-align: center; font-size: 1.4rem; margin-bottom: 1rem; }
+    .ranking-row { display: flex; justify-content: space-between; padding: 6px 8px; color: rgba(255,255,255,0.8); font-size: 0.95rem; }
+    .ranking-row.top3 { color: var(--duck-yellow); font-weight: 700; }
+    .ranking-row .rank { width: 36px; }
+    .ranking-row .name { flex: 1; }
+    .ranking-row .score { text-align: right; }
+    .ranking-empty { color: rgba(255,255,255,0.5); text-align: center; padding: 2rem; }
+    .ranking-footnote { color: rgba(255,255,255,0.4); font-size: 0.8rem; text-align: center; margin-top: 0.8rem; padding-top: 0.8rem; border-top: 1px solid rgba(255,255,255,0.1); }
+    .ranking-close {
+      display: block;
+      margin: 1rem auto 0;
+      padding: 10px 24px;
+      border-radius: 50px;
+      border: 1px solid rgba(255,255,255,0.3);
+      background: rgba(255,255,255,0.15);
+      color: #fff;
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .ranking-close:hover { background: rgba(255,255,255,0.25); }
 
     /* ===== QUACK COUNTER ===== */
     .quack-section {
@@ -1218,7 +1294,10 @@
           地上から宇宙の果てまで — アヒルの無限上昇ゲーム。<br>
           ランキングで世界中のプレイヤーと競おう！
         </p>
-        <a href="/game.html" class="game-play-btn">あそぶ</a>
+        <div class="game-buttons">
+          <a href="/game.html" class="game-play-btn">あそぶ</a>
+          <button class="game-ranking-btn" id="showRanking">🥚 ランキングを見る</button>
+        </div>
       </div>
     </div>
   </section>
@@ -1247,6 +1326,15 @@
       <p class="quack-label">回 クワッ！ と鳴きました</p>
     </div>
   </section>
+
+  <!-- Ranking Overlay -->
+  <div class="ranking-overlay" id="rankingOverlay">
+    <div class="ranking-panel">
+      <h2>🥚 ランキング TOP 20</h2>
+      <div id="rankingList"><div class="ranking-empty">よみこみちゅう...</div></div>
+      <button class="ranking-close" id="rankingClose">とじる</button>
+    </div>
+  </div>
 
   <!-- Footer -->
   <footer>
@@ -1368,6 +1456,36 @@
         hamburger.classList.remove('active');
         navLinks.classList.remove('open');
       });
+    });
+
+    // Ranking overlay
+    const rankingOverlay = document.getElementById('rankingOverlay');
+    document.getElementById('showRanking').addEventListener('click', async () => {
+      rankingOverlay.classList.add('active');
+      const list = document.getElementById('rankingList');
+      list.innerHTML = '<div class="ranking-empty">よみこみちゅう...</div>';
+      try {
+        const res = await fetch('/api/scores');
+        const data = await res.json();
+        if (!data || data.length === 0) {
+          list.innerHTML = '<div class="ranking-empty">まだスコアがありません</div>';
+        } else {
+          const hasUnknown = data.slice(0, 20).some(e => !e.eggs);
+          list.innerHTML = data.slice(0, 20).map((e, i) => {
+            const medal = i === 0 ? '👑' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}.`;
+            const eggsText = e.eggs ? ` 🥚${e.eggs}` : ' 🥚?';
+            return `<div class="ranking-row ${i < 3 ? 'top3' : ''}"><span class="rank">${medal}</span><span class="name">${e.name}</span><span class="score">${e.score.toLocaleString()}${eggsText}</span></div>`;
+          }).join('') + (hasUnknown ? '<div class="ranking-footnote">🥚? = アヒルが何個拾ったか忘れちゃいました</div>' : '');
+        }
+      } catch(err) {
+        list.innerHTML = '<div class="ranking-empty">ランキングを取得できませんでした</div>';
+      }
+    });
+    document.getElementById('rankingClose').addEventListener('click', () => {
+      rankingOverlay.classList.remove('active');
+    });
+    rankingOverlay.addEventListener('click', (e) => {
+      if (e.target === rankingOverlay) rankingOverlay.classList.remove('active');
     });
   </script>
 </body>

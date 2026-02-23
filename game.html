@@ -131,6 +131,7 @@
     .lb-row .name { flex: 1; }
     .lb-row .score { text-align: right; }
     .lb-empty { color: rgba(255,255,255,0.5); text-align: center; padding: 2rem; }
+    .lb-footnote { color: rgba(255,255,255,0.4); font-size: 0.8rem; text-align: center; margin-top: 0.8rem; padding-top: 0.8rem; border-top: 1px solid rgba(255,255,255,0.1); }
     .lb-close { display: block; margin: 1rem auto 0; }
 
     /* Touch Controls */
@@ -1068,11 +1069,12 @@
         if (this.leaderboard.length === 0) {
           list.innerHTML = '<div class="lb-empty">まだスコアがありません</div>';
         } else {
+          const hasUnknownEggs = this.leaderboard.slice(0, 20).some(e => !e.eggs);
           list.innerHTML = this.leaderboard.slice(0, 20).map((e, i) => {
             const medal = i === 0 ? '👑' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}.`;
-            const eggsText = e.eggs ? ` (${e.eggs}こ)` : '';
+            const eggsText = e.eggs ? ` 🥚${e.eggs}` : ' 🥚?';
             return `<div class="lb-row ${i < 3 ? 'top3' : ''}"><span class="rank">${medal}</span><span class="name">${e.name}</span><span class="score">${e.score.toLocaleString()}${eggsText}</span></div>`;
-          }).join('');
+          }).join('') + (hasUnknownEggs ? '<div class="lb-footnote">🥚? = アヒルが何個拾ったか忘れちゃいました</div>' : '');
         }
         document.getElementById('lbOverlay').classList.add('active');
       }
