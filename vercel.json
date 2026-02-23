@@ -1,0 +1,10 @@
+{
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "www.ahiru-space.com" }],
+      "destination": "https://ahiru-space.com/:path*",
+      "permanent": true
+    }
+  ]
+}
