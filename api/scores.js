@@ -20,7 +20,7 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'POST') {
-      const { name, score } = req.body;
+      const { name, score, eggs } = req.body;
 
       // Validation
       if (!name || typeof name !== 'string' || name.trim().length === 0) {
@@ -36,6 +36,7 @@ export default async function handler(req, res) {
       scores.push({
         name: cleanName,
         score: Math.floor(score),
+        eggs: typeof eggs === 'number' ? Math.floor(eggs) : 0,
         date: new Date().toISOString()
       });
 

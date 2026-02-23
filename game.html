@@ -646,7 +646,7 @@
           const res = await fetch('/api/scores', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, score })
+            body: JSON.stringify({ name, score, eggs: this.eggsCollected })
           });
           if (res.ok) {
             this.leaderboard = await res.json();
@@ -1070,7 +1070,8 @@
         } else {
           list.innerHTML = this.leaderboard.slice(0, 20).map((e, i) => {
             const medal = i === 0 ? '👑' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}.`;
-            return `<div class="lb-row ${i < 3 ? 'top3' : ''}"><span class="rank">${medal}</span><span class="name">${e.name}</span><span class="score">${e.score.toLocaleString()}</span></div>`;
+            const eggsText = e.eggs ? ` (${e.eggs}こ)` : '';
+            return `<div class="lb-row ${i < 3 ? 'top3' : ''}"><span class="rank">${medal}</span><span class="name">${e.name}</span><span class="score">${e.score.toLocaleString()}${eggsText}</span></div>`;
           }).join('');
         }
         document.getElementById('lbOverlay').classList.add('active');
