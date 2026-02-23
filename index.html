@@ -112,6 +112,60 @@
       width: 100%;
     }
 
+    /* Hamburger menu */
+    .nav-hamburger {
+      display: none;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 8px;
+    }
+
+    .nav-hamburger span {
+      display: block;
+      width: 24px;
+      height: 3px;
+      background: var(--duck-orange);
+      border-radius: 2px;
+      margin: 5px 0;
+      transition: all 0.3s;
+    }
+
+    .nav-hamburger.active span:nth-child(1) {
+      transform: rotate(45deg) translate(5px, 6px);
+    }
+    .nav-hamburger.active span:nth-child(2) {
+      opacity: 0;
+    }
+    .nav-hamburger.active span:nth-child(3) {
+      transform: rotate(-45deg) translate(5px, -6px);
+    }
+
+    @media (max-width: 768px) {
+      .nav-hamburger {
+        display: block;
+      }
+
+      .nav-links {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: rgba(255,255,255,0.97);
+        backdrop-filter: blur(12px);
+        flex-direction: column;
+        padding: 1rem 2rem 1.5rem;
+        gap: 1rem;
+        border-bottom: 3px solid var(--duck-yellow);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+      }
+
+      .nav-links.open {
+        display: flex;
+      }
+    }
+
     /* ===== HERO ===== */
     .hero {
       min-height: 100vh;
@@ -687,10 +741,6 @@
 
     /* ===== RESPONSIVE ===== */
     @media (max-width: 768px) {
-      .nav-links {
-        display: none;
-      }
-
       .about-grid {
         grid-template-columns: 1fr;
         gap: 2rem;
@@ -752,13 +802,16 @@
         </svg>
         Quack!
       </a>
-      <ul class="nav-links">
+      <ul class="nav-links" id="navLinks">
         <li><a href="#about">ラバーダックとは</a></li>
         <li><a href="#history">歴史</a></li>
         <li><a href="#facts">豆知識</a></li>
         <li><a href="#game">ゲーム</a></li>
         <li><a href="#quack">Quack!</a></li>
       </ul>
+      <button class="nav-hamburger" id="navHamburger" aria-label="メニュー">
+        <span></span><span></span><span></span>
+      </button>
     </div>
   </nav>
 
@@ -1295,6 +1348,14 @@
       setTimeout(() => quackBtn.style.transform = '', 150);
     });
 
+    // === Hamburger menu ===
+    const hamburger = document.getElementById('navHamburger');
+    const navLinks = document.getElementById('navLinks');
+    hamburger.addEventListener('click', () => {
+      hamburger.classList.toggle('active');
+      navLinks.classList.toggle('open');
+    });
+
     // === Smooth scroll for nav links ===
     document.querySelectorAll('a[href^="#"]').forEach(link => {
       link.addEventListener('click', (e) => {
@@ -1303,6 +1364,9 @@
         if (target) {
           target.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
+        // Close mobile menu
+        hamburger.classList.remove('active');
+        navLinks.classList.remove('open');
       });
     });
   </script>

@@ -41,6 +41,98 @@
     }
     .back-link:hover { color: #FFD700; }
 
+    /* Game Over Overlay (HTML) */
+    .gameover-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      z-index: 80;
+      background: rgba(0,0,0,0.7);
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      font-family: 'Nunito', 'Noto Sans JP', sans-serif;
+    }
+    .gameover-overlay.active { display: flex; }
+    .gameover-panel {
+      background: rgba(10,10,30,0.95);
+      border: 2px solid #FFD700;
+      border-radius: 20px;
+      padding: 2rem;
+      max-width: 380px;
+      width: 100%;
+      text-align: center;
+    }
+    .gameover-panel h2 { color: #FFD700; font-size: 1.8rem; margin-bottom: 1rem; }
+    .gameover-panel .stats { color: #fff; font-size: 1rem; line-height: 2; margin-bottom: 1rem; }
+    .gameover-panel .stats span { color: #FFD700; font-weight: 800; }
+    .gameover-panel .highscore-entry { margin: 1rem 0; }
+    .gameover-panel .highscore-entry p { color: #FFD700; font-weight: 700; margin-bottom: 0.5rem; }
+    .gameover-panel input {
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 2px solid rgba(255,215,0,0.4);
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+      font-size: 1rem;
+      font-family: inherit;
+      outline: none;
+      margin-bottom: 0.5rem;
+    }
+    .gameover-panel input:focus { border-color: #FFD700; }
+    .gameover-panel input::placeholder { color: rgba(255,255,255,0.4); }
+    .go-btn {
+      display: inline-block;
+      padding: 10px 24px;
+      border-radius: 50px;
+      border: none;
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 800;
+      cursor: pointer;
+      margin: 6px;
+      transition: transform 0.2s;
+    }
+    .go-btn:active { transform: scale(0.95); }
+    .go-btn.primary { background: #FFD700; color: #000; }
+    .go-btn.secondary { background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.3); }
+    .go-btn.secondary:hover { background: rgba(255,255,255,0.25); }
+    .submitted-msg { color: #FFD700; font-weight: 700; margin: 0.5rem 0; }
+
+    /* Leaderboard Overlay */
+    .lb-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      z-index: 90;
+      background: rgba(0,0,0,0.8);
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .lb-overlay.active { display: flex; }
+    .lb-panel {
+      background: rgba(10,10,30,0.97);
+      border: 2px solid #FFD700;
+      border-radius: 20px;
+      padding: 1.5rem;
+      max-width: 400px;
+      width: 100%;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    .lb-panel h2 { color: #FFD700; text-align: center; font-size: 1.4rem; margin-bottom: 1rem; }
+    .lb-row { display: flex; justify-content: space-between; padding: 6px 8px; color: rgba(255,255,255,0.8); font-size: 0.95rem; }
+    .lb-row.top3 { color: #FFD700; font-weight: 700; }
+    .lb-row .rank { width: 36px; }
+    .lb-row .name { flex: 1; }
+    .lb-row .score { text-align: right; }
+    .lb-empty { color: rgba(255,255,255,0.5); text-align: center; padding: 2rem; }
+    .lb-close { display: block; margin: 1rem auto 0; }
+
     /* Touch Controls */
     .touch-controls {
       display: none;
@@ -81,6 +173,37 @@
 <body>
   <a href="/" class="back-link">← Home</a>
   <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+  <!-- Game Over HTML Overlay -->
+  <div class="gameover-overlay" id="gameoverOverlay">
+    <div class="gameover-panel">
+      <h2>ゲームオーバー</h2>
+      <div class="stats">
+        スコア: <span id="goScore">0</span><br>
+        たかさ: <span id="goHeight">0</span>m<br>
+        たまご: <span id="goEggs">0</span>こ
+      </div>
+      <div class="highscore-entry" id="hsEntry" style="display:none;">
+        <p>ランキング入り！ なまえを入力:</p>
+        <input type="text" id="hsName" maxlength="15" placeholder="なまえ" autocomplete="off">
+        <button class="go-btn primary" id="hsSubmit">とうろく</button>
+      </div>
+      <div class="submitted-msg" id="hsSubmitted" style="display:none;">とうろくしました！</div>
+      <div>
+        <button class="go-btn primary" id="goRestart">もういちど</button>
+        <button class="go-btn secondary" id="goLeaderboard">ランキング</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Leaderboard HTML Overlay -->
+  <div class="lb-overlay" id="lbOverlay">
+    <div class="lb-panel">
+      <h2>ランキング TOP 20</h2>
+      <div id="lbList"></div>
+      <button class="go-btn secondary lb-close" id="lbClose">とじる</button>
+    </div>
+  </div>
 
   <div class="touch-controls" id="touchControls">
     <div class="touch-left-group">
@@ -500,10 +623,8 @@
 
         // Leaderboard
         this.leaderboard = [];
-        this.showLeaderboard = false;
-        this.nameInput = '';
-        this.nameInputActive = false;
         this.scoreSubmitted = false;
+        this.overlayShown = false;
         this.fetchLeaderboard();
 
         // Create initial platforms
@@ -730,22 +851,8 @@
           if (justPressed['KeyQ'] || touchJustPressed.quack) {
             if (this.duck.quack()) this.quackMsgTimer = 20;
           }
-        } else if (this.state === 'gameover') {
-          if (this.nameInputActive) {
-            // Name input handled by keydown listener below
-          } else if (!this.showLeaderboard) {
-            if (justPressed['KeyR'] || touchJustPressed.flap) {
-              return 'restart';
-            }
-            if (justPressed['KeyL']) {
-              this.showLeaderboard = true;
-            }
-          } else {
-            if (justPressed['Escape'] || justPressed['KeyL'] || touchJustPressed.quack) {
-              this.showLeaderboard = false;
-            }
-          }
         }
+        // gameover input is handled by HTML overlay buttons
         // Clear justPressed
         Object.keys(justPressed).forEach(k => delete justPressed[k]);
         touchJustPressed.flap = false;
@@ -934,186 +1041,112 @@
           ctx.fillText(hint, W / 2 - hw / 2, H / 2 + 50);
         }
 
-        // Game Over screen
-        if (this.state === 'gameover') {
-          ctx.fillStyle = 'rgba(0,0,0,0.6)';
-          ctx.fillRect(0, 0, W, H);
-
-          if (this.showLeaderboard) {
-            this.drawLeaderboard();
-          } else {
-            this.drawGameOver();
-          }
+        // Game Over - show HTML overlay
+        if (this.state === 'gameover' && !this.overlayShown) {
+          this.showGameOverOverlay();
+          this.overlayShown = true;
         }
       }
 
-      drawGameOver() {
-        const yBase = H / 2 - 140;
-
-        ctx.fillStyle = COLORS.yellow;
-        ctx.font = 'bold 36px Nunito, Noto Sans JP, sans-serif';
-        let t = 'ゲームオーバー';
-        ctx.fillText(t, W/2 - ctx.measureText(t).width/2, yBase + 20);
-
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 28px Nunito, Noto Sans JP, sans-serif';
-        t = `スコア: ${this.score}`;
-        ctx.fillText(t, W/2 - ctx.measureText(t).width/2, yBase + 70);
-
-        ctx.font = 'bold 18px Nunito, Noto Sans JP, sans-serif';
-        t = `さいこうのたかさ: ${Math.floor(this.highestPoint)}m`;
-        ctx.fillText(t, W/2 - ctx.measureText(t).width/2, yBase + 105);
-        t = `あつめたたまご: ${this.eggsCollected}こ`;
-        ctx.fillText(t, W/2 - ctx.measureText(t).width/2, yBase + 130);
-
-        // High score entry
-        if (!this.scoreSubmitted && this.isHighScore(this.score)) {
-          ctx.fillStyle = COLORS.yellow;
-          ctx.font = 'bold 20px Nunito, Noto Sans JP, sans-serif';
-          t = 'ランキング入り！ なまえを入力:';
-          ctx.fillText(t, W/2 - ctx.measureText(t).width/2, yBase + 175);
-
-          // Name input box
-          ctx.fillStyle = 'rgba(255,255,255,0.15)';
-          ctx.strokeStyle = this.nameInputActive ? COLORS.yellow : 'rgba(255,255,255,0.4)';
-          ctx.lineWidth = 2;
-          const boxX = W/2 - 120, boxY = yBase + 188, boxW = 240, boxH = 36;
-          ctx.fillRect(boxX, boxY, boxW, boxH);
-          ctx.strokeRect(boxX, boxY, boxW, boxH);
-
-          ctx.fillStyle = this.nameInput ? '#fff' : 'rgba(255,255,255,0.4)';
-          ctx.font = 'bold 18px Nunito, sans-serif';
-          ctx.fillText(this.nameInput || 'ここをクリック', boxX + 10, boxY + 25);
-
-          if (this.nameInput.length > 0) {
-            // Submit button
-            ctx.fillStyle = COLORS.yellow;
-            ctx.beginPath();
-            ctx.roundRect(W/2 - 60, yBase + 235, 120, 36, 18);
-            ctx.fill();
-            ctx.fillStyle = '#000';
-            ctx.font = 'bold 16px Nunito, Noto Sans JP, sans-serif';
-            t = 'とうろく';
-            ctx.fillText(t, W/2 - ctx.measureText(t).width/2, yBase + 258);
-          }
-        } else if (this.scoreSubmitted) {
-          ctx.fillStyle = COLORS.yellow;
-          ctx.font = 'bold 20px Nunito, Noto Sans JP, sans-serif';
-          t = 'とうろくしました！';
-          ctx.fillText(t, W/2 - ctx.measureText(t).width/2, yBase + 180);
-        }
-
-        // Bottom buttons
-        const btnY = yBase + 290;
-        ctx.fillStyle = 'rgba(255,255,255,0.8)';
-        ctx.font = 'bold 16px Nunito, Noto Sans JP, sans-serif';
-        t = 'R: もういちど　　L: ランキング';
-        ctx.fillText(t, W/2 - ctx.measureText(t).width/2, btnY);
+      showGameOverOverlay() {
+        document.getElementById('goScore').textContent = this.score.toLocaleString();
+        document.getElementById('goHeight').textContent = Math.floor(this.highestPoint).toLocaleString();
+        document.getElementById('goEggs').textContent = this.eggsCollected;
+        document.getElementById('hsEntry').style.display = this.isHighScore(this.score) ? 'block' : 'none';
+        document.getElementById('hsSubmitted').style.display = 'none';
+        document.getElementById('hsName').value = '';
+        document.getElementById('gameoverOverlay').classList.add('active');
       }
 
-      drawLeaderboard() {
-        const panelX = W/2 - 200, panelY = 40, panelW = 400, panelH = H - 80;
-        ctx.fillStyle = 'rgba(0,0,20,0.9)';
-        ctx.beginPath();
-        ctx.roundRect(panelX, panelY, panelW, panelH, 16);
-        ctx.fill();
-        ctx.strokeStyle = COLORS.yellow;
-        ctx.lineWidth = 2;
-        ctx.stroke();
+      hideOverlays() {
+        document.getElementById('gameoverOverlay').classList.remove('active');
+        document.getElementById('lbOverlay').classList.remove('active');
+      }
 
-        ctx.fillStyle = COLORS.yellow;
-        ctx.font = 'bold 28px Nunito, Noto Sans JP, sans-serif';
-        let t = 'ランキング TOP 20';
-        ctx.fillText(t, W/2 - ctx.measureText(t).width/2, panelY + 40);
-
-        ctx.font = 'bold 15px Nunito, sans-serif';
-        const startY = panelY + 70;
-        for (let i = 0; i < this.leaderboard.length && i < 20; i++) {
-          const entry = this.leaderboard[i];
-          const y = startY + i * 22;
-          const medal = i === 0 ? '👑' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}.`;
-          ctx.fillStyle = i < 3 ? COLORS.yellow : 'rgba(255,255,255,0.8)';
-          ctx.fillText(`${medal} ${entry.name}`, panelX + 20, y);
-          ctx.fillText(`${entry.score.toLocaleString()}`, panelX + panelW - 100, y);
-        }
-
+      showLeaderboardOverlay() {
+        const list = document.getElementById('lbList');
         if (this.leaderboard.length === 0) {
-          ctx.fillStyle = 'rgba(255,255,255,0.5)';
-          ctx.font = 'bold 16px Nunito, Noto Sans JP, sans-serif';
-          t = 'まだスコアがありません';
-          ctx.fillText(t, W/2 - ctx.measureText(t).width/2, startY + 40);
+          list.innerHTML = '<div class="lb-empty">まだスコアがありません</div>';
+        } else {
+          list.innerHTML = this.leaderboard.slice(0, 20).map((e, i) => {
+            const medal = i === 0 ? '👑' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}.`;
+            return `<div class="lb-row ${i < 3 ? 'top3' : ''}"><span class="rank">${medal}</span><span class="name">${e.name}</span><span class="score">${e.score.toLocaleString()}</span></div>`;
+          }).join('');
         }
-
-        ctx.fillStyle = 'rgba(255,255,255,0.5)';
-        ctx.font = 'bold 14px Nunito, Noto Sans JP, sans-serif';
-        t = 'L / ESC: とじる';
-        ctx.fillText(t, W/2 - ctx.measureText(t).width/2, panelY + panelH - 20);
+        document.getElementById('lbOverlay').classList.add('active');
       }
     }
 
     // ===== MAIN =====
     let game = new Game();
+    const touchControls = document.getElementById('touchControls');
 
-    // Name input handling
-    document.addEventListener('keydown', e => {
-      if (game.state === 'gameover' && game.nameInputActive && !game.scoreSubmitted) {
-        if (e.key === 'Backspace') {
-          game.nameInput = game.nameInput.slice(0, -1);
-          e.preventDefault();
-        } else if (e.key === 'Enter' && game.nameInput.length > 0) {
-          game.submitScore(game.nameInput, game.score);
-          game.nameInputActive = false;
-          e.preventDefault();
-        } else if (e.key.length === 1 && game.nameInput.length < 15) {
-          game.nameInput += e.key;
-          e.preventDefault();
-        }
+    function restartGame() {
+      game.hideOverlays();
+      game = new Game();
+      game.state = 'playing';
+      touchControls.style.display = '';
+    }
+
+    // --- HTML Overlay Button Handlers ---
+    document.getElementById('goRestart').addEventListener('click', restartGame);
+
+    document.getElementById('goLeaderboard').addEventListener('click', () => {
+      game.showLeaderboardOverlay();
+    });
+
+    document.getElementById('hsSubmit').addEventListener('click', async () => {
+      const nameEl = document.getElementById('hsName');
+      const name = nameEl.value.trim();
+      if (name.length > 0 && !game.scoreSubmitted) {
+        await game.submitScore(name, game.score);
+        document.getElementById('hsEntry').style.display = 'none';
+        document.getElementById('hsSubmitted').style.display = 'block';
       }
     });
 
-    // Click handling for name input & submit button
-    canvas.addEventListener('click', e => {
-      const rect = canvas.getBoundingClientRect();
-      const scaleX = W / rect.width;
-      const scaleY = H / rect.height;
-      const mx = (e.clientX - rect.left) * scaleX;
-      const my = (e.clientY - rect.top) * scaleY;
-
-      if (game.state === 'gameover' && !game.scoreSubmitted && game.isHighScore(game.score)) {
-        const yBase = H / 2 - 140;
-        const boxX = W/2 - 120, boxY = yBase + 188, boxW = 240, boxH = 36;
-        // Click on input box
-        if (mx >= boxX && mx <= boxX+boxW && my >= boxY && my <= boxY+boxH) {
-          game.nameInputActive = true;
-        }
-        // Click submit button
-        if (game.nameInput.length > 0 && mx >= W/2-60 && mx <= W/2+60 && my >= yBase+235 && my <= yBase+271) {
-          game.submitScore(game.nameInput, game.score);
-          game.nameInputActive = false;
-        }
-      }
-
-      if (game.state === 'title') {
-        game.state = 'playing';
-      }
+    document.getElementById('lbClose').addEventListener('click', () => {
+      document.getElementById('lbOverlay').classList.remove('active');
     });
 
-    // Mobile: tap canvas for restart
-    canvas.addEventListener('touchstart', e => {
-      if (game.state === 'title') {
-        game.state = 'playing';
+    // Enter key submits score from name input
+    document.getElementById('hsName').addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
         e.preventDefault();
+        document.getElementById('hsSubmit').click();
       }
+    });
+
+    // Keyboard shortcuts for game over (R=restart, L=leaderboard, Esc=close)
+    document.addEventListener('keydown', e => {
+      if (game.state !== 'gameover') return;
+      // Don't handle shortcuts when typing in name input
+      if (document.activeElement === document.getElementById('hsName')) return;
+      if (e.code === 'KeyR') restartGame();
+      if (e.code === 'KeyL') game.showLeaderboardOverlay();
+      if (e.code === 'Escape') document.getElementById('lbOverlay').classList.remove('active');
+    });
+
+    // Click/tap canvas to start from title
+    canvas.addEventListener('click', () => {
+      if (game.state === 'title') game.state = 'playing';
+    });
+    canvas.addEventListener('touchstart', e => {
+      if (game.state === 'title') { game.state = 'playing'; e.preventDefault(); }
     }, {passive: false});
 
-    function gameLoop() {
-      const action = game.handleInput();
-      if (action === 'restart') {
-        game = new Game();
-        game.state = 'playing';
+    // Hide touch controls when overlay is active
+    function updateTouchControlsVisibility() {
+      if (game.state === 'gameover') {
+        touchControls.style.display = 'none';
       }
+    }
+
+    function gameLoop() {
+      game.handleInput();
       game.update();
       game.draw();
+      updateTouchControlsVisibility();
       requestAnimationFrame(gameLoop);
     }
 
