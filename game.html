@@ -1,0 +1,1123 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Duck Only Up! - ahiru-space.com</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&family=Noto+Sans+JP:wght@400;700;900&display=swap');
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: 'Nunito', 'Noto Sans JP', sans-serif;
+      overflow: hidden;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    #gameCanvas {
+      display: block;
+      image-rendering: pixelated;
+      max-width: 100vw;
+      max-height: 100vh;
+    }
+    .back-link {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      color: rgba(255,255,255,0.6);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 700;
+      z-index: 100;
+      padding: 4px 12px;
+      background: rgba(0,0,0,0.3);
+      border-radius: 20px;
+    }
+    .back-link:hover { color: #FFD700; }
+
+    /* Touch Controls */
+    .touch-controls {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 140px;
+      z-index: 50;
+      pointer-events: none;
+    }
+    @media (pointer: coarse) {
+      .touch-controls { display: flex; justify-content: space-between; align-items: flex-end; padding: 0 15px 20px; }
+    }
+    .touch-btn {
+      pointer-events: all;
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      border: 2px solid rgba(255,255,255,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      color: rgba(255,255,255,0.8);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .touch-btn:active, .touch-btn.active {
+      background: rgba(255,215,0,0.4);
+      border-color: rgba(255,215,0,0.7);
+    }
+    .touch-left-group { display: flex; gap: 12px; }
+    .touch-right-group { display: flex; gap: 12px; align-items: flex-end; }
+    .touch-btn.small { width: 52px; height: 52px; font-size: 16px; margin-bottom: 70px; }
+  </style>
+</head>
+<body>
+  <a href="/" class="back-link">← Home</a>
+  <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+  <div class="touch-controls" id="touchControls">
+    <div class="touch-left-group">
+      <div class="touch-btn" id="btnLeft">◀</div>
+      <div class="touch-btn" id="btnRight">▶</div>
+    </div>
+    <div class="touch-right-group">
+      <div class="touch-btn small" id="btnQuack">Q</div>
+      <div class="touch-btn" id="btnFlap">▲</div>
+    </div>
+  </div>
+
+  <script>
+    // ========================================
+    // Duck Only Up! - Web Version
+    // ========================================
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const W = 800, H = 600;
+
+    // Resize canvas to fit screen
+    function resizeCanvas() {
+      const ratio = W / H;
+      let w = window.innerWidth;
+      let h = window.innerHeight;
+      if (w / h > ratio) { w = h * ratio; } else { h = w / ratio; }
+      canvas.style.width = w + 'px';
+      canvas.style.height = h + 'px';
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    // ===== CONSTANTS =====
+    const GRAVITY = 0.5;
+    const MAX_FALL_SPEED = 15;
+    const FPS = 60;
+    const COLORS = {
+      white: '#fff', skyBlue: '#87CEEB', yellow: '#FFD700', orange: '#FFA500',
+      darkOrange: '#FF8C00', brown: '#8B4513', green: '#228B22', blue: '#00BFFF',
+      darkBlue: '#0064C8', waterBlue: '#40A4DF', red: '#DC3232', darkRed: '#B41E1E',
+      purple: '#9632C8', darkGray: '#505050', black: '#000'
+    };
+
+    // ===== AUDIO =====
+    let audioCtx = null;
+    function getAudioCtx() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      return audioCtx;
+    }
+    function playQuack() {
+      try {
+        const ctx = getAudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sawtooth';
+        const now = ctx.currentTime;
+        osc.frequency.setValueAtTime(600, now);
+        osc.frequency.exponentialRampToValueAtTime(250, now + 0.08);
+        osc.frequency.exponentialRampToValueAtTime(400, now + 0.12);
+        osc.frequency.exponentialRampToValueAtTime(150, now + 0.2);
+        gain.gain.setValueAtTime(0.25, now);
+        gain.gain.linearRampToValueAtTime(0.3, now + 0.03);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+        osc.start(now);
+        osc.stop(now + 0.25);
+      } catch(e) {}
+    }
+    function playJump() {
+      try {
+        const ctx = getAudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        const now = ctx.currentTime;
+        osc.frequency.setValueAtTime(300, now);
+        osc.frequency.exponentialRampToValueAtTime(600, now + 0.1);
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+        osc.start(now);
+        osc.stop(now + 0.15);
+      } catch(e) {}
+    }
+    function playEgg() {
+      try {
+        const ctx = getAudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        const now = ctx.currentTime;
+        osc.frequency.setValueAtTime(800, now);
+        osc.frequency.exponentialRampToValueAtTime(1200, now + 0.1);
+        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+        osc.start(now);
+        osc.stop(now + 0.15);
+      } catch(e) {}
+    }
+    function playGameOver() {
+      try {
+        const ctx = getAudioCtx();
+        const now = ctx.currentTime;
+        [200, 180, 150].forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now + i * 0.15);
+          gain.gain.setValueAtTime(0.2, now + i * 0.15);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.15 + 0.3);
+          osc.start(now + i * 0.15);
+          osc.stop(now + i * 0.15 + 0.3);
+        });
+      } catch(e) {}
+    }
+
+    // ===== INPUT =====
+    const keys = {};
+    const justPressed = {};
+    document.addEventListener('keydown', e => {
+      if (!keys[e.code]) justPressed[e.code] = true;
+      keys[e.code] = true;
+      if (['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)) e.preventDefault();
+    });
+    document.addEventListener('keyup', e => { keys[e.code] = false; });
+
+    // Touch controls
+    const touchState = { left: false, right: false, flap: false, quack: false };
+    const touchJustPressed = { flap: false, quack: false };
+    function setupTouchBtn(id, key) {
+      const btn = document.getElementById(id);
+      if (!btn) return;
+      const onStart = (e) => { e.preventDefault(); touchState[key] = true; touchJustPressed[key] = true; btn.classList.add('active'); };
+      const onEnd = (e) => { e.preventDefault(); touchState[key] = false; btn.classList.remove('active'); };
+      btn.addEventListener('touchstart', onStart, {passive:false});
+      btn.addEventListener('touchend', onEnd, {passive:false});
+      btn.addEventListener('touchcancel', onEnd, {passive:false});
+    }
+    setupTouchBtn('btnLeft', 'left');
+    setupTouchBtn('btnRight', 'right');
+    setupTouchBtn('btnFlap', 'flap');
+    setupTouchBtn('btnQuack', 'quack');
+
+    // ===== CLASSES =====
+    class Duck {
+      constructor() {
+        this.w = 40; this.h = 40;
+        this.x = W / 2 - 20; this.y = H - 90;
+        this.velX = 0; this.velY = 0;
+        this.onGround = false;
+        this.flapPower = -15;
+        this.canDoubleJump = true;
+        this.quackCooldown = 0;
+        this.flapAnim = 0;
+        this.facingRight = true;
+      }
+      update() {
+        this.velX = 0;
+        if (keys['ArrowLeft'] || keys['KeyA'] || touchState.left) {
+          this.velX = -6;
+          this.facingRight = false;
+        }
+        if (keys['ArrowRight'] || keys['KeyD'] || touchState.right) {
+          this.velX = 6;
+          this.facingRight = true;
+        }
+        this.velY += GRAVITY;
+        if (this.velY > MAX_FALL_SPEED) this.velY = MAX_FALL_SPEED;
+        this.x += this.velX;
+        this.y += this.velY;
+        if (this.x < 0) this.x = 0;
+        if (this.x + this.w > W) this.x = W - this.w;
+        if (this.flapAnim > 0) this.flapAnim -= 0.1;
+        if (this.quackCooldown > 0) this.quackCooldown--;
+      }
+      flap() {
+        if (this.onGround) {
+          this.velY = this.flapPower;
+          this.onGround = false;
+          this.canDoubleJump = true;
+          this.flapAnim = 1;
+          playJump();
+          return true;
+        } else if (this.canDoubleJump) {
+          this.velY = this.flapPower * 0.8;
+          this.canDoubleJump = false;
+          this.flapAnim = 1;
+          playJump();
+          return true;
+        }
+        return false;
+      }
+      quack() {
+        if (this.quackCooldown === 0) {
+          this.velY = Math.min(this.velY, -3);
+          this.quackCooldown = 30;
+          playQuack();
+          return true;
+        }
+        return false;
+      }
+      draw() {
+        ctx.save();
+        const cx = this.x + this.w / 2;
+        const cy = this.y + this.h / 2;
+        if (!this.facingRight) {
+          ctx.translate(cx, cy);
+          ctx.scale(-1, 1);
+          ctx.translate(-cx, -cy);
+        }
+        // Body
+        ctx.fillStyle = COLORS.yellow;
+        ctx.beginPath();
+        ctx.ellipse(this.x + 17, this.y + 25, 15, 10, 0, 0, Math.PI * 2);
+        ctx.fill();
+        // Head
+        ctx.beginPath();
+        ctx.arc(this.x + 28, this.y + 12, 10, 0, Math.PI * 2);
+        ctx.fill();
+        // Beak
+        ctx.fillStyle = COLORS.orange;
+        ctx.beginPath();
+        ctx.moveTo(this.x + 35, this.y + 12);
+        ctx.lineTo(this.x + 40, this.y + 10);
+        ctx.lineTo(this.x + 40, this.y + 14);
+        ctx.fill();
+        // Eye
+        ctx.fillStyle = '#000';
+        ctx.beginPath();
+        ctx.arc(this.x + 30, this.y + 10, 2, 0, Math.PI * 2);
+        ctx.fill();
+        // Wing
+        const wingY = this.y + 20 + this.flapAnim * 3;
+        ctx.fillStyle = '#C8B400';
+        ctx.beginPath();
+        ctx.ellipse(this.x + 6, wingY, 6, 4, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+      get rect() { return { x: this.x, y: this.y, w: this.w, h: this.h }; }
+    }
+
+    class Platform {
+      constructor(x, y, width, type = 'normal', moving = false) {
+        this.x = x; this.y = y; this.w = width; this.h = 15;
+        this.type = type;
+        this.isSpike = (type === 'spike');
+        this.moving = moving;
+        if (moving) {
+          this.moveSpeed = [- 2, -1.5, 1.5, 2][Math.floor(Math.random() * 4)];
+          this.moveMin = Math.max(0, x - 120);
+          this.moveMax = Math.min(W - width, x + 120);
+        }
+      }
+      update() {
+        if (this.moving) {
+          this.x += this.moveSpeed;
+          if (this.x <= this.moveMin || this.x >= this.moveMax) this.moveSpeed = -this.moveSpeed;
+        }
+      }
+      draw() {
+        if (this.type === 'spike') {
+          ctx.fillStyle = COLORS.darkRed;
+          ctx.fillRect(this.x, this.y + 5, this.w, 10);
+          ctx.fillStyle = COLORS.red;
+          const count = Math.floor(this.w / 12);
+          for (let i = 0; i < count; i++) {
+            const cx = this.x + 6 + i * 12;
+            ctx.beginPath();
+            ctx.moveTo(cx - 5, this.y + 5);
+            ctx.lineTo(cx, this.y - 3);
+            ctx.lineTo(cx + 5, this.y + 5);
+            ctx.fill();
+          }
+        } else {
+          const colors = { water: COLORS.waterBlue, grass: COLORS.green, wood: COLORS.brown, normal: COLORS.darkBlue };
+          ctx.fillStyle = colors[this.type] || COLORS.darkBlue;
+          ctx.fillRect(this.x, this.y, this.w, this.h);
+          if (this.type === 'water') {
+            ctx.fillStyle = COLORS.blue;
+            for (let i = 0; i < this.w; i += 10) {
+              ctx.beginPath();
+              ctx.arc(this.x + i, this.y, 5, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+          if (this.moving) {
+            ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+            ctx.lineWidth = 2;
+            const midY = this.y + this.h / 2;
+            ctx.beginPath(); ctx.moveTo(this.x + 4, midY); ctx.lineTo(this.x + 16, midY); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(this.x + this.w - 16, midY); ctx.lineTo(this.x + this.w - 4, midY); ctx.stroke();
+          }
+        }
+      }
+      get rect() { return { x: this.x, y: this.y, w: this.w, h: this.h }; }
+    }
+
+    class Crow {
+      constructor(x, y) {
+        this.x = x; this.y = y; this.w = 35; this.h = 30;
+        this.moveSpeed = [-3, -2, 2, 3][Math.floor(Math.random() * 4)];
+        this.animTick = 0;
+      }
+      update() {
+        this.x += this.moveSpeed;
+        if (this.x + this.w < -50) this.x = W + 10;
+        else if (this.x > W + 50) this.x = -this.w - 10;
+        this.animTick++;
+      }
+      draw() {
+        ctx.save();
+        const cx = this.x + this.w / 2;
+        const cy = this.y + this.h / 2;
+        if (this.moveSpeed < 0) {
+          ctx.translate(cx, cy);
+          ctx.scale(-1, 1);
+          ctx.translate(-cx, -cy);
+        }
+        // Body
+        ctx.fillStyle = COLORS.darkGray;
+        ctx.beginPath();
+        ctx.ellipse(this.x + 17, this.y + 19, 12, 7, 0, 0, Math.PI * 2);
+        ctx.fill();
+        // Head
+        ctx.beginPath();
+        ctx.arc(this.x + 25, this.y + 12, 8, 0, Math.PI * 2);
+        ctx.fill();
+        // Beak
+        ctx.fillStyle = COLORS.orange;
+        ctx.beginPath();
+        ctx.moveTo(this.x + 33, this.y + 11);
+        ctx.lineTo(this.x + 35, this.y + 13);
+        ctx.lineTo(this.x + 31, this.y + 14);
+        ctx.fill();
+        // Eye
+        ctx.fillStyle = COLORS.red;
+        ctx.beginPath();
+        ctx.arc(this.x + 27, this.y + 10, 2, 0, Math.PI * 2);
+        ctx.fill();
+        // Wing
+        const wingOff = (Math.floor(this.animTick / 10) % 2 === 0) ? 3 : -3;
+        ctx.fillStyle = '#3C3C3C';
+        ctx.beginPath();
+        ctx.ellipse(this.x + 9, this.y + 14 + wingOff, 7, 4, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+      get rect() { return { x: this.x + 4, y: this.y + 4, w: this.w - 8, h: this.h - 8 }; }
+    }
+
+    class Egg {
+      constructor(x, y) {
+        this.x = x; this.y = y; this.w = 20; this.h = 25;
+        this.bobOffset = Math.random() * Math.PI * 2;
+      }
+      draw() {
+        const bob = Math.sin(Date.now() / 500 + this.bobOffset) * 2;
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.ellipse(this.x + 10, this.y + 12 + bob, 10, 12, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#c8c8c8';
+        ctx.beginPath();
+        ctx.ellipse(this.x + 10, this.y + 12 + bob, 8, 10, 0, 0, Math.PI * 2);
+        ctx.fill();
+        // Shine
+        ctx.fillStyle = 'rgba(255,255,255,0.7)';
+        ctx.beginPath();
+        ctx.ellipse(this.x + 7, this.y + 8 + bob, 3, 4, -0.3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      get rect() { return { x: this.x, y: this.y, w: this.w, h: this.h }; }
+    }
+
+    // ===== COLLISION =====
+    function rectsOverlap(a, b) {
+      return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+    }
+
+    // ===== GAME =====
+    class Game {
+      constructor() {
+        this.duck = new Duck();
+        this.platforms = [];
+        this.eggs = [];
+        this.crows = [];
+        this.cameraY = 0;
+        this.highestPoint = 0;
+        this.score = 0;
+        this.eggsCollected = 0;
+        this.gameOver = false;
+        this.gameOverPlayed = false;
+        this.quackMsgTimer = 0;
+        this.lastWasSpike = false;
+
+        // Zone
+        this.lastZone = '';
+        this.zoneMsg = '';
+        this.zoneMsgTimer = 0;
+
+        // Background decorations
+        this.clouds = Array.from({length: 8}, () => ({
+          x: Math.random() * W, y: Math.random() * H, w: 60 + Math.random() * 60
+        }));
+        this.stars = Array.from({length: 80}, () => ({
+          x: Math.random() * W, y: Math.random() * H
+        }));
+        this.alienX = 100 + Math.random() * (W - 200);
+        this.alienBob = 0;
+
+        // Leaderboard
+        this.leaderboard = [];
+        this.showLeaderboard = false;
+        this.nameInput = '';
+        this.nameInputActive = false;
+        this.scoreSubmitted = false;
+        this.fetchLeaderboard();
+
+        // Create initial platforms
+        this.createInitialPlatforms();
+
+        // Game state
+        this.state = 'title'; // 'title', 'playing', 'gameover'
+      }
+
+      async fetchLeaderboard() {
+        try {
+          const res = await fetch('/api/scores');
+          if (res.ok) this.leaderboard = await res.json();
+        } catch(e) { /* KV not set up yet - that's OK */ }
+      }
+
+      async submitScore(name, score) {
+        try {
+          const res = await fetch('/api/scores', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, score })
+          });
+          if (res.ok) {
+            this.leaderboard = await res.json();
+            this.scoreSubmitted = true;
+          }
+        } catch(e) {}
+      }
+
+      isHighScore(score) {
+        if (this.leaderboard.length < 20) return score > 0;
+        return score > this.leaderboard[this.leaderboard.length - 1].score;
+      }
+
+      createInitialPlatforms() {
+        // Ground
+        this.platforms.push(new Platform(0, H - 30, W, 'grass'));
+        let y = H - 30;
+        let prevSpike = false;
+        for (let i = 0; i < 30; i++) {
+          y -= 80 + Math.random() * 70;
+          const x = 50 + Math.random() * (W - 250);
+          const width = 100 + Math.random() * 150;
+          let type, moving = false;
+          if (i < 5) {
+            type = ['normal','water','grass','wood'][Math.floor(Math.random()*4)];
+          } else {
+            const roll = Math.random();
+            if (roll < 0.15 && !prevSpike) { type = 'spike'; }
+            else if (roll < 0.30) { type = ['normal','water','grass','wood'][Math.floor(Math.random()*4)]; moving = true; }
+            else { type = ['normal','water','grass','wood'][Math.floor(Math.random()*4)]; }
+          }
+          prevSpike = (type === 'spike');
+          this.platforms.push(new Platform(x, y, width, type, moving));
+          if (Math.random() < 0.45 && type !== 'spike' && !moving) {
+            this.eggs.push(new Egg(x + width / 2 - 10, y - 15));
+          }
+          if (i >= 8 && Math.random() < 0.15) {
+            this.crows.push(new Crow(50 + Math.random() * (W - 100), y - 50));
+          }
+        }
+      }
+
+      generatePlatforms() {
+        if (this.platforms.length === 0) return;
+        let highest = Math.min(...this.platforms.map(p => p.y));
+        while (highest > this.cameraY - H) {
+          highest -= 80 + Math.random() * 70;
+          const x = 50 + Math.random() * (W - 250);
+          const width = 100 + Math.random() * 150;
+          let type, moving = false;
+          const roll = Math.random();
+          if (roll < 0.18 && !this.lastWasSpike) { type = 'spike'; }
+          else if (roll < 0.38) { type = ['normal','water','grass','wood'][Math.floor(Math.random()*4)]; moving = true; }
+          else { type = ['normal','water','grass','wood'][Math.floor(Math.random()*4)]; }
+          this.lastWasSpike = (type === 'spike');
+          this.platforms.push(new Platform(x, highest, width, type, moving));
+          if (Math.random() < 0.45 && type !== 'spike' && !moving) {
+            this.eggs.push(new Egg(x + width / 2 - 10, highest - 15));
+          }
+          if (Math.random() < 0.18) {
+            this.crows.push(new Crow(50 + Math.random() * (W - 100), highest - 50));
+          }
+        }
+      }
+
+      getZone() {
+        const h = this.highestPoint;
+        if (h < 2000) return 'ground';
+        if (h < 8000) return 'clouds';
+        if (h < 15000) return 'high_sky';
+        if (h < 30000) return 'stratosphere';
+        if (h < 80000) return 'upper_atm';
+        if (h < 150000) return 'space';
+        if (h < 300000) return 'moon';
+        return 'deep_space';
+      }
+
+      update() {
+        if (this.state !== 'playing') return;
+
+        // Duck
+        this.duck.update();
+
+        // Platforms
+        this.platforms.forEach(p => p.update());
+        this.crows.forEach(c => c.update());
+
+        // Platform collision
+        this.duck.onGround = false;
+        if (this.duck.velY > 0) {
+          const dr = this.duck.rect;
+          for (const p of this.platforms) {
+            const pr = p.rect;
+            if (dr.x < pr.x + pr.w && dr.x + dr.w > pr.x &&
+                dr.y + dr.h >= pr.y && dr.y + dr.h <= pr.y + 15) {
+              if (p.isSpike) {
+                this.triggerGameOver();
+                return;
+              }
+              this.duck.y = p.y - this.duck.h;
+              this.duck.velY = 0;
+              this.duck.onGround = true;
+              this.duck.canDoubleJump = true;
+              if (p.moving) this.duck.x += p.moveSpeed;
+              break;
+            }
+          }
+        }
+
+        // Crow collision
+        const dr = this.duck.rect;
+        for (const c of this.crows) {
+          if (rectsOverlap(dr, c.rect)) {
+            this.triggerGameOver();
+            return;
+          }
+        }
+
+        // Egg collection
+        for (let i = this.eggs.length - 1; i >= 0; i--) {
+          if (rectsOverlap(dr, this.eggs[i].rect)) {
+            this.eggs.splice(i, 1);
+            this.eggsCollected++;
+            this.score += 100;
+            playEgg();
+          }
+        }
+
+        // Camera
+        if (this.duck.y < H / 3) {
+          const offset = H / 3 - this.duck.y;
+          this.cameraY -= offset;
+          this.duck.y = H / 3;
+          this.platforms.forEach(p => p.y += offset);
+          this.eggs.forEach(e => e.y += offset);
+          this.crows.forEach(c => c.y += offset);
+        }
+
+        // Score
+        const currentHeight = -this.cameraY;
+        if (currentHeight > this.highestPoint) {
+          this.score += Math.floor(currentHeight - this.highestPoint);
+          this.highestPoint = currentHeight;
+        }
+
+        // Fall off screen
+        if (this.duck.y > H) {
+          this.triggerGameOver();
+          return;
+        }
+
+        // Egg falls off screen
+        for (const egg of this.eggs) {
+          if (egg.y > H) {
+            this.triggerGameOver();
+            return;
+          }
+        }
+
+        // Cleanup
+        this.platforms = this.platforms.filter(p => p.y < H + 100);
+        this.crows = this.crows.filter(c => c.y < H + 100);
+
+        // Generate
+        this.generatePlatforms();
+
+        // Zone messages
+        const zone = this.getZone();
+        if (zone !== this.lastZone && this.lastZone !== '') {
+          const names = {
+            clouds: 'くも が でてきた...  (2,000m)',
+            high_sky: 'ひこうき の たかさだ！  (8,000m)',
+            stratosphere: 'せいそうけん...  (15,000m)',
+            upper_atm: 'そら が くらくなってきた  (30,000m)',
+            space: 'うちゅう だ！  (80,000m)',
+            moon: 'つき が みえる！  (150,000m)',
+            deep_space: 'うちゅうじん だ！！  (300,000m)',
+          };
+          if (names[zone]) { this.zoneMsg = names[zone]; this.zoneMsgTimer = 150; }
+        }
+        this.lastZone = zone;
+        if (this.quackMsgTimer > 0) this.quackMsgTimer--;
+        if (this.zoneMsgTimer > 0) this.zoneMsgTimer--;
+      }
+
+      triggerGameOver() {
+        this.gameOver = true;
+        this.state = 'gameover';
+        if (!this.gameOverPlayed) { playGameOver(); this.gameOverPlayed = true; }
+        this.fetchLeaderboard();
+      }
+
+      handleInput() {
+        if (this.state === 'title') {
+          if (justPressed['Space'] || justPressed['Enter'] || touchJustPressed.flap) {
+            this.state = 'playing';
+          }
+        } else if (this.state === 'playing') {
+          if (justPressed['Space'] || justPressed['ArrowUp'] || justPressed['KeyW'] || touchJustPressed.flap) {
+            this.duck.flap();
+          }
+          if (justPressed['KeyQ'] || touchJustPressed.quack) {
+            if (this.duck.quack()) this.quackMsgTimer = 20;
+          }
+        } else if (this.state === 'gameover') {
+          if (this.nameInputActive) {
+            // Name input handled by keydown listener below
+          } else if (!this.showLeaderboard) {
+            if (justPressed['KeyR'] || touchJustPressed.flap) {
+              return 'restart';
+            }
+            if (justPressed['KeyL']) {
+              this.showLeaderboard = true;
+            }
+          } else {
+            if (justPressed['Escape'] || justPressed['KeyL'] || touchJustPressed.quack) {
+              this.showLeaderboard = false;
+            }
+          }
+        }
+        // Clear justPressed
+        Object.keys(justPressed).forEach(k => delete justPressed[k]);
+        touchJustPressed.flap = false;
+        touchJustPressed.quack = false;
+        return null;
+      }
+
+      drawBackground() {
+        const h = this.highestPoint;
+        const zone = this.getZone();
+
+        if (zone === 'ground') {
+          ctx.fillStyle = COLORS.skyBlue;
+          ctx.fillRect(0, 0, W, H);
+        } else if (zone === 'clouds') {
+          const t = (h - 2000) / 6000;
+          const r = Math.min(255, 135 + 30 * t);
+          const g = Math.min(255, 206 + 15 * t);
+          const b = Math.min(245, 235 + 5 * t);
+          ctx.fillStyle = `rgb(${r|0},${g|0},${b|0})`;
+          ctx.fillRect(0, 0, W, H);
+        } else if (zone === 'high_sky') {
+          const t = (h - 8000) / 7000;
+          const r = Math.max(40, 100 - 50 * t);
+          const g = Math.max(100, 150 - 40 * t);
+          const b = Math.max(200, 235 - 20 * t);
+          ctx.fillStyle = `rgb(${r|0},${g|0},${b|0})`;
+          ctx.fillRect(0, 0, W, H);
+        } else if (zone === 'stratosphere') {
+          const t = (h - 15000) / 15000;
+          const r = Math.max(15, 50 - 30 * t);
+          const g = Math.max(30, 110 - 70 * t);
+          const b = Math.max(100, 215 - 100 * t);
+          ctx.fillStyle = `rgb(${r|0},${g|0},${b|0})`;
+          ctx.fillRect(0, 0, W, H);
+        } else if (zone === 'upper_atm') {
+          const t = (h - 30000) / 50000;
+          const r = Math.max(5, 20 - 10 * t);
+          const g = Math.max(5, 30 - 25 * t);
+          const b = Math.max(10, 100 - 85 * t);
+          ctx.fillStyle = `rgb(${r|0},${g|0},${b|0})`;
+          ctx.fillRect(0, 0, W, H);
+        } else {
+          ctx.fillStyle = 'rgb(3,3,8)';
+          ctx.fillRect(0, 0, W, H);
+        }
+
+        // Clouds (1500-12000m)
+        if (h > 1500 && h < 12000) {
+          let alpha = h < 5000 ? Math.min(1, (h-1500)/1500)*0.7 : 0.7*(12000-h)/7000;
+          ctx.fillStyle = `rgba(255,255,255,${alpha.toFixed(2)})`;
+          for (const c of this.clouds) {
+            const cx = (c.x + this.highestPoint * 0.01) % (W + 200) - 100;
+            ctx.beginPath();
+            ctx.ellipse(cx, c.y, c.w / 2, c.w / 6, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(cx + c.w / 4, c.y - c.w / 6, c.w / 4, c.w / 6, 0, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+
+        // Stars (50000m+)
+        if (h > 50000) {
+          const alpha = Math.min(1, (h - 50000) / 30000);
+          for (const s of this.stars) {
+            const twinkle = alpha * (0.5 + Math.random() * 0.5);
+            ctx.fillStyle = `rgba(255,255,${200+Math.random()*55|0},${twinkle.toFixed(2)})`;
+            ctx.fillRect(s.x, s.y, Math.random() > 0.9 ? 2 : 1, Math.random() > 0.9 ? 2 : 1);
+          }
+        }
+
+        // Moon (130000m+)
+        if (h > 130000) {
+          const alpha = Math.min(1, (h - 130000) / 20000);
+          const size = Math.min(50, 20 + (h - 130000) / 10000 * 15);
+          ctx.fillStyle = `rgba(255,255,200,${alpha.toFixed(2)})`;
+          ctx.beginPath();
+          ctx.arc(W - 120, 70, size, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = `rgba(230,230,170,${(alpha*0.6).toFixed(2)})`;
+          ctx.beginPath();
+          ctx.arc(W - 120 - size/4, 70 - size/4, size/5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // Alien (280000m+)
+        if (h > 280000) {
+          const alpha = Math.min(1, (h - 280000) / 20000);
+          this.alienBob += 0.05;
+          const ay = 150 + Math.sin(this.alienBob) * 10;
+          ctx.fillStyle = `rgba(150,150,150,${alpha.toFixed(2)})`;
+          ctx.beginPath();
+          ctx.ellipse(this.alienX + 30, ay + 35, 25, 7, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = `rgba(100,200,100,${alpha.toFixed(2)})`;
+          ctx.beginPath();
+          ctx.ellipse(this.alienX + 30, ay + 25, 15, 12, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = `rgba(0,0,0,${alpha.toFixed(2)})`;
+          ctx.beginPath();
+          ctx.arc(this.alienX + 25, ay + 25, 3, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(this.alienX + 35, ay + 25, 3, 0, Math.PI * 2);
+          ctx.fill();
+          if (Math.random() > 0.5) {
+            ctx.fillStyle = `rgba(100,255,100,${(alpha*0.3).toFixed(2)})`;
+            ctx.beginPath();
+            ctx.moveTo(this.alienX + 20, ay + 45);
+            ctx.lineTo(this.alienX + 30, ay + 70);
+            ctx.lineTo(this.alienX + 40, ay + 45);
+            ctx.fill();
+          }
+        }
+      }
+
+      draw() {
+        // Background
+        this.drawBackground();
+
+        // Platforms, eggs, crows, duck
+        this.platforms.forEach(p => p.draw());
+        this.eggs.forEach(e => e.draw());
+        this.crows.forEach(c => c.draw());
+        this.duck.draw();
+
+        // UI
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 28px Nunito, Noto Sans JP, sans-serif';
+        ctx.fillText(`スコア: ${this.score}`, 10, 32);
+        ctx.font = 'bold 18px Nunito, Noto Sans JP, sans-serif';
+        ctx.fillStyle = COLORS.yellow;
+        ctx.fillText(`たかさ: ${Math.floor(this.highestPoint)}m`, 10, 58);
+        ctx.fillStyle = '#fff';
+        ctx.fillText(`たまご: ${this.eggsCollected}こ`, 10, 82);
+
+        // Quack message
+        if (this.quackMsgTimer > 0) {
+          ctx.fillStyle = COLORS.yellow;
+          ctx.font = 'bold 28px Nunito, Noto Sans JP, sans-serif';
+          ctx.fillText('クワッ！', W / 2 - 50, 120);
+        }
+
+        // Zone message
+        if (this.zoneMsgTimer > 0) {
+          const alpha = Math.min(1, this.zoneMsgTimer / 37);
+          ctx.fillStyle = `rgba(0,0,0,${(alpha*0.5).toFixed(2)})`;
+          ctx.fillRect(W / 2 - 200, H / 2 - 75, 400, 50);
+          ctx.fillStyle = `rgba(255,255,100,${alpha.toFixed(2)})`;
+          ctx.font = 'bold 24px Nunito, Noto Sans JP, sans-serif';
+          const tw = ctx.measureText(this.zoneMsg).width;
+          ctx.fillText(this.zoneMsg, W / 2 - tw / 2, H / 2 - 45);
+        }
+
+        // Controls hint
+        if (this.state === 'playing' && this.highestPoint < 100) {
+          ctx.fillStyle = 'rgba(255,255,255,0.8)';
+          ctx.font = 'bold 16px Nunito, Noto Sans JP, sans-serif';
+          ctx.fillText('スペース: はばたく', W - 210, 24);
+          ctx.fillText('Q: クワッ', W - 210, 46);
+          ctx.fillText('← →: いどう', W - 210, 68);
+        }
+
+        // Title screen
+        if (this.state === 'title') {
+          ctx.fillStyle = 'rgba(0,0,0,0.4)';
+          ctx.fillRect(0, 0, W, H);
+
+          ctx.fillStyle = COLORS.yellow;
+          ctx.font = 'bold 64px Nunito, sans-serif';
+          const title = 'Duck Only Up!';
+          const tw = ctx.measureText(title).width;
+          ctx.fillText(title, W / 2 - tw / 2, H / 2 - 60);
+
+          ctx.fillStyle = '#fff';
+          ctx.font = 'bold 22px Nunito, Noto Sans JP, sans-serif';
+          const sub = 'スペースキーでスタート';
+          const sw = ctx.measureText(sub).width;
+          ctx.fillText(sub, W / 2 - sw / 2, H / 2);
+
+          ctx.font = 'bold 16px Nunito, Noto Sans JP, sans-serif';
+          ctx.fillStyle = 'rgba(255,255,255,0.6)';
+          const hint = 'スペース: はばたく　← →: いどう　Q: クワッ';
+          const hw = ctx.measureText(hint).width;
+          ctx.fillText(hint, W / 2 - hw / 2, H / 2 + 50);
+        }
+
+        // Game Over screen
+        if (this.state === 'gameover') {
+          ctx.fillStyle = 'rgba(0,0,0,0.6)';
+          ctx.fillRect(0, 0, W, H);
+
+          if (this.showLeaderboard) {
+            this.drawLeaderboard();
+          } else {
+            this.drawGameOver();
+          }
+        }
+      }
+
+      drawGameOver() {
+        const yBase = H / 2 - 140;
+
+        ctx.fillStyle = COLORS.yellow;
+        ctx.font = 'bold 36px Nunito, Noto Sans JP, sans-serif';
+        let t = 'ゲームオーバー';
+        ctx.fillText(t, W/2 - ctx.measureText(t).width/2, yBase + 20);
+
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 28px Nunito, Noto Sans JP, sans-serif';
+        t = `スコア: ${this.score}`;
+        ctx.fillText(t, W/2 - ctx.measureText(t).width/2, yBase + 70);
+
+        ctx.font = 'bold 18px Nunito, Noto Sans JP, sans-serif';
+        t = `さいこうのたかさ: ${Math.floor(this.highestPoint)}m`;
+        ctx.fillText(t, W/2 - ctx.measureText(t).width/2, yBase + 105);
+        t = `あつめたたまご: ${this.eggsCollected}こ`;
+        ctx.fillText(t, W/2 - ctx.measureText(t).width/2, yBase + 130);
+
+        // High score entry
+        if (!this.scoreSubmitted && this.isHighScore(this.score)) {
+          ctx.fillStyle = COLORS.yellow;
+          ctx.font = 'bold 20px Nunito, Noto Sans JP, sans-serif';
+          t = 'ランキング入り！ なまえを入力:';
+          ctx.fillText(t, W/2 - ctx.measureText(t).width/2, yBase + 175);
+
+          // Name input box
+          ctx.fillStyle = 'rgba(255,255,255,0.15)';
+          ctx.strokeStyle = this.nameInputActive ? COLORS.yellow : 'rgba(255,255,255,0.4)';
+          ctx.lineWidth = 2;
+          const boxX = W/2 - 120, boxY = yBase + 188, boxW = 240, boxH = 36;
+          ctx.fillRect(boxX, boxY, boxW, boxH);
+          ctx.strokeRect(boxX, boxY, boxW, boxH);
+
+          ctx.fillStyle = this.nameInput ? '#fff' : 'rgba(255,255,255,0.4)';
+          ctx.font = 'bold 18px Nunito, sans-serif';
+          ctx.fillText(this.nameInput || 'ここをクリック', boxX + 10, boxY + 25);
+
+          if (this.nameInput.length > 0) {
+            // Submit button
+            ctx.fillStyle = COLORS.yellow;
+            ctx.beginPath();
+            ctx.roundRect(W/2 - 60, yBase + 235, 120, 36, 18);
+            ctx.fill();
+            ctx.fillStyle = '#000';
+            ctx.font = 'bold 16px Nunito, Noto Sans JP, sans-serif';
+            t = 'とうろく';
+            ctx.fillText(t, W/2 - ctx.measureText(t).width/2, yBase + 258);
+          }
+        } else if (this.scoreSubmitted) {
+          ctx.fillStyle = COLORS.yellow;
+          ctx.font = 'bold 20px Nunito, Noto Sans JP, sans-serif';
+          t = 'とうろくしました！';
+          ctx.fillText(t, W/2 - ctx.measureText(t).width/2, yBase + 180);
+        }
+
+        // Bottom buttons
+        const btnY = yBase + 290;
+        ctx.fillStyle = 'rgba(255,255,255,0.8)';
+        ctx.font = 'bold 16px Nunito, Noto Sans JP, sans-serif';
+        t = 'R: もういちど　　L: ランキング';
+        ctx.fillText(t, W/2 - ctx.measureText(t).width/2, btnY);
+      }
+
+      drawLeaderboard() {
+        const panelX = W/2 - 200, panelY = 40, panelW = 400, panelH = H - 80;
+        ctx.fillStyle = 'rgba(0,0,20,0.9)';
+        ctx.beginPath();
+        ctx.roundRect(panelX, panelY, panelW, panelH, 16);
+        ctx.fill();
+        ctx.strokeStyle = COLORS.yellow;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.fillStyle = COLORS.yellow;
+        ctx.font = 'bold 28px Nunito, Noto Sans JP, sans-serif';
+        let t = 'ランキング TOP 20';
+        ctx.fillText(t, W/2 - ctx.measureText(t).width/2, panelY + 40);
+
+        ctx.font = 'bold 15px Nunito, sans-serif';
+        const startY = panelY + 70;
+        for (let i = 0; i < this.leaderboard.length && i < 20; i++) {
+          const entry = this.leaderboard[i];
+          const y = startY + i * 22;
+          const medal = i === 0 ? '👑' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}.`;
+          ctx.fillStyle = i < 3 ? COLORS.yellow : 'rgba(255,255,255,0.8)';
+          ctx.fillText(`${medal} ${entry.name}`, panelX + 20, y);
+          ctx.fillText(`${entry.score.toLocaleString()}`, panelX + panelW - 100, y);
+        }
+
+        if (this.leaderboard.length === 0) {
+          ctx.fillStyle = 'rgba(255,255,255,0.5)';
+          ctx.font = 'bold 16px Nunito, Noto Sans JP, sans-serif';
+          t = 'まだスコアがありません';
+          ctx.fillText(t, W/2 - ctx.measureText(t).width/2, startY + 40);
+        }
+
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.font = 'bold 14px Nunito, Noto Sans JP, sans-serif';
+        t = 'L / ESC: とじる';
+        ctx.fillText(t, W/2 - ctx.measureText(t).width/2, panelY + panelH - 20);
+      }
+    }
+
+    // ===== MAIN =====
+    let game = new Game();
+
+    // Name input handling
+    document.addEventListener('keydown', e => {
+      if (game.state === 'gameover' && game.nameInputActive && !game.scoreSubmitted) {
+        if (e.key === 'Backspace') {
+          game.nameInput = game.nameInput.slice(0, -1);
+          e.preventDefault();
+        } else if (e.key === 'Enter' && game.nameInput.length > 0) {
+          game.submitScore(game.nameInput, game.score);
+          game.nameInputActive = false;
+          e.preventDefault();
+        } else if (e.key.length === 1 && game.nameInput.length < 15) {
+          game.nameInput += e.key;
+          e.preventDefault();
+        }
+      }
+    });
+
+    // Click handling for name input & submit button
+    canvas.addEventListener('click', e => {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = W / rect.width;
+      const scaleY = H / rect.height;
+      const mx = (e.clientX - rect.left) * scaleX;
+      const my = (e.clientY - rect.top) * scaleY;
+
+      if (game.state === 'gameover' && !game.scoreSubmitted && game.isHighScore(game.score)) {
+        const yBase = H / 2 - 140;
+        const boxX = W/2 - 120, boxY = yBase + 188, boxW = 240, boxH = 36;
+        // Click on input box
+        if (mx >= boxX && mx <= boxX+boxW && my >= boxY && my <= boxY+boxH) {
+          game.nameInputActive = true;
+        }
+        // Click submit button
+        if (game.nameInput.length > 0 && mx >= W/2-60 && mx <= W/2+60 && my >= yBase+235 && my <= yBase+271) {
+          game.submitScore(game.nameInput, game.score);
+          game.nameInputActive = false;
+        }
+      }
+
+      if (game.state === 'title') {
+        game.state = 'playing';
+      }
+    });
+
+    // Mobile: tap canvas for restart
+    canvas.addEventListener('touchstart', e => {
+      if (game.state === 'title') {
+        game.state = 'playing';
+        e.preventDefault();
+      }
+    }, {passive: false});
+
+    function gameLoop() {
+      const action = game.handleInput();
+      if (action === 'restart') {
+        game = new Game();
+        game.state = 'playing';
+      }
+      game.update();
+      game.draw();
+      requestAnimationFrame(gameLoop);
+    }
+
+    requestAnimationFrame(gameLoop);
+  </script>
+</body>
+</html>

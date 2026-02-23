@@ -520,6 +520,70 @@
       font-size: 0.9rem;
     }
 
+    /* ===== GAME BANNER ===== */
+    .game-section {
+      background: linear-gradient(135deg, #1A1A2E, #16213E, #0F3460);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .game-section .section-header h2 {
+      color: var(--duck-yellow);
+    }
+
+    .game-section .section-header p {
+      color: rgba(255,255,255,0.7);
+    }
+
+    .game-banner {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5rem;
+      background: rgba(255,255,255,0.05);
+      border: 2px solid rgba(255,215,0,0.3);
+      border-radius: 24px;
+      padding: 2.5rem 3rem;
+      transition: all 0.3s;
+    }
+
+    .game-banner:hover {
+      border-color: var(--duck-yellow);
+      background: rgba(255,215,0,0.08);
+      transform: translateY(-4px);
+    }
+
+    .game-banner h3 {
+      font-size: 1.8rem;
+      font-weight: 900;
+      color: var(--duck-yellow);
+    }
+
+    .game-banner p {
+      color: rgba(255,255,255,0.7);
+      font-size: 1rem;
+      line-height: 1.8;
+    }
+
+    .game-play-btn {
+      display: inline-block;
+      background: var(--duck-yellow);
+      color: var(--text-dark);
+      padding: 1rem 3rem;
+      border-radius: 50px;
+      text-decoration: none;
+      font-weight: 800;
+      font-size: 1.2rem;
+      transition: all 0.3s;
+      box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+    }
+
+    .game-play-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 8px 25px rgba(255, 215, 0, 0.5);
+    }
+
     /* ===== QUACK COUNTER ===== */
     .quack-section {
       background: linear-gradient(135deg, var(--water-dark), #01579B);
@@ -692,6 +756,7 @@
         <li><a href="#about">ラバーダックとは</a></li>
         <li><a href="#history">歴史</a></li>
         <li><a href="#facts">豆知識</a></li>
+        <li><a href="#game">ゲーム</a></li>
         <li><a href="#quack">Quack!</a></li>
       </ul>
     </div>
@@ -1081,6 +1146,26 @@
           </svg>
           <div class="gallery-overlay"><p>デバッグダック</p></div>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Game -->
+  <section class="game-section" id="game">
+    <div class="container">
+      <div class="section-header fade-up">
+        <h2>Duck Only Up!</h2>
+        <div class="accent-line"></div>
+        <p>アヒルを空のかなたへ飛ばそう。どこまで行ける？</p>
+      </div>
+      <div class="game-banner fade-up">
+        <h3>Duck Only Up!</h3>
+        <p>
+          はばたいて、クワッして、ひたすら上へ。<br>
+          地上から宇宙の果てまで — アヒルの無限上昇ゲーム。<br>
+          ランキングで世界中のプレイヤーと競おう！
+        </p>
+        <a href="/game.html" class="game-play-btn">あそぶ</a>
       </div>
     </div>
   </section>
