@@ -1531,6 +1531,15 @@
 
     // === News Section ===
     (function loadNews() {
+      function esc(str) {
+        const d = document.createElement('div');
+        d.textContent = str;
+        return d.innerHTML;
+      }
+      function sanitizeUrl(url) {
+        try { const u = new URL(url); return (u.protocol === 'https:' || u.protocol === 'http:') ? u.href : ''; }
+        catch { return ''; }
+      }
       const list = document.getElementById('newsList');
       fetch('/api/news')
         .then(r => r.json())
@@ -1541,11 +1550,12 @@
           }
           list.innerHTML = data.items.map(item => {
             const date = item.date ? new Date(item.date).toLocaleDateString('ja-JP') : '';
-            return `<a class="news-item" href="${item.link}" target="_blank" rel="noopener noreferrer">
-              <h4>${item.title}</h4>
+            const href = sanitizeUrl(item.link);
+            return `<a class="news-item" href="${esc(href)}" target="_blank" rel="noopener noreferrer">
+              <h4>${esc(item.title)}</h4>
               <div class="news-meta">
-                ${item.source ? `<span class="news-source">${item.source}</span>` : ''}
-                ${date ? `<span>${date}</span>` : ''}
+                ${item.source ? `<span class="news-source">${esc(item.source)}</span>` : ''}
+                ${date ? `<span>${esc(date)}</span>` : ''}
               </div>
             </a>`;
           }).join('');
