@@ -1291,9 +1291,9 @@
   <section class="game-section" id="game">
     <div class="container">
       <div class="section-header fade-up">
-        <h2>Duck Only Up!</h2>
+        <h2>ゲーム</h2>
         <div class="accent-line"></div>
-        <p>アヒルを空のかなたへ飛ばそう。どこまで行ける？</p>
+        <p>アヒルたちのゲームで遊ぼう！</p>
       </div>
       <div class="game-banner fade-up">
         <h3>Duck Only Up!</h3>
@@ -1304,7 +1304,19 @@
         </p>
         <div class="game-buttons">
           <a href="/game.html" class="game-play-btn">あそぶ</a>
-          <button class="game-ranking-btn" id="showRanking">ランキングを見る</button>
+          <button class="game-ranking-btn" data-api="/api/scores" data-type="duckup">ランキングを見る</button>
+        </div>
+      </div>
+      <div class="game-banner fade-up">
+        <h3>アヒルランナー 世界一周</h3>
+        <p>
+          走って、飛んで、世界を一周！<br>
+          日本からアジアまで — 6つのゾーンを駆け抜けろ。<br>
+          何周できるかな？
+        </p>
+        <div class="game-buttons">
+          <a href="/runner.html" class="game-play-btn">あそぶ</a>
+          <button class="game-ranking-btn" data-api="/api/runner-scores" data-type="runner">ランキングを見る</button>
         </div>
       </div>
     </div>
@@ -1468,26 +1480,36 @@
 
     // Ranking overlay
     const rankingOverlay = document.getElementById('rankingOverlay');
-    document.getElementById('showRanking').addEventListener('click', async () => {
+    function showRankingFor(apiUrl, type) {
       rankingOverlay.classList.add('active');
       const list = document.getElementById('rankingList');
       list.innerHTML = '<div class="ranking-empty">よみこみちゅう...</div>';
-      try {
-        const res = await fetch('/api/scores');
-        const data = await res.json();
+      fetch(apiUrl).then(r => r.json()).then(data => {
         if (!data || data.length === 0) {
           list.innerHTML = '<div class="ranking-empty">まだスコアがありません</div>';
         } else {
-          const hasUnknown = data.slice(0, 20).some(e => !e.eggs);
+          const isRunner = type === 'runner';
           list.innerHTML = data.slice(0, 20).map((e, i) => {
             const medal = i === 0 ? '👑' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}.`;
-            const eggsText = e.eggs ? ` 🥚${e.eggs}` : ' 🥚?';
-            return `<div class="ranking-row ${i < 3 ? 'top3' : ''}"><span class="rank">${medal}</span><span class="name">${e.name}</span><span class="score">${e.score.toLocaleString()}${eggsText}</span></div>`;
-          }).join('') + (hasUnknown ? '<div class="ranking-footnote">🥚? = アヒルが何個拾ったか忘れちゃいました</div>' : '');
+            let extra = '';
+            if (isRunner) {
+              extra = e.laps ? ` (${e.laps}周)` : '';
+            } else {
+              extra = e.eggs ? ` 🥚${e.eggs}` : ' 🥚?';
+            }
+            return `<div class="ranking-row ${i < 3 ? 'top3' : ''}"><span class="rank">${medal}</span><span class="name">${e.name}</span><span class="score">${e.score.toLocaleString()}${extra}</span></div>`;
+          }).join('');
+          if (!isRunner) {
+            const hasUnknown = data.slice(0, 20).some(e => !e.eggs);
+            if (hasUnknown) list.innerHTML += '<div class="ranking-footnote">🥚? = アヒルが何個拾ったか忘れちゃいました</div>';
+          }
         }
-      } catch(err) {
+      }).catch(() => {
         list.innerHTML = '<div class="ranking-empty">ランキングを取得できませんでした</div>';
-      }
+      });
+    }
+    document.querySelectorAll('.game-ranking-btn').forEach(btn => {
+      btn.addEventListener('click', () => showRankingFor(btn.dataset.api, btn.dataset.type));
     });
     document.getElementById('rankingClose').addEventListener('click', () => {
       rankingOverlay.classList.remove('active');
