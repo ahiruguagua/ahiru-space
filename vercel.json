@@ -6,5 +6,6 @@
       "destination": "https://ahiru-space.com/:path*",
       "permanent": true
     }
-  ]
+  ],
+  "crons": [{ "path": "/api/news", "schedule": "0 0 * * *" }]
 }
