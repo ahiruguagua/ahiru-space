@@ -430,7 +430,7 @@
         try {
           const r = await fetch('/api/runner-scores', {
             method: 'POST', headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({ name, score, laps: this.lap })
+            body: JSON.stringify({ name, score, laps: this.lap, zone: getZone(this.score).name })
           });
           if (r.ok) { this.leaderboard = await r.json(); this.scoreSubmitted = true; }
         } catch(e){}
@@ -791,8 +791,10 @@
         } else {
           list.innerHTML = this.leaderboard.slice(0, 20).map((e, i) => {
             const medal = i===0?'👑':i===1?'🥈':i===2?'🥉':`${i+1}.`;
-            const lapText = e.laps ? ` (${e.laps}周)` : '';
-            return `<div class="lb-row ${i<3?'top3':''}"><span class="rank">${medal}</span><span class="name">${e.name}</span><span class="score">${e.score.toLocaleString()}${lapText}</span></div>`;
+            const lapText = e.laps ? `${e.laps}周` : '';
+            const zoneText = e.zone || '';
+            const extra = [lapText, zoneText].filter(Boolean).join(' ');
+            return `<div class="lb-row ${i<3?'top3':''}"><span class="rank">${medal}</span><span class="name">${e.name}</span><span class="score">${e.score.toLocaleString()}${extra ? ' ('+extra+')' : ''}</span></div>`;
           }).join('');
         }
         document.getElementById('lbOverlay').classList.add('active');

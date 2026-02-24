@@ -1493,7 +1493,8 @@
             const medal = i === 0 ? '👑' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}.`;
             let extra = '';
             if (isRunner) {
-              extra = e.laps ? ` (${e.laps}周)` : '';
+              const parts = [e.laps ? `${e.laps}周` : '', e.zone || ''].filter(Boolean).join(' ');
+              extra = parts ? ` (${parts})` : '';
             } else {
               extra = e.eggs ? ` 🥚${e.eggs}` : ' 🥚?';
             }

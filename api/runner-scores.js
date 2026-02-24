@@ -19,7 +19,7 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'POST') {
-      const { name, score, laps } = req.body;
+      const { name, score, laps, zone } = req.body;
 
       if (!name || typeof name !== 'string' || name.trim().length === 0) {
         return res.status(400).json({ error: 'Name is required' });
@@ -35,6 +35,7 @@ export default async function handler(req, res) {
         name: cleanName,
         score: Math.floor(score),
         laps: typeof laps === 'number' ? Math.floor(laps) : 1,
+        zone: typeof zone === 'string' ? zone.slice(0, 20) : '',
         date: new Date().toISOString()
       });
 
