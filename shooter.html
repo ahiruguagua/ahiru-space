@@ -27,7 +27,7 @@ body {
   user-select: none;
   -webkit-user-select: none;
 }
-canvas { display: block; border-radius: 12px; }
+canvas { display: block; border-radius: 12px; max-width: 100vw; max-height: 100vh; }
 .back-link {
   position: fixed;
   top: 10px;
@@ -344,6 +344,16 @@ const W = 600, H = 800;
 canvas.width = W;
 canvas.height = H;
 
+function resizeCanvas() {
+  const ratio = W / H;
+  let w = window.innerWidth, h = window.innerHeight;
+  if (w / h > ratio) w = h * ratio; else h = w / ratio;
+  canvas.style.width = w + 'px';
+  canvas.style.height = h + 'px';
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
 const overlay = document.getElementById('overlay');
 const startBtn = document.getElementById('startBtn');
 const scoreText = document.getElementById('scoreText');
@@ -355,6 +365,118 @@ window.addEventListener('keydown', e => { keys[e.code] = true; if (e.code === 'S
 window.addEventListener('keyup', e => { keys[e.code] = false; });
 
 let highScore = parseInt(localStorage.getItem('duckShooterHighScore') || '0');
+
+// Audio
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function playShoot() {
+  try {
+    const c = getAudioCtx(), o = c.createOscillator(), g = c.createGain();
+    o.connect(g); g.connect(c.destination); o.type = 'sine';
+    const n = c.currentTime;
+    o.frequency.setValueAtTime(600, n);
+    o.frequency.exponentialRampToValueAtTime(1200, n + 0.06);
+    g.gain.setValueAtTime(0.12, n);
+    g.gain.exponentialRampToValueAtTime(0.01, n + 0.08);
+    o.start(n); o.stop(n + 0.08);
+  } catch(e) {}
+}
+
+function playHit() {
+  try {
+    const c = getAudioCtx(), o = c.createOscillator(), g = c.createGain();
+    o.connect(g); g.connect(c.destination); o.type = 'square';
+    const n = c.currentTime;
+    o.frequency.setValueAtTime(400, n);
+    o.frequency.exponentialRampToValueAtTime(200, n + 0.06);
+    g.gain.setValueAtTime(0.1, n);
+    g.gain.exponentialRampToValueAtTime(0.01, n + 0.08);
+    o.start(n); o.stop(n + 0.08);
+  } catch(e) {}
+}
+
+function playDestroy() {
+  try {
+    const c = getAudioCtx(), n = c.currentTime;
+    // Noise burst
+    const buf = c.createBuffer(1, c.sampleRate * 0.15, c.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * Math.max(0, 1 - i / data.length);
+    const noise = c.createBufferSource();
+    noise.buffer = buf;
+    const gn = c.createGain();
+    noise.connect(gn); gn.connect(c.destination);
+    gn.gain.setValueAtTime(0.15, n);
+    gn.gain.exponentialRampToValueAtTime(0.01, n + 0.15);
+    noise.start(n); noise.stop(n + 0.15);
+    // Falling tone
+    const o = c.createOscillator(), g = c.createGain();
+    o.connect(g); g.connect(c.destination); o.type = 'sine';
+    o.frequency.setValueAtTime(500, n);
+    o.frequency.exponentialRampToValueAtTime(100, n + 0.2);
+    g.gain.setValueAtTime(0.12, n);
+    g.gain.exponentialRampToValueAtTime(0.01, n + 0.2);
+    o.start(n); o.stop(n + 0.2);
+  } catch(e) {}
+}
+
+function playPowerup() {
+  try {
+    const c = getAudioCtx(), o = c.createOscillator(), g = c.createGain();
+    o.connect(g); g.connect(c.destination); o.type = 'sine';
+    const n = c.currentTime;
+    o.frequency.setValueAtTime(400, n);
+    o.frequency.exponentialRampToValueAtTime(1000, n + 0.15);
+    g.gain.setValueAtTime(0.15, n);
+    g.gain.exponentialRampToValueAtTime(0.01, n + 0.2);
+    o.start(n); o.stop(n + 0.2);
+  } catch(e) {}
+}
+
+function playDamage() {
+  try {
+    const c = getAudioCtx(), o = c.createOscillator(), g = c.createGain();
+    o.connect(g); g.connect(c.destination); o.type = 'sawtooth';
+    const n = c.currentTime;
+    o.frequency.setValueAtTime(300, n);
+    o.frequency.exponentialRampToValueAtTime(80, n + 0.2);
+    g.gain.setValueAtTime(0.2, n);
+    g.gain.exponentialRampToValueAtTime(0.01, n + 0.25);
+    o.start(n); o.stop(n + 0.25);
+  } catch(e) {}
+}
+
+function playGameOver() {
+  try {
+    const c = getAudioCtx(), n = c.currentTime;
+    [200, 180, 150].forEach((f, i) => {
+      const o = c.createOscillator(), g = c.createGain();
+      o.connect(g); g.connect(c.destination); o.type = 'sine';
+      o.frequency.setValueAtTime(f, n + i * 0.15);
+      g.gain.setValueAtTime(0.2, n + i * 0.15);
+      g.gain.exponentialRampToValueAtTime(0.01, n + i * 0.15 + 0.3);
+      o.start(n + i * 0.15); o.stop(n + i * 0.15 + 0.3);
+    });
+  } catch(e) {}
+}
+
+function playWaveClear() {
+  try {
+    const c = getAudioCtx(), n = c.currentTime;
+    [400, 500, 700].forEach((f, i) => {
+      const o = c.createOscillator(), g = c.createGain();
+      o.connect(g); g.connect(c.destination); o.type = 'sine';
+      o.frequency.setValueAtTime(f, n + i * 0.12);
+      g.gain.setValueAtTime(0.15, n + i * 0.12);
+      g.gain.exponentialRampToValueAtTime(0.01, n + i * 0.12 + 0.25);
+      o.start(n + i * 0.12); o.stop(n + i * 0.12 + 0.25);
+    });
+  } catch(e) {}
+}
 
 // Leaderboard
 let leaderboard = [];
@@ -514,6 +636,7 @@ function shoot() {
   const p = player;
   const cd = p.power >= 3 ? 6 : p.power >= 2 ? 8 : 10;
   shootCooldown = cd;
+  playShoot();
   bullets.push({ x: p.x, y: p.y - p.h / 2, vx: 0, vy: -8, size: 8, dmg: 1 });
   if (p.power >= 2) {
     bullets.push({ x: p.x - 14, y: p.y - p.h / 2 + 5, vx: -0.5, vy: -8, size: 6, dmg: 1 });
@@ -605,6 +728,7 @@ function update() {
         e.flash = 6;
         spawnSplash(b.x, b.y, 5);
         if (e.hp <= 0) {
+          playDestroy();
           e.dead = true;
           score += e.score;
           spawnSplash(e.x, e.y, 15);
@@ -619,6 +743,8 @@ function update() {
             else type = 'barrier';
             powerups.push({ x: e.x, y: e.y, vy: 1.5, type, life: 400, w: 20, h: 20 });
           }
+        } else {
+          playHit();
         }
       }
     });
@@ -631,6 +757,7 @@ function update() {
       if (collides(b, player)) {
         b.hit = true;
         lives--;
+        playDamage();
         player.invincible = 120;
         player.power = Math.max(1, player.power - 1);
         shakeTimer = 15; shakeIntensity = 8;
@@ -643,6 +770,7 @@ function update() {
     enemies.forEach(e => {
       if (collides(e, player)) {
         lives--;
+        playDamage();
         player.invincible = 120;
         player.power = Math.max(1, player.power - 1);
         e.dead = true;
@@ -670,6 +798,7 @@ function update() {
     p.life--;
     if (collides(p, player)) {
       p.collected = true;
+      playPowerup();
       spawnSplash(player.x, player.y, 15);
       switch (p.type) {
         case 'power':
@@ -713,6 +842,7 @@ function update() {
   if (shakeTimer > 0) shakeTimer--;
 
   if (enemies.length === 0) {
+    if (waveTimer === 0) playWaveClear();
     waveTimer++;
     if (waveTimer > 60) { wave++; waveTimer = 0; spawnWave(); }
   }
@@ -724,6 +854,7 @@ function update() {
 
 function gameOver() {
   gameState = 'gameover';
+  playGameOver();
   if (score > highScore) {
     highScore = score;
     localStorage.setItem('duckShooterHighScore', String(highScore));
