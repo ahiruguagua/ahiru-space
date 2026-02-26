@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ひよこタイピングバトル</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', 'Hiragino Sans', sans-serif;
+    overflow: hidden;
+    background: #87CEEB;
+    user-select: none;
+  }
+  canvas { display: block; }
+  #ui-layer {
+    position: absolute; top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+  }
+  #score-board {
+    position: absolute; top: 16px; left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.6); color: #fff;
+    padding: 8px 28px; border-radius: 20px;
+    font-size: 20px; letter-spacing: 1px; z-index: 10;
+  }
+  #score-board span { color: #FFD700; font-weight: bold; }
+  #combo-display {
+    position: absolute; top: 60px; left: 50%;
+    transform: translateX(-50%);
+    color: #FF6347; font-size: 28px; font-weight: bold;
+    text-shadow: 0 0 8px rgba(255,99,71,0.6);
+    opacity: 0; transition: opacity 0.3s; z-index: 10;
+  }
+  #input-box {
+    position: absolute; bottom: 30px; left: 50%;
+    transform: translateX(-50%);
+    pointer-events: auto; z-index: 10;
+  }
+  #input-box input {
+    width: 420px; padding: 12px 20px; font-size: 24px;
+    border: 3px solid #FFD700; border-radius: 30px; outline: none;
+    text-align: center; background: rgba(255,255,255,0.92);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2); letter-spacing: 2px;
+  }
+  #input-box input:focus { border-color: #FF6347; }
+  #start-screen, #gameover-screen {
+    position: absolute; top: 0; left: 0;
+    width: 100%; height: 100%;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.55);
+    z-index: 100; pointer-events: auto;
+  }
+  #start-screen h1 {
+    font-size: 52px; color: #FFD700;
+    text-shadow: 3px 3px 0 #c8960a; margin-bottom: 12px;
+  }
+  #start-screen p { color: #fff; font-size: 18px; margin-bottom: 8px; }
+  #start-screen .hint { color: #ccc; font-size: 14px; margin-bottom: 24px; }
+  .btn {
+    padding: 14px 48px; font-size: 22px; border: none;
+    border-radius: 30px; cursor: pointer;
+    background: #FFD700; color: #333; font-weight: bold;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    transition: transform 0.15s;
+  }
+  .btn:hover { transform: scale(1.06); }
+  #gameover-screen h2 { font-size: 44px; color: #FF6347; margin-bottom: 10px; }
+  #gameover-screen .final-score { font-size: 60px; color: #FFD700; font-weight: bold; margin: 10px 0; }
+  #gameover-screen .stats { color: #fff; font-size: 18px; margin-bottom: 24px; line-height: 1.8; }
+  #life-bar { position: absolute; top: 16px; right: 20px; font-size: 28px; z-index: 10; }
+  #level-display {
+    position: absolute; top: 16px; left: 20px;
+    background: rgba(0,0,0,0.5); color: #7FFF00;
+    padding: 6px 16px; border-radius: 12px; font-size: 16px; z-index: 10;
+  }
+  .damage-flash { animation: flash 0.3s; }
+  @keyframes flash {
+    0%, 100% { filter: none; }
+    50% { filter: brightness(2) saturate(0); }
+  }
+</style>
+</head>
+<body>
+<canvas id="game-canvas"></canvas>
+<div id="ui-layer">
+  <div id="score-board">SCORE: <span id="score">0</span></div>
+  <div id="combo-display"></div>
+  <div id="life-bar"></div>
+  <div id="level-display">Lv.1</div>
+  <div id="input-box">
+    <input type="text" id="type-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="ここにタイプ！">
+  </div>
+</div>
+<div id="start-screen">
+  <h1>🐤 ひよこタイピングバトル</h1>
+  <p>迫りくる敵を正しくタイピングして倒そう！</p>
+  <p class="hint">Escキーでターゲット切り替え / Backspaceでミス修正</p>
+  <button class="btn" id="start-btn">ゲームスタート</button>
+</div>
+<div id="gameover-screen" style="display:none;">
+  <h2>GAME OVER</h2>
+  <div class="final-score" id="final-score">0</div>
+  <div class="stats" id="final-stats"></div>
+  <button class="btn" id="retry-btn">もう一度プレイ</button>
+</div>
+
+<script>
+// ============ WORDS ============
+const WORDS = [
+  // ===== Lv1 (短い単語) =====
+  {ja:'ねこ',roma:'neko'},{ja:'いぬ',roma:'inu'},{ja:'そら',roma:'sora'},
+  {ja:'うみ',roma:'umi'},{ja:'やま',roma:'yama'},{ja:'かぜ',roma:'kaze'},
+  {ja:'ほし',roma:'hoshi'},{ja:'はな',roma:'hana'},{ja:'あめ',roma:'ame'},
+  {ja:'ゆき',roma:'yuki'},{ja:'ひよこ',roma:'hiyoko'},{ja:'たまご',roma:'tamago'},
+  {ja:'さくら',roma:'sakura'},{ja:'みず',roma:'mizu'},{ja:'つき',roma:'tsuki'},
+  {ja:'くも',roma:'kumo'},{ja:'かわ',roma:'kawa'},{ja:'もり',roma:'mori'},
+  {ja:'ひかり',roma:'hikari'},{ja:'にじ',roma:'niji'},
+  {ja:'いえ',roma:'ie'},{ja:'かさ',roma:'kasa'},{ja:'くつ',roma:'kutsu'},
+  {ja:'まど',roma:'mado'},{ja:'いし',roma:'ishi'},{ja:'すな',roma:'suna'},
+  {ja:'むし',roma:'mushi'},{ja:'とり',roma:'tori'},{ja:'さかな',roma:'sakana'},
+  {ja:'おかし',roma:'okashi'},{ja:'くすり',roma:'kusuri'},{ja:'まくら',roma:'makura'},
+  {ja:'かがみ',roma:'kagami'},{ja:'たから',roma:'takara'},{ja:'あさひ',roma:'asahi'},
+
+  // ===== Lv2 (ふつう) =====
+  {ja:'りんご',roma:'ringo'},{ja:'ぶどう',roma:'budou'},{ja:'みかん',roma:'mikan'},
+  {ja:'たいよう',roma:'taiyou'},{ja:'でんわ',roma:'denwa'},{ja:'がっこう',roma:'gakkou'},
+  {ja:'せんせい',roma:'sensei'},{ja:'ともだち',roma:'tomodachi'},{ja:'おんがく',roma:'ongaku'},
+  {ja:'じてんしゃ',roma:'jitensha'},{ja:'しんぶん',roma:'shinbun'},{ja:'けしごむ',roma:'keshigomu'},
+  {ja:'えんぴつ',roma:'enpitsu'},{ja:'かいもの',roma:'kaimono'},{ja:'ひこうき',roma:'hikouki'},
+  {ja:'でんしゃ',roma:'densha'},{ja:'どうぶつ',roma:'doubutsu'},{ja:'きょうりゅう',roma:'kyouryuu'},
+  {ja:'パソコン',roma:'pasokon'},{ja:'テレビ',roma:'terebi'},
+  {ja:'めがね',roma:'megane'},{ja:'かばん',roma:'kaban'},{ja:'くるま',roma:'kuruma'},
+  {ja:'うさぎ',roma:'usagi'},{ja:'きつね',roma:'kitsune'},{ja:'たぬき',roma:'tanuki'},
+  {ja:'すずめ',roma:'suzume'},{ja:'かめ',roma:'kame'},{ja:'いるか',roma:'iruka'},
+  {ja:'ラーメン',roma:'raamen'},{ja:'カレー',roma:'karee'},{ja:'おにぎり',roma:'onigiri'},
+  {ja:'すいか',roma:'suika'},{ja:'いちご',roma:'ichigo'},{ja:'メロン',roma:'meron'},
+  {ja:'ノート',roma:'nooto'},{ja:'はさみ',roma:'hasami'},{ja:'ふうせん',roma:'fuusen'},
+  {ja:'にんじん',roma:'ninjin'},{ja:'たまねぎ',roma:'tamanegi'},
+  // 関西弁・ユーモア
+  {ja:'なんでやねん',roma:'nandeyanen'},{ja:'ほんまに',roma:'honmani'},
+  {ja:'あかんで',roma:'akande'},{ja:'おもろい',roma:'omoroi'},
+  {ja:'しらんけど',roma:'shirankedo'},{ja:'めっちゃ',roma:'meccha'},
+
+  // ===== Lv3 (むずかしい) =====
+  {ja:'しょうぼうしゃ',roma:'shoubousha'},{ja:'ちょうちょう',roma:'chouchou'},
+  {ja:'しんかんせん',roma:'shinkansen'},{ja:'たんじょうび',roma:'tanjoubi'},
+  {ja:'プログラミング',roma:'puroguramingu'},{ja:'だいがくせい',roma:'daigakusei'},
+  {ja:'としょかん',roma:'toshokan'},{ja:'びょういん',roma:'byouin'},
+  {ja:'スマートフォン',roma:'sumaatofon'},{ja:'コンビニエンス',roma:'konbiniensu'},
+  {ja:'ちかてつ',roma:'chikatetsu'},{ja:'けいさつかん',roma:'keisatsukan'},
+  {ja:'おもいで',roma:'omoide'},{ja:'ぼうけん',roma:'bouken'},
+  {ja:'やきにく',roma:'yakiniku'},{ja:'かきごおり',roma:'kakigoori'},
+  {ja:'うんどうかい',roma:'undoukai'},{ja:'すいぞくかん',roma:'suizokukan'},
+  {ja:'ゆうえんち',roma:'yuuenchi'},{ja:'はくぶつかん',roma:'hakubutsukan'},
+  {ja:'ちょきんばこ',roma:'chokinbako'},{ja:'けいたいでんわ',roma:'keitaidenwa'},
+  {ja:'こうこうせい',roma:'koukousei'},{ja:'おまつり',roma:'omatsuri'},
+  {ja:'かぶとむし',roma:'kabutomushi'},{ja:'クリスマス',roma:'kurisumasu'},
+  {ja:'インターネット',roma:'intaanetto'},{ja:'ハンバーガー',roma:'hanbaagaa'},
+  {ja:'アイスクリーム',roma:'aisukuriimu'},{ja:'チョコレート',roma:'chokoreeto'},
+  {ja:'エレベーター',roma:'erebeetaa'},{ja:'トランポリン',roma:'toranporin'},
+  // 関西弁・ユーモア
+  {ja:'そんなあほな',roma:'sonnaahona'},{ja:'いけずやなあ',roma:'ikezuyanaa'},
+  {ja:'ちゃうちゃう',roma:'chauchau'},{ja:'もうかりまっか',roma:'moukarimakka'},
+  {ja:'ぼちぼちでんな',roma:'bochibochidenna'},{ja:'せやかて',roma:'seyakate'},
+
+  // ===== Lv4 (短い文章) =====
+  {ja:'ひよこ がんばれ',roma:'hiyokoganbare'},
+  {ja:'きょうは いいてんき',roma:'kyouhaiitenki'},
+  {ja:'おなかが すいた',roma:'onakagasuita'},
+  {ja:'さくらが さいた',roma:'sakuragasaita'},
+  {ja:'あしたは やすみ',roma:'ashitahayasumi'},
+  {ja:'ねこが ねている',roma:'nekoganeteiru'},
+  {ja:'そらが きれい',roma:'soragakirei'},
+  {ja:'がんばろうぜ',roma:'ganbarouze'},
+  {ja:'たのしい なつ',roma:'tanoshiinatsu'},
+  {ja:'ゆめを かなえる',roma:'yumewokanaeru'},
+  {ja:'あさごはん たべた',roma:'asagohantabeta'},
+  {ja:'いっしょに あそぼう',roma:'isshoniasobou'},
+  {ja:'にわに はなが さく',roma:'niwanihanagasaku'},
+  {ja:'そとは さむい',roma:'sotohasamui'},
+  {ja:'うちに かえろう',roma:'uchinikaerou'},
+  {ja:'ほんを よもう',roma:'honwoyomou'},
+  {ja:'あめが ふってきた',roma:'amegafuttekita'},
+  {ja:'おやすみなさい',roma:'oyasuminasai'},
+  {ja:'たいへんだ にげろ',roma:'taihendanigero'},
+  {ja:'おはよう ございます',roma:'ohayougozaimasu'},
+  {ja:'ありがとう ございます',roma:'arigatougozaimasu'},
+  {ja:'いただきます',roma:'itadakimasu'},
+  {ja:'ごちそうさま',roma:'gochisousama'},
+  {ja:'しゅくだいを やる',roma:'shukudaiwoyaru'},
+  {ja:'でんきを けす',roma:'denkiwokesu'},
+  // 関西弁・ユーモア文章
+  {ja:'なんでやねん それ',roma:'nandeyannensore'},
+  {ja:'ほんまに すごいな',roma:'honmanisugoina'},
+  {ja:'おおきに まいど',roma:'ookinimado'}, // intentionally simplified
+  {ja:'しらんがな それ',roma:'shiranganasore'},
+  {ja:'アホちゃいまんねん',roma:'ahochaimannen'},
+  {ja:'おもろすぎて わろた',roma:'omorosugitewarota'},
+  {ja:'それな わかるわ',roma:'sorenawakruwa'},
+  {ja:'ぴえん こえて ぱおん',roma:'pienkoeteipaon'},
+  {ja:'やばい おくれる',roma:'yabaiokureru'},
+  {ja:'ねむい けど がんばる',roma:'nemuikedoganbaru'},
+
+  // ===== Lv5 (長い文章) =====
+  {ja:'ひよこは つよくなった',roma:'hiyokohatsuyokunatta'},
+  {ja:'にほんごを れんしゅう',roma:'nihongoworenshuu'},
+  {ja:'タイピングは たのしい',roma:'taipinguhatanoshii'},
+  {ja:'まいにちが ぼうけんだ',roma:'mainichigaboukenda'},
+  {ja:'てきを やっつけろ',roma:'tekiwoyattsukero'},
+  {ja:'ともだちと あそぶ',roma:'tomodachitoasobu'},
+  {ja:'おいしい ごはんを たべる',roma:'oishiigohanwotaberu'},
+  {ja:'スコアを こうしんしよう',roma:'sukoawokoushinshiyou'},
+  {ja:'さいきょうの ひよこ',roma:'saikyounohiyoko'},
+  {ja:'コンボを つなげよう',roma:'konbowotsunageyou'},
+  {ja:'あきらめたら そこで おわり',roma:'akirametarasokodeowari'},
+  {ja:'なつやすみに うみへ いく',roma:'natsuyasuminiumiheiku'},
+  {ja:'きょうの ばんごはんは カレー',roma:'kyounobangohanhakaree'},
+  {ja:'としょかんで ほんを かりる',roma:'toshokandehonwokariru'},
+  {ja:'おおきな にじが でた',roma:'ookinanijigadeta'},
+  {ja:'はやおきは さんもんの とく',roma:'hayaokihasanmonnotoku'},
+  {ja:'ぜんりょくで はしれ',roma:'zenryokudehashire'},
+  {ja:'なかまと ちからを あわせる',roma:'nakamatochikarawoawaseru'},
+  {ja:'しっぱいは せいこうの もと',roma:'shippaihaseikounomoto'},
+  {ja:'まほうの ことばで たたかえ',roma:'mahounokotobadetatakae'},
+  {ja:'ひよこは せかいを すくう',roma:'hiyokohasekaiwosukuu'},
+  // 関西弁・ユーモア長文
+  {ja:'なんでやねん おかしいやろ',roma:'nandeyanenokasiiyaro'},
+  {ja:'めっちゃ ええやん それ',roma:'mecchaeeyansore'},
+  {ja:'おばちゃんの あめちゃん',roma:'obachannoamechan'},
+  {ja:'たこやきは せいぎ',roma:'takoyakihaseigi'},
+  {ja:'ぼけと つっこみの びがく',roma:'boketotsukkomibigaku'},// intentionally simplified
+  {ja:'おこめ たべて げんき もりもり',roma:'okometabetegenkimorimori'},
+  {ja:'ひよこの ちからは むげんだい',roma:'hiyokonochikarahamugendai'},
+  {ja:'ここまで きたら もう やるしかない',roma:'kokomadekitaramouyarusikanai'},
+];
+
+const ENEMY_TYPES = [
+  { name: 'slime',    color: '#44cc44', body: '🟢', size: 36, points: 100 },
+  { name: 'bat',      color: '#8855cc', body: '🦇', size: 32, points: 120 },
+  { name: 'skeleton', color: '#cccccc', body: '💀', size: 38, points: 150 },
+  { name: 'ghost',    color: '#aaddff', body: '👻', size: 40, points: 180 },
+  { name: 'demon',    color: '#dd3333', body: '👹', size: 44, points: 250 },
+  { name: 'boss',     color: '#ff4400', body: '🐉', size: 56, points: 500 },
+];
+
+// ===== SKY THEMES =====
+const SKY_THEMES = [
+  // Lv1-2: 朝
+  { top: '#4a90d9', mid: '#87CEEB', bot: '#b8e6b8', cloud: 'rgba(255,255,255,0.7)', groundTop: '#5da64a', groundMid: '#4a8a3a', groundBot: '#3a6a2a', grass: '#6dc45a', stars: false },
+  // Lv3-4: 昼
+  { top: '#3a80cc', mid: '#6cb4e6', bot: '#a8d8a8', cloud: 'rgba(255,255,255,0.6)', groundTop: '#5a9a45', groundMid: '#488535', groundBot: '#386528', grass: '#68ba55', stars: false },
+  // Lv5-6: 夕方
+  { top: '#c05a30', mid: '#e8945a', bot: '#d4a06a', cloud: 'rgba(255,200,150,0.5)', groundTop: '#6a6035', groundMid: '#554a28', groundBot: '#3d3520', grass: '#7a7040', stars: false },
+  // Lv7-8: 夕暮れ
+  { top: '#2a1545', mid: '#6a2a6a', bot: '#c44a30', cloud: 'rgba(180,120,160,0.35)', groundTop: '#3a3040', groundMid: '#2a2030', groundBot: '#1a1020', grass: '#4a3a50', stars: true },
+  // Lv9-10: 夜
+  { top: '#0a0a2a', mid: '#101040', bot: '#1a1a50', cloud: 'rgba(60,60,100,0.25)', groundTop: '#1a2018', groundMid: '#101510', groundBot: '#080a08', grass: '#2a3528', stars: true },
+];
+
+// ============ STATE ============
+let canvas, ctx, W, H;
+let score, combo, maxCombo, life, level, wordsTyped, enemiesEscaped, missCount;
+let enemies, particles, floatingTexts, chick;
+let gameRunning, spawnTimer, spawnInterval, gameTime;
+let grassOffset = 0;
+let activeEnemy = null;
+let starPositions = []; // 夜空の星
+
+function init() {
+  canvas = document.getElementById('game-canvas');
+  ctx = canvas.getContext('2d');
+  resize();
+  window.addEventListener('resize', resize);
+  // 星の位置を生成
+  for (let i = 0; i < 80; i++) {
+    starPositions.push({
+      x: Math.random(), y: Math.random() * 0.6,
+      size: 0.5 + Math.random() * 2,
+      twinkle: Math.random() * Math.PI * 2,
+    });
+  }
+}
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+
+// ============ GAME LIFECYCLE ============
+function startGame() {
+  score = 0; combo = 0; maxCombo = 0; life = 5; level = 1;
+  wordsTyped = 0; enemiesEscaped = 0; missCount = 0; gameTime = 0;
+  enemies = []; particles = []; floatingTexts = [];
+  spawnInterval = 2800; spawnTimer = 0;
+  gameRunning = true; activeEnemy = null;
+
+  chick = { x: W / 2, y: H - 130, bobTime: 0, attacking: false, attackTimer: 0, targetX: 0, targetY: 0 };
+
+  document.getElementById('start-screen').style.display = 'none';
+  document.getElementById('gameover-screen').style.display = 'none';
+  updateUI();
+
+  const input = document.getElementById('type-input');
+  input.value = '';
+  input.focus();
+
+  requestAnimationFrame(gameLoop);
+}
+
+function gameOver() {
+  gameRunning = false;
+  activeEnemy = null;
+  document.getElementById('gameover-screen').style.display = 'flex';
+  document.getElementById('final-score').textContent = score;
+  document.getElementById('final-stats').innerHTML =
+    `倒した敵: ${wordsTyped}体<br>最大コンボ: ${maxCombo}<br>ミスタイプ: ${missCount}回<br>レベル: ${level}`;
+}
+
+// ============ SPAWNING ============
+function spawnEnemy() {
+  const wordPool = getWordPool();
+  const entry = wordPool[Math.floor(Math.random() * wordPool.length)];
+
+  let typeIdx = 0;
+  const r = Math.random();
+  if (level >= 8 && r < 0.08)       typeIdx = 5;
+  else if (level >= 5 && r < 0.2)   typeIdx = 4;
+  else if (level >= 4 && r < 0.35)  typeIdx = 3;
+  else if (level >= 3 && r < 0.5)   typeIdx = 2;
+  else if (level >= 2 && r < 0.6)   typeIdx = 1;
+
+  const type = ENEMY_TYPES[typeIdx];
+  const side = Math.random() < 0.5 ? 'left' : 'right';
+  const x = side === 'left' ? -50 : W + 50;
+  const targetY = H - 130 + (Math.random() * 40 - 20);
+  const lenFactor = Math.max(0.5, 1 - (entry.roma.length - 4) * 0.03);
+  const speed = (0.35 + level * 0.06 + Math.random() * 0.25) * lenFactor;
+
+  enemies.push({
+    x, y: 60 + Math.random() * (H * 0.35),
+    targetX: chick.x + (Math.random() * 100 - 50),
+    targetY, speed,
+    ja: entry.ja, roma: entry.roma,
+    typedStr: '', correctLen: 0, _lastLen: 0,
+    type, side,
+    wobble: Math.random() * Math.PI * 2,
+    alive: true,
+  });
+}
+
+function getWordPool() {
+  if (level <= 2) return WORDS.slice(0, 35);
+  if (level <= 4) return WORDS.slice(0, 81);
+  if (level <= 6) return WORDS.slice(0, 119);
+  if (level <= 8) return WORDS.slice(0, 155);
+  return WORDS;
+}
+
+// ============ AUTO TARGET ============
+function findClosestEnemy(exclude) {
+  let best = null;
+  let bestDist = Infinity;
+  for (const e of enemies) {
+    if (!e.alive || e === exclude) continue;
+    const d = distTo(e, chick);
+    if (d < bestDist) { bestDist = d; best = e; }
+  }
+  return best;
+}
+
+function autoSelectTarget() {
+  if (activeEnemy && activeEnemy.alive) return; // already have target
+  const e = findClosestEnemy(null);
+  if (e) {
+    activeEnemy = e;
+    // reset input to match
+    document.getElementById('type-input').value = '';
+  }
+}
+
+function switchTarget() {
+  const input = document.getElementById('type-input');
+  // reset current target
+  if (activeEnemy) {
+    activeEnemy.typedStr = '';
+    activeEnemy.correctLen = 0;
+    activeEnemy._lastLen = 0;
+  }
+  const next = findClosestEnemy(activeEnemy);
+  if (next) {
+    activeEnemy = next;
+  }
+  input.value = '';
+}
+
+// ============ INPUT ============
+document.addEventListener('DOMContentLoaded', () => {
+  init();
+  const input = document.getElementById('type-input');
+
+  input.addEventListener('input', () => {
+    if (!gameRunning) return;
+    const val = input.value.toLowerCase();
+
+    // 入力が空 → reset
+    if (!val) {
+      if (activeEnemy) {
+        activeEnemy.typedStr = '';
+        activeEnemy.correctLen = 0;
+        activeEnemy._lastLen = 0;
+      }
+      return;
+    }
+
+    if (!activeEnemy) return;
+
+    activeEnemy.typedStr = val;
+
+    // 先頭から連続正解数
+    let correct = 0;
+    for (let i = 0; i < val.length && i < activeEnemy.roma.length; i++) {
+      if (val[i] === activeEnemy.roma[i]) correct++;
+      else break;
+    }
+    activeEnemy.correctLen = correct;
+
+    // ミスカウント
+    const hasMiss = correct < val.length;
+    if (hasMiss && val.length > activeEnemy._lastLen) {
+      missCount++;
+    }
+    activeEnemy._lastLen = val.length;
+
+    // 全文字正解で撃破
+    if (correct === activeEnemy.roma.length && val.length === activeEnemy.roma.length) {
+      const defeated = activeEnemy;
+      activeEnemy = null;
+      input.value = '';
+      defeatEnemy(defeated);
+    }
+  });
+
+  // Escapeでターゲット切り替え
+  document.addEventListener('keydown', (ev) => {
+    if (!gameRunning) return;
+    if (ev.key === 'Escape') {
+      ev.preventDefault();
+      switchTarget();
+      return;
+    }
+    input.focus();
+  });
+
+  document.getElementById('start-btn').addEventListener('click', startGame);
+  document.getElementById('retry-btn').addEventListener('click', startGame);
+  document.addEventListener('click', () => { if (gameRunning) input.focus(); });
+});
+
+function distTo(a, b) {
+  return Math.hypot(a.x - b.x, a.y - b.y);
+}
+
+function defeatEnemy(e) {
+  e.alive = false;
+  combo++;
+  wordsTyped++;
+  if (combo > maxCombo) maxCombo = combo;
+
+  const comboMultiplier = 1 + Math.floor(combo / 5) * 0.5;
+  const points = Math.floor(e.type.points * comboMultiplier);
+  score += points;
+
+  chick.attacking = true;
+  chick.attackTimer = 20;
+  chick.targetX = e.x;
+  chick.targetY = e.y;
+
+  for (let i = 0; i < 15; i++) {
+    particles.push({
+      x: e.x, y: e.y,
+      vx: (Math.random() - 0.5) * 8, vy: (Math.random() - 0.5) * 8 - 2,
+      life: 30 + Math.random() * 20, maxLife: 50,
+      color: e.type.color, size: 3 + Math.random() * 5,
+    });
+  }
+  for (let i = 0; i < 5; i++) {
+    particles.push({
+      x: e.x, y: e.y,
+      vx: (Math.random() - 0.5) * 5, vy: -3 - Math.random() * 4,
+      life: 40, maxLife: 40, color: '#FFD700', size: 6, star: true,
+    });
+  }
+
+  floatingTexts.push({
+    x: e.x, y: e.y - 30,
+    text: `+${points}`, life: 60,
+    color: combo >= 10 ? '#FF4500' : combo >= 5 ? '#FFD700' : '#FFF',
+    size: combo >= 10 ? 28 : combo >= 5 ? 24 : 20,
+  });
+
+  updateUI();
+  updateLevel();
+}
+
+function updateLevel() {
+  const newLevel = Math.min(10, 1 + Math.floor(wordsTyped / 5));
+  if (newLevel !== level) {
+    level = newLevel;
+    spawnInterval = Math.max(800, 2800 - level * 250);
+    document.getElementById('level-display').textContent = `Lv.${level}`;
+    floatingTexts.push({
+      x: W / 2, y: H / 2 - 40,
+      text: `LEVEL ${level}!`, life: 90, color: '#7FFF00', size: 40,
+    });
+  }
+}
+
+function updateUI() {
+  document.getElementById('score').textContent = score;
+  document.getElementById('life-bar').textContent = '❤️'.repeat(Math.max(0, life));
+  const comboEl = document.getElementById('combo-display');
+  if (combo >= 3) {
+    comboEl.textContent = `${combo} COMBO!`;
+    comboEl.style.opacity = '1';
+    comboEl.style.fontSize = Math.min(36, 22 + combo) + 'px';
+  } else {
+    comboEl.style.opacity = '0';
+  }
+}
+
+// ============ GAME LOOP ============
+let lastTime = 0;
+function gameLoop(timestamp) {
+  if (!gameRunning) return;
+  const dt = Math.min(32, timestamp - (lastTime || timestamp));
+  lastTime = timestamp;
+  gameTime += dt;
+
+  spawnTimer += dt;
+  if (spawnTimer >= spawnInterval) { spawnTimer = 0; spawnEnemy(); }
+
+  update(dt);
+  draw();
+  requestAnimationFrame(gameLoop);
+}
+
+// ============ UPDATE ============
+function update(dt) {
+  const speed = dt / 16;
+
+  for (const e of enemies) {
+    if (!e.alive) continue;
+    e.wobble += 0.05 * speed;
+
+    const dx = e.targetX - e.x;
+    const dy = e.targetY - e.y;
+    const d = Math.hypot(dx, dy);
+    if (d > 5) {
+      e.x += (dx / d) * e.speed * speed;
+      e.y += (dy / d) * e.speed * speed;
+    }
+
+    if (d < 40) {
+      if (e === activeEnemy) {
+        activeEnemy = null;
+        document.getElementById('type-input').value = '';
+      }
+      e.alive = false;
+      life--;
+      combo = 0;
+      enemiesEscaped++;
+      updateUI();
+
+      canvas.classList.add('damage-flash');
+      setTimeout(() => canvas.classList.remove('damage-flash'), 300);
+      floatingTexts.push({
+        x: chick.x, y: chick.y - 40,
+        text: 'ダメージ!', life: 60, color: '#FF0000', size: 24,
+      });
+      if (life <= 0) { gameOver(); return; }
+    }
+  }
+
+  enemies = enemies.filter(e => e.alive);
+
+  if (activeEnemy && !activeEnemy.alive) {
+    activeEnemy = null;
+    document.getElementById('type-input').value = '';
+  }
+
+  // 自動ターゲット選択
+  autoSelectTarget();
+
+  for (const p of particles) {
+    p.x += p.vx * speed; p.y += p.vy * speed;
+    p.vy += 0.15 * speed; p.life -= speed;
+  }
+  particles = particles.filter(p => p.life > 0);
+
+  for (const ft of floatingTexts) { ft.y -= 1.2 * speed; ft.life -= speed; }
+  floatingTexts = floatingTexts.filter(ft => ft.life > 0);
+
+  chick.bobTime += 0.06 * speed;
+  if (chick.attacking) {
+    chick.attackTimer -= speed;
+    if (chick.attackTimer <= 0) chick.attacking = false;
+  }
+  grassOffset = (grassOffset + 0.3 * speed) % 40;
+}
+
+// ============ SKY THEME ============
+function getSkyTheme() {
+  const idx = Math.min(4, Math.floor((level - 1) / 2));
+  return SKY_THEMES[idx];
+}
+
+// ============ DRAW ============
+function draw() {
+  const theme = getSkyTheme();
+
+  // Sky
+  const skyGrad = ctx.createLinearGradient(0, 0, 0, H);
+  skyGrad.addColorStop(0, theme.top);
+  skyGrad.addColorStop(0.6, theme.mid);
+  skyGrad.addColorStop(1, theme.bot);
+  ctx.fillStyle = skyGrad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Stars (夜)
+  if (theme.stars) drawStars();
+
+  drawClouds(theme);
+  drawGround(theme);
+
+  for (const e of enemies) { if (e.alive) drawEnemy(e); }
+
+  for (const p of particles) {
+    const alpha = Math.max(0, p.life / p.maxLife);
+    ctx.globalAlpha = alpha;
+    if (p.star) drawStarShape(p.x, p.y, p.size, p.color);
+    else {
+      ctx.fillStyle = p.color;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.size * alpha, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  drawChick();
+  if (chick.attacking && chick.attackTimer > 10) drawAttackEffect();
+
+  for (const ft of floatingTexts) {
+    const alpha = Math.min(1, ft.life / 20);
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = ft.color;
+    ctx.font = `bold ${ft.size}px 'Segoe UI', sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+    ctx.lineWidth = 3;
+    ctx.strokeText(ft.text, ft.x, ft.y);
+    ctx.fillText(ft.text, ft.x, ft.y);
+    ctx.globalAlpha = 1;
+  }
+}
+
+function drawStars() {
+  const t = gameTime * 0.001;
+  for (const s of starPositions) {
+    const twinkle = 0.5 + 0.5 * Math.sin(t + s.twinkle);
+    ctx.globalAlpha = twinkle * 0.9;
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(s.x * W, s.y * H, s.size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawClouds(theme) {
+  ctx.fillStyle = theme.cloud;
+  const t = gameTime * 0.00005;
+  for (let i = 0; i < 5; i++) {
+    const cx = ((i * 320 + t * W * (0.5 + i * 0.2)) % (W + 200)) - 100;
+    const cy = 60 + i * 50;
+    ctx.beginPath(); ctx.ellipse(cx, cy, 80 + i * 10, 30, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(cx + 40, cy - 10, 50, 25, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(cx - 30, cy - 5, 55, 22, 0, 0, Math.PI * 2); ctx.fill();
+  }
+}
+
+function drawGround(theme) {
+  const groundY = H - 80;
+  const groundGrad = ctx.createLinearGradient(0, groundY, 0, H);
+  groundGrad.addColorStop(0, theme.groundTop);
+  groundGrad.addColorStop(0.3, theme.groundMid);
+  groundGrad.addColorStop(1, theme.groundBot);
+  ctx.fillStyle = groundGrad;
+  ctx.fillRect(0, groundY, W, 80);
+  ctx.strokeStyle = theme.grass;
+  ctx.lineWidth = 2;
+  for (let x = -40 + (grassOffset % 40); x < W + 40; x += 20) {
+    ctx.beginPath(); ctx.moveTo(x, groundY); ctx.quadraticCurveTo(x + 5, groundY - 15, x + 2, groundY - 22); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x + 10, groundY); ctx.quadraticCurveTo(x + 14, groundY - 10, x + 8, groundY - 16); ctx.stroke();
+  }
+}
+
+function drawEnemy(e) {
+  const wobbleX = Math.sin(e.wobble) * 4;
+  const wobbleY = Math.cos(e.wobble * 1.3) * 3;
+  const ex = e.x + wobbleX;
+  const ey = e.y + wobbleY;
+  const isTarget = (e === activeEnemy);
+
+  ctx.fillStyle = 'rgba(0,0,0,0.15)';
+  ctx.beginPath();
+  ctx.ellipse(ex, ey + e.type.size * 0.6, e.type.size * 0.5, 8, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  if (isTarget) { ctx.shadowColor = '#FFD700'; ctx.shadowBlur = 12; }
+
+  ctx.font = `${e.type.size}px serif`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(e.type.body, ex, ey);
+  ctx.shadowBlur = 0;
+
+  // テキスト
+  const roma = e.roma;
+  const ja = e.ja;
+  const typed = e.typedStr || '';
+
+  ctx.font = 'bold 16px "Hiragino Sans", "Noto Sans JP", sans-serif';
+  const jaWidth = ctx.measureText(ja).width + 24;
+  ctx.font = 'bold 17px monospace';
+  const romaWidth = ctx.measureText(roma).width + 24;
+  const displayRoma = typed.length > roma.length ? typed : roma;
+  const displayWidth = ctx.measureText(displayRoma).width + 24;
+  const boxWidth = Math.max(jaWidth, romaWidth, displayWidth);
+  const boxHeight = 50;
+  const boxX = ex - boxWidth / 2;
+  const boxY = ey - e.type.size - boxHeight - 6;
+
+  ctx.fillStyle = isTarget ? 'rgba(0,0,0,0.82)' : 'rgba(0,0,0,0.6)';
+  if (isTarget) {
+    ctx.strokeStyle = '#FFD700'; ctx.lineWidth = 2;
+    roundRect(ctx, boxX, boxY, boxWidth, boxHeight, 10);
+    ctx.fill(); ctx.stroke();
+  } else {
+    roundRect(ctx, boxX, boxY, boxWidth, boxHeight, 10);
+    ctx.fill();
+  }
+
+  // Japanese
+  ctx.font = 'bold 16px "Hiragino Sans", "Noto Sans JP", sans-serif';
+  ctx.fillStyle = isTarget ? '#FFD700' : '#ddc870';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(ja, ex, boxY + 16);
+
+  // Romaji 1文字ずつ
+  ctx.font = 'bold 17px monospace';
+  ctx.textBaseline = 'middle';
+  const romaY = boxY + 37;
+
+  if (typed.length > 0 && isTarget) {
+    ctx.textAlign = 'left';
+    const totalW = ctx.measureText(roma).width;
+    let startX = ex - totalW / 2;
+    for (let i = 0; i < roma.length; i++) {
+      const ch = roma[i];
+      if (i < typed.length) {
+        ctx.fillStyle = (typed[i] === ch) ? '#7FFF00' : '#FF4444';
+      } else {
+        ctx.fillStyle = '#ffffff';
+      }
+      ctx.fillText(ch, startX, romaY);
+      startX += ctx.measureText(ch).width;
+    }
+    if (typed.length > roma.length) {
+      ctx.fillStyle = '#FF4444';
+      ctx.fillText(typed.slice(roma.length), startX, romaY);
+    }
+  } else {
+    ctx.fillStyle = isTarget ? '#ffffff' : '#bbbbbb';
+    ctx.textAlign = 'center';
+    ctx.fillText(roma, ex, romaY);
+  }
+
+  // Progress bar
+  const progress = e.correctLen / roma.length;
+  const barW = boxWidth - 8;
+  const barH = 3;
+  const barX = ex - barW / 2;
+  const barY = boxY + boxHeight + 2;
+  ctx.fillStyle = 'rgba(255,255,255,0.2)';
+  ctx.fillRect(barX, barY, barW, barH);
+  ctx.fillStyle = progress > 0 ? '#7FFF00' : 'rgba(255,255,255,0.1)';
+  ctx.fillRect(barX, barY, barW * progress, barH);
+}
+
+function drawChick() {
+  const cx = chick.x;
+  const bobY = Math.sin(chick.bobTime) * 4;
+  const cy = chick.y + bobY;
+
+  ctx.fillStyle = 'rgba(0,0,0,0.15)';
+  ctx.beginPath(); ctx.ellipse(cx, chick.y + 30, 22, 8, 0, 0, Math.PI * 2); ctx.fill();
+
+  ctx.fillStyle = '#FFE44D';
+  ctx.beginPath(); ctx.ellipse(cx, cy, 24, 26, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#FFF3A0';
+  ctx.beginPath(); ctx.ellipse(cx, cy + 6, 16, 16, 0, 0, Math.PI * 2); ctx.fill();
+
+  ctx.fillStyle = '#FFE44D';
+  ctx.beginPath(); ctx.arc(cx, cy - 26, 18, 0, Math.PI * 2); ctx.fill();
+
+  ctx.fillStyle = '#333';
+  ctx.beginPath(); ctx.arc(cx - 7, cy - 29, 3.5, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(cx + 7, cy - 29, 3.5, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(cx - 6, cy - 30, 1.5, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(cx + 8, cy - 30, 1.5, 0, Math.PI * 2); ctx.fill();
+
+  ctx.fillStyle = '#FF8C00';
+  ctx.beginPath(); ctx.moveTo(cx, cy - 24); ctx.lineTo(cx + 8, cy - 21); ctx.lineTo(cx, cy - 18); ctx.closePath(); ctx.fill();
+
+  ctx.fillStyle = 'rgba(255,130,130,0.35)';
+  ctx.beginPath(); ctx.ellipse(cx - 13, cy - 22, 5, 3.5, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(cx + 13, cy - 22, 5, 3.5, 0, 0, Math.PI * 2); ctx.fill();
+
+  ctx.fillStyle = '#FFD700';
+  ctx.beginPath();
+  ctx.moveTo(cx - 3, cy - 44); ctx.quadraticCurveTo(cx + 4, cy - 56, cx + 2, cy - 44);
+  ctx.quadraticCurveTo(cx + 8, cy - 54, cx + 7, cy - 42); ctx.fill();
+
+  const wingFlap = chick.attacking ? Math.sin(gameTime * 0.03) * 15 : Math.sin(chick.bobTime * 2) * 5;
+  ctx.fillStyle = '#FFD54F';
+  ctx.beginPath(); ctx.ellipse(cx - 24, cy - 2, 12, 8, -0.3 - wingFlap * 0.03, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(cx + 24, cy - 2, 12, 8, 0.3 + wingFlap * 0.03, 0, Math.PI * 2); ctx.fill();
+
+  ctx.fillStyle = '#FF8C00';
+  ctx.beginPath(); ctx.ellipse(cx - 10, cy + 25, 8, 4, -0.2, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(cx + 10, cy + 25, 8, 4, 0.2, 0, Math.PI * 2); ctx.fill();
+
+  if (chick.attacking) {
+    ctx.strokeStyle = '#333'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(cx - 11, cy - 33); ctx.lineTo(cx - 3, cy - 31); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx + 11, cy - 33); ctx.lineTo(cx + 3, cy - 31); ctx.stroke();
+  }
+}
+
+function drawAttackEffect() {
+  const dx = chick.targetX - chick.x;
+  const dy = chick.targetY - chick.y;
+  const progress = 1 - (chick.attackTimer - 10) / 10;
+
+  ctx.strokeStyle = '#FFD700';
+  ctx.lineWidth = 4 + Math.sin(gameTime * 0.1) * 2;
+  ctx.shadowColor = '#FFD700'; ctx.shadowBlur = 15;
+  ctx.beginPath();
+  ctx.moveTo(chick.x, chick.y - 26);
+  ctx.lineTo(chick.x + dx * progress, chick.y - 26 + dy * progress);
+  ctx.stroke();
+
+  ctx.strokeStyle = '#FFF'; ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(chick.x, chick.y - 26);
+  ctx.lineTo(chick.x + dx * progress, chick.y - 26 + dy * progress);
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+}
+
+function drawStarShape(x, y, size, color) {
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  for (let i = 0; i < 5; i++) {
+    const angle = (i * 4 * Math.PI) / 5 - Math.PI / 2;
+    const method = i === 0 ? 'moveTo' : 'lineTo';
+    ctx[method](x + Math.cos(angle) * size, y + Math.sin(angle) * size);
+  }
+  ctx.closePath(); ctx.fill();
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+</script>
+</body>
+</html>
