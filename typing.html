@@ -102,8 +102,13 @@
   .go-btn.secondary { background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.3); }
   .go-btn.secondary:hover { background: rgba(255,255,255,0.25); }
   .submitted-msg { color: #FFD700; font-weight: 700; margin: 0.5rem 0; font-size: 16px; }
-  .home-link { display: inline-block; color: rgba(255,255,255,0.7); font-size: 14px; margin-top: 10px; text-decoration: none; }
-  .home-link:hover { color: #fff; }
+  .back-link {
+    position: fixed; top: 10px; left: 10px; z-index: 300;
+    color: rgba(255,255,255,0.7); text-decoration: none; font-size: 14px;
+    font-weight: bold; padding: 4px 12px; background: rgba(0,0,0,0.4);
+    border-radius: 20px;
+  }
+  .back-link:hover { color: #FFD700; }
   /* Leaderboard Overlay */
   .lb-overlay {
     display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
@@ -126,6 +131,7 @@
 </style>
 </head>
 <body>
+<a href="/" class="back-link">&larr; Home</a>
 <canvas id="game-canvas"></canvas>
 <div id="ui-layer">
   <div id="score-board">SCORE: <span id="score">0</span></div>
@@ -156,7 +162,6 @@
     <button class="go-btn primary" id="retry-btn">もういちど</button>
     <button class="go-btn secondary" id="goLeaderboard">ランキング</button>
   </div>
-  <a href="/" class="home-link">ホームに戻る</a>
 </div>
 
 <!-- Leaderboard Overlay -->
