@@ -72,11 +72,9 @@
 
     .link-card {
       display: flex;
-      align-items: center;
-      gap: 1rem;
+      flex-direction: column;
       width: 100%;
       max-width: 400px;
-      padding: 1.2rem 1.5rem;
       background: white;
       border-radius: 16px;
       text-decoration: none;
@@ -84,6 +82,7 @@
       box-shadow: 0 4px 16px rgba(0,0,0,0.05);
       border: 2px solid transparent;
       transition: all 0.3s;
+      overflow: hidden;
     }
     .link-card:hover {
       border-color: #FFD700;
@@ -91,10 +90,24 @@
       box-shadow: 0 8px 24px rgba(255,215,0,0.15);
     }
 
+    .link-thumb {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      object-fit: cover;
+      display: block;
+    }
+
+    .link-body {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem 1.2rem;
+    }
+
     .link-icon {
-      font-size: 2rem;
+      font-size: 1.8rem;
       flex-shrink: 0;
-      width: 48px;
+      width: 40px;
       text-align: center;
     }
 
@@ -133,18 +146,24 @@
 
     <div class="links">
       <a href="https://sora.chatgpt.com/p/s_699828b1413481919b6d8de2b58418cd?psh=HXVzZXItcnB0azNyaTFFYWx2cjk4YnBVWDBVV3Vu.km4UcOqVcMhF" target="_blank" rel="noopener" class="link-card">
-        <span class="link-icon">🎬</span>
-        <div class="link-text">
-          <h3>アヒル動画</h3>
-          <p>SORAでつくったアヒルの映像作品</p>
+        <img src="/sora-thumb.webp" alt="SORA アヒル動画" class="link-thumb">
+        <div class="link-body">
+          <span class="link-icon">🎬</span>
+          <div class="link-text">
+            <h3>アヒル動画</h3>
+            <p>SORAでつくったアヒルの映像作品</p>
+          </div>
         </div>
       </a>
 
       <a href="https://youtu.be/yiWUmu9vU_E?si=izhgaouP-xdCpNaT" target="_blank" rel="noopener" class="link-card">
-        <span class="link-icon">🎵</span>
-        <div class="link-text">
-          <h3>アヒルの曲</h3>
-          <p>アヒルをイメージしてつくった音楽</p>
+        <img src="https://img.youtube.com/vi/yiWUmu9vU_E/maxresdefault.jpg" alt="アヒルの曲" class="link-thumb">
+        <div class="link-body">
+          <span class="link-icon">🎵</span>
+          <div class="link-text">
+            <h3>アヒルの曲</h3>
+            <p>アヒルをイメージしてつくった音楽</p>
+          </div>
         </div>
       </a>
     </div>
