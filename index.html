@@ -1332,6 +1332,7 @@
         </p>
         <div class="game-buttons">
           <a href="/typing.html" class="game-play-btn">あそぶ</a>
+          <button class="game-ranking-btn" data-api="/api/typing-scores" data-type="typing">ランキングを見る</button>
         </div>
       </div>
       <div class="game-banner fade-up">
@@ -1523,6 +1524,8 @@
               extra = parts ? ` (${parts})` : '';
             } else if (type === 'shooter') {
               extra = e.wave ? ` W${e.wave}` : '';
+            } else if (type === 'typing') {
+              extra = e.level ? ` Lv.${e.level}` : '';
             } else {
               extra = e.eggs ? ` 🥚${e.eggs}` : ' 🥚?';
             }

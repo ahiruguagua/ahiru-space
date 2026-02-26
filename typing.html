@@ -81,6 +81,48 @@
     0%, 100% { filter: none; }
     50% { filter: brightness(2) saturate(0); }
   }
+  /* Gameover panel */
+  #gameover-screen .highscore-entry { margin: 1rem 0; }
+  #gameover-screen .highscore-entry p { color: #FFD700; font-weight: 700; margin-bottom: 0.5rem; font-size: 16px; }
+  #gameover-screen input[type="text"] {
+    width: 280px; padding: 10px 14px; border-radius: 10px;
+    border: 2px solid rgba(255,215,0,0.4); background: rgba(255,255,255,0.1);
+    color: #fff; font-size: 1rem; font-family: inherit; outline: none; margin-bottom: 0.5rem;
+  }
+  #gameover-screen input[type="text"]:focus { border-color: #FFD700; }
+  #gameover-screen input[type="text"]::placeholder { color: rgba(255,255,255,0.4); }
+  .go-btn {
+    display: inline-block; padding: 10px 24px; border-radius: 30px;
+    border: none; font-size: 1rem; font-weight: bold; cursor: pointer;
+    margin: 6px; transition: transform 0.15s; font-family: 'Segoe UI', 'Hiragino Sans', sans-serif;
+  }
+  .go-btn:active { transform: scale(0.95); }
+  .go-btn.primary { background: #FFD700; color: #333; }
+  .go-btn.primary:hover { background: #FFE44D; }
+  .go-btn.secondary { background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.3); }
+  .go-btn.secondary:hover { background: rgba(255,255,255,0.25); }
+  .submitted-msg { color: #FFD700; font-weight: 700; margin: 0.5rem 0; font-size: 16px; }
+  .home-link { display: inline-block; color: rgba(255,255,255,0.7); font-size: 14px; margin-top: 10px; text-decoration: none; }
+  .home-link:hover { color: #fff; }
+  /* Leaderboard Overlay */
+  .lb-overlay {
+    display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 200; background: rgba(0,0,0,0.8);
+    flex-direction: column; align-items: center; justify-content: center; padding: 20px;
+  }
+  .lb-overlay.active { display: flex; }
+  .lb-panel {
+    background: rgba(10,20,40,0.97); border: 2px solid #FFD700; border-radius: 20px;
+    padding: 1.5rem; max-width: 400px; width: 100%; max-height: 80vh; overflow-y: auto;
+    font-family: 'Segoe UI', 'Hiragino Sans', sans-serif;
+  }
+  .lb-panel h2 { color: #FFD700; text-align: center; font-size: 1.4rem; margin-bottom: 1rem; }
+  .lb-row { display: flex; justify-content: space-between; padding: 6px 8px; color: rgba(255,255,255,0.8); font-size: 0.95rem; }
+  .lb-row.top3 { color: #FFD700; font-weight: 700; }
+  .lb-row .rank { width: 36px; }
+  .lb-row .name { flex: 1; }
+  .lb-row .score { text-align: right; }
+  .lb-empty { color: rgba(255,255,255,0.5); text-align: center; padding: 2rem; }
 </style>
 </head>
 <body>
@@ -104,7 +146,26 @@
   <h2>GAME OVER</h2>
   <div class="final-score" id="final-score">0</div>
   <div class="stats" id="final-stats"></div>
-  <button class="btn" id="retry-btn">もう一度プレイ</button>
+  <div class="highscore-entry" id="hsEntry" style="display:none;">
+    <p>ランキング入り！ なまえを入力:</p>
+    <input type="text" id="hsName" maxlength="15" placeholder="なまえ" autocomplete="off">
+    <button class="go-btn primary" id="hsSubmit">とうろく</button>
+  </div>
+  <div class="submitted-msg" id="hsSubmitted" style="display:none;">とうろくしました！</div>
+  <div>
+    <button class="go-btn primary" id="retry-btn">もういちど</button>
+    <button class="go-btn secondary" id="goLeaderboard">ランキング</button>
+  </div>
+  <a href="/" class="home-link">ホームに戻る</a>
+</div>
+
+<!-- Leaderboard Overlay -->
+<div class="lb-overlay" id="lbOverlay">
+  <div class="lb-panel">
+    <h2>ランキング TOP 20</h2>
+    <div id="lbList"></div>
+    <button class="go-btn secondary" id="lbClose" style="display:block;margin:1rem auto 0;">とじる</button>
+  </div>
 </div>
 
 <script>
@@ -310,13 +371,65 @@ function startGame() {
   requestAnimationFrame(gameLoop);
 }
 
+// ============ LEADERBOARD ============
+let leaderboard = [];
+let scoreSubmitted = false;
+
+async function fetchLeaderboard() {
+  try {
+    const res = await fetch('/api/typing-scores');
+    if (res.ok) leaderboard = await res.json();
+  } catch(e) {}
+}
+
+async function submitScore(name, finalScore, finalLevel) {
+  try {
+    const res = await fetch('/api/typing-scores', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, score: finalScore, level: finalLevel })
+    });
+    if (res.ok) {
+      leaderboard = await res.json();
+      scoreSubmitted = true;
+    }
+  } catch(e) {}
+}
+
+function isHighScore(s) {
+  if (leaderboard.length < 20) return s > 0;
+  return s > leaderboard[leaderboard.length - 1].score;
+}
+
+function showLeaderboardOverlay() {
+  const list = document.getElementById('lbList');
+  if (leaderboard.length === 0) {
+    list.innerHTML = '<div class="lb-empty">まだスコアがありません</div>';
+  } else {
+    list.innerHTML = leaderboard.slice(0, 20).map((e, i) => {
+      const medal = i === 0 ? '👑' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}.`;
+      const levelText = e.level ? ` Lv.${e.level}` : '';
+      return `<div class="lb-row ${i < 3 ? 'top3' : ''}"><span class="rank">${medal}</span><span class="name">${e.name}</span><span class="score">${e.score.toLocaleString()}${levelText}</span></div>`;
+    }).join('');
+  }
+  document.getElementById('lbOverlay').classList.add('active');
+}
+
+fetchLeaderboard();
+
 function gameOver() {
   gameRunning = false;
   activeEnemy = null;
-  document.getElementById('gameover-screen').style.display = 'flex';
-  document.getElementById('final-score').textContent = score;
-  document.getElementById('final-stats').innerHTML =
-    `倒した敵: ${wordsTyped}体<br>最大コンボ: ${maxCombo}<br>ミスタイプ: ${missCount}回<br>レベル: ${level}`;
+  scoreSubmitted = false;
+  fetchLeaderboard().then(() => {
+    document.getElementById('final-score').textContent = score;
+    document.getElementById('final-stats').innerHTML =
+      `倒した敵: ${wordsTyped}体<br>最大コンボ: ${maxCombo}<br>ミスタイプ: ${missCount}回<br>レベル: ${level}`;
+    document.getElementById('hsEntry').style.display = isHighScore(score) ? 'block' : 'none';
+    document.getElementById('hsSubmitted').style.display = 'none';
+    document.getElementById('hsName').value = '';
+    document.getElementById('gameover-screen').style.display = 'flex';
+  });
 }
 
 // ============ SPAWNING ============
@@ -457,6 +570,31 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('start-btn').addEventListener('click', startGame);
   document.getElementById('retry-btn').addEventListener('click', startGame);
   document.addEventListener('click', () => { if (gameRunning) input.focus(); });
+
+  document.getElementById('goLeaderboard').addEventListener('click', () => {
+    showLeaderboardOverlay();
+  });
+
+  document.getElementById('hsSubmit').addEventListener('click', async () => {
+    const nameEl = document.getElementById('hsName');
+    const name = nameEl.value.trim();
+    if (name.length > 0 && !scoreSubmitted) {
+      await submitScore(name, score, level);
+      document.getElementById('hsEntry').style.display = 'none';
+      document.getElementById('hsSubmitted').style.display = 'block';
+    }
+  });
+
+  document.getElementById('hsName').addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      document.getElementById('hsSubmit').click();
+    }
+  });
+
+  document.getElementById('lbClose').addEventListener('click', () => {
+    document.getElementById('lbOverlay').classList.remove('active');
+  });
 });
 
 function distTo(a, b) {
