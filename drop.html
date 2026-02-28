@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>おちアヒル - Duck Drop!</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #0a1628;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+  color: #fff;
+}
+
+#wrap {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+#leftCol {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+
+#scoreBar {
+  display: flex;
+  gap: 12px;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+#scoreBar div {
+  background: #162040;
+  border: 2px solid #FFD700;
+  border-radius: 10px;
+  padding: 6px 16px;
+}
+
+#scoreBar span {
+  color: #FFD700;
+  font-size: 20px;
+  margin-left: 4px;
+}
+
+#board {
+  position: relative;
+  border: 3px solid #FFD700;
+  border-radius: 6px;
+  background: #0e1e30;
+  box-shadow: 0 0 40px rgba(255,215,0,0.2);
+}
+
+#rightCol {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.panel {
+  background: #162040;
+  border: 2px solid #FFD700;
+  border-radius: 10px;
+  padding: 12px;
+  text-align: center;
+}
+
+.panel h3 {
+  color: #FFD700;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+#nextCanvas {
+  display: block;
+  margin: 0 auto;
+}
+
+#helpText {
+  font-size: 13px;
+  color: #8899bb;
+  line-height: 1.8;
+  text-align: left;
+}
+
+#helpText b { color: #FFD700; }
+
+.back-link {
+  position: fixed; top: 10px; left: 10px; z-index: 1000;
+  color: rgba(255,255,255,0.7); text-decoration: none; font-size: 14px;
+  font-weight: bold; padding: 4px 12px; background: rgba(0,0,0,0.4);
+  border-radius: 20px;
+}
+.back-link:hover { color: #FFD700; }
+
+/* Overlay */
+#overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+#overlay.hidden { display: none; }
+
+#overlay h1 {
+  color: #FFD700;
+  font-size: 52px;
+  text-shadow: 0 0 20px rgba(255,215,0,0.5);
+}
+
+#overlay h2 {
+  color: #ccc;
+  font-size: 18px;
+  font-weight: normal;
+  margin: 8px 0 30px;
+}
+
+#startBtn {
+  background: linear-gradient(135deg, #FFD700, #FF8C00);
+  color: #222;
+  border: none;
+  border-radius: 50px;
+  padding: 18px 60px;
+  font-size: 24px;
+  font-weight: 900;
+  cursor: pointer;
+  font-family: inherit;
+  box-shadow: 0 6px 20px rgba(255,165,0,0.4);
+}
+
+#startBtn:hover { transform: scale(1.05); }
+
+#chainPop {
+  position: fixed;
+  top: 35%;
+  left: 50%;
+  transform: translate(-50%,-50%) scale(1.2);
+  font-size: 56px;
+  font-weight: 900;
+  color: #FFD700;
+  text-shadow: 3px 3px 8px #000, 0 0 30px rgba(255,215,0,0.7);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+  z-index: 500;
+}
+
+#chainPop.show { opacity: 1; }
+</style>
+</head>
+<body>
+<a href="/" class="back-link">&larr; Home</a>
+
+<div id="wrap">
+  <div id="leftCol">
+    <div id="scoreBar">
+      <div>スコア<span id="sc">0</span></div>
+      <div>連鎖<span id="ch">0</span></div>
+      <div>Lv<span id="lv">1</span></div>
+    </div>
+    <div id="board">
+      <canvas id="c"></canvas>
+    </div>
+  </div>
+  <div id="rightCol">
+    <div class="panel">
+      <h3>つぎ</h3>
+      <canvas id="nextCanvas"></canvas>
+    </div>
+    <div class="panel">
+      <div id="helpText">
+        <b>← →</b> 移動<br>
+        <b>↑</b> 回転<br>
+        <b>↓</b> 速く落下<br>
+        <b>Space</b> 即落下<br><br>
+        同じ色のアヒルを<br>
+        <b>4匹以上</b>つなげると<br>
+        消えるよ！
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="overlay">
+  <h1>おちアヒル</h1>
+  <h2>Duck Drop! 🐤</h2>
+  <button id="startBtn">スタート</button>
+</div>
+
+<div id="chainPop"></div>
+
+<script>
+// ============ CONFIG ============
+const W = 6, H = 12, SZ = 48;
+const COLORS = [
+  { b:'#FFD700', bk:'#FF8C00', w:'#B8960E', bl:'#FFFACD' },
+  { b:'#FF5252', bk:'#B71C1C', w:'#D32F2F', bl:'#FFCDD2' },
+  { b:'#4CAF50', bk:'#1B5E20', w:'#388E3C', bl:'#C8E6C9' },
+  { b:'#2196F3', bk:'#0D47A1', w:'#1565C0', bl:'#BBDEFB' },
+  { b:'#AB47BC', bk:'#4A148C', w:'#7B1FA2', bl:'#E1BEE7' },
+];
+const NEED = 4; // min connected to clear
+
+// ============ CANVAS ============
+const cv = document.getElementById('c');
+const cx = cv.getContext('2d');
+cv.width = W * SZ;
+cv.height = H * SZ;
+
+const nv = document.getElementById('nextCanvas');
+const nx = nv.getContext('2d');
+nv.width = SZ + 20;
+nv.height = SZ * 2 + 20;
+
+// ============ STATE ============
+let grid = Array.from({length:H}, ()=> Array(W).fill(-1));
+let cur = null, nxt = null;
+let sc = 0, lv = 1, mxCh = 0, chCnt = 0;
+let state = 'wait';
+let dTmr = 0, dInt = 1000, frame = 0;
+let clrCells = [], clrTmr = 0;
+let parts = [];
+let gameGen = 0; // generation counter to invalidate stale timeouts
+
+function reset() {
+  gameGen++;
+  grid = Array.from({length:H}, ()=> Array(W).fill(-1));
+  sc = 0; lv = 1; mxCh = 0; chCnt = 0;
+  state = 'play'; dTmr = 0; dInt = 1000; frame = 0;
+  clrCells = []; clrTmr = 0; parts = [];
+  document.getElementById('sc').textContent = '0';
+  document.getElementById('ch').textContent = '0';
+  document.getElementById('lv').textContent = '1';
+  nxt = mkPair();
+  spawn();
+}
+
+// ============ AUDIO ============
+let ac = null;
+function snd(t, n) {
+  if (!ac) return;
+  try {
+    const now = ac.currentTime;
+    const o = ac.createOscillator();
+    const g = ac.createGain();
+    o.connect(g); g.connect(ac.destination);
+    if (t==='m') { o.frequency.value=440; o.type='sine'; g.gain.setValueAtTime(.05,now); g.gain.linearRampToValueAtTime(0,now+.04); o.start(now); o.stop(now+.04); }
+    else if (t==='r') { o.frequency.value=660; o.type='sine'; g.gain.setValueAtTime(.06,now); g.gain.linearRampToValueAtTime(0,now+.06); o.start(now); o.stop(now+.06); }
+    else if (t==='l') { o.frequency.value=180; o.type='triangle'; g.gain.setValueAtTime(.1,now); g.gain.linearRampToValueAtTime(0,now+.1); o.start(now); o.stop(now+.1); }
+    else if (t==='c') {
+      const f=500+(n-1)*100; o.frequency.setValueAtTime(f,now); o.frequency.linearRampToValueAtTime(f*1.5,now+.15);
+      o.type='square'; g.gain.setValueAtTime(.07,now); g.gain.linearRampToValueAtTime(0,now+.25); o.start(now); o.stop(now+.25);
+      const o2=ac.createOscillator(),g2=ac.createGain(); o2.connect(g2); g2.connect(ac.destination);
+      o2.frequency.setValueAtTime(800,now+.05); o2.frequency.linearRampToValueAtTime(350,now+.2);
+      o2.type='sawtooth'; g2.gain.setValueAtTime(.04,now+.05); g2.gain.linearRampToValueAtTime(0,now+.22); o2.start(now+.05); o2.stop(now+.22);
+    }
+    else if (t==='go') { o.frequency.setValueAtTime(300,now); o.frequency.linearRampToValueAtTime(60,now+.8); o.type='sawtooth'; g.gain.setValueAtTime(.08,now); g.gain.linearRampToValueAtTime(0,now+.8); o.start(now); o.stop(now+.8); }
+  } catch(e){}
+}
+
+// ============ DRAW DUCK ============
+function duck(c, x, y, sz, ci, alpha) {
+  const col = COLORS[ci];
+  if (!col) return;
+  const s = sz * 0.42;
+  const mx = x + sz/2, my = y + sz/2;
+  c.save();
+  if (alpha !== undefined) c.globalAlpha = alpha;
+  c.translate(mx, my);
+
+  // shadow
+  c.fillStyle = 'rgba(0,0,0,0.2)';
+  c.beginPath(); c.ellipse(0, s*.55, s*.6, s*.12, 0, 0, Math.PI*2); c.fill();
+
+  // body
+  c.fillStyle = col.b;
+  c.beginPath(); c.ellipse(0, s*.1, s*.78, s*.55, 0, 0, Math.PI*2); c.fill();
+  c.strokeStyle = 'rgba(0,0,0,0.3)'; c.lineWidth = 1.5; c.stroke();
+
+  // belly
+  c.fillStyle = col.bl; c.globalAlpha = (alpha !== undefined ? alpha : 1) * 0.45;
+  c.beginPath(); c.ellipse(s*.05, s*.22, s*.45, s*.3, 0, 0, Math.PI*2); c.fill();
+  c.globalAlpha = alpha !== undefined ? alpha : 1;
+
+  // head
+  c.fillStyle = col.b;
+  c.beginPath(); c.arc(s*.32, -s*.38, s*.42, 0, Math.PI*2); c.fill();
+  c.strokeStyle = 'rgba(0,0,0,0.25)'; c.lineWidth = 1.5; c.stroke();
+
+  // cheek highlight
+  c.fillStyle = 'rgba(255,255,255,0.2)';
+  c.beginPath(); c.arc(s*.18, -s*.52, s*.14, 0, Math.PI*2); c.fill();
+
+  // eye white
+  c.fillStyle = '#fff';
+  c.beginPath(); c.arc(s*.45, -s*.42, s*.14, 0, Math.PI*2); c.fill();
+  // pupil
+  c.fillStyle = '#111';
+  c.beginPath(); c.arc(s*.48, -s*.4, s*.07, 0, Math.PI*2); c.fill();
+  // shine
+  c.fillStyle = '#fff';
+  c.beginPath(); c.arc(s*.51, -s*.44, s*.03, 0, Math.PI*2); c.fill();
+
+  // beak
+  c.fillStyle = col.bk;
+  c.beginPath(); c.moveTo(s*.65,-s*.38); c.lineTo(s*.95,-s*.32); c.lineTo(s*.65,-s*.24); c.closePath(); c.fill();
+
+  // wing
+  c.fillStyle = col.w;
+  c.beginPath(); c.ellipse(-s*.15, s*.05, s*.2, s*.32, -.2, 0, Math.PI*2); c.fill();
+  c.strokeStyle = 'rgba(0,0,0,0.15)'; c.lineWidth = 1; c.stroke();
+
+  c.restore();
+}
+
+// ============ PAIR ============
+const DIR = [{dr:-1,dc:0},{dr:0,dc:1},{dr:1,dc:0},{dr:0,dc:-1}];
+
+function mkPair() {
+  const mc = Math.min(3 + Math.floor(lv/3), COLORS.length);
+  return { pr:1, pc:2, rot:0, a: Math.floor(Math.random()*mc), b: Math.floor(Math.random()*mc) };
+}
+
+function cPos(p) { return { r: p.pr+DIR[p.rot].dr, c: p.pc+DIR[p.rot].dc }; }
+
+function ok(r,c) { return c>=0 && c<W && r<H && (r<0 || grid[r][c]===-1); }
+function fit(p) { const ch=cPos(p); return ok(p.pr,p.pc) && ok(ch.r,ch.c); }
+
+function move(dr,dc) {
+  if (!cur || state!=='play') return false;
+  const np = {...cur, pr:cur.pr+dr, pc:cur.pc+dc};
+  if (fit(np)) { cur=np; if(dc) snd('m'); return true; }
+  return false;
+}
+
+function rot() {
+  if (!cur || state!=='play') return;
+  const np = {...cur, rot:(cur.rot+1)%4};
+  if (fit(np)) { cur=np; snd('r'); return; }
+  for (const k of [1,-1]) { const kp={...np,pc:np.pc+k}; if(fit(kp)){cur=kp;snd('r');return;} }
+  const up = {...np, pr:np.pr-1};
+  if (fit(up)) { cur=up; snd('r'); }
+}
+
+function drop() {
+  if (!cur || state!=='play') return;
+  while(move(1,0)){}
+  lock();
+}
+
+function lock() {
+  if (!cur) return;
+  const ch = cPos(cur);
+  if (cur.pr>=0 && cur.pr<H) grid[cur.pr][cur.pc] = cur.a;
+  if (ch.r>=0 && ch.r<H) grid[ch.r][ch.c] = cur.b;
+  snd('l');
+  cur = null;
+  chCnt = 0;
+  resolve();
+}
+
+function spawn() {
+  cur = nxt || mkPair();
+  cur.pr = 1; cur.pc = 2; cur.rot = 0;
+  nxt = mkPair();
+  dTmr = 0;
+  if (!fit(cur)) { state='over'; snd('go'); showOL('ゲームオーバー','スコア: '+sc,'もういちど'); }
+}
+
+// ============ GRAVITY + CLEAR ============
+function grav() {
+  for (let c=0; c<W; c++) {
+    let wr = H-1;
+    for (let r=H-1; r>=0; r--) {
+      if (grid[r][c]!==-1) { if(r!==wr){grid[wr][c]=grid[r][c];grid[r][c]=-1;} wr--; }
+    }
+  }
+}
+
+function flood(r,c,col,vis) {
+  if (r<0||r>=H||c<0||c>=W||vis[r][c]||grid[r][c]!==col) return [];
+  vis[r][c]=true;
+  return [{r,c}].concat(flood(r-1,c,col,vis),flood(r+1,c,col,vis),flood(r,c-1,col,vis),flood(r,c+1,col,vis));
+}
+
+function findCl() {
+  const vis = Array.from({length:H},()=>Array(W).fill(false));
+  let res = [];
+  for (let r=0;r<H;r++) for (let c=0;c<W;c++) {
+    if (grid[r][c]!==-1 && !vis[r][c]) {
+      const g = flood(r,c,grid[r][c],vis);
+      if (g.length>=NEED) res=res.concat(g);
+    }
+  }
+  return res;
+}
+
+function resolve() {
+  state = 'anim';
+  grav();
+  const cls = findCl();
+  if (cls.length > 0) {
+    chCnt++;
+    if (chCnt>mxCh) { mxCh=chCnt; document.getElementById('ch').textContent=mxCh; }
+    sc += cls.length * 10 * chCnt * chCnt;
+    document.getElementById('sc').textContent = sc;
+    const nl = Math.floor(sc/500)+1;
+    if (nl>lv) { lv=nl; document.getElementById('lv').textContent=lv; dInt=Math.max(150,1000-(lv-1)*80); }
+    if (chCnt>=2) chainPop(chCnt);
+    snd('c',chCnt);
+
+    clrCells = cls.map(c=>({r:c.r, c:c.c, col:grid[c.r][c.c]}));
+    clrTmr = 20;
+
+    cls.forEach(c=> {
+      const ci = grid[c.r][c.c];
+      const color = (ci >= 0 && COLORS[ci]) ? COLORS[ci].b : '#fff';
+      for(let i=0;i<5;i++) parts.push({x:c.c*SZ+SZ/2, y:c.r*SZ+SZ/2, vx:(Math.random()-.5)*7, vy:-Math.random()*5-2, life:1, dec:.02+Math.random()*.02, sz:3+Math.random()*4, col:color});
+      grid[c.r][c.c] = -1;
+    });
+
+    const gen = gameGen;
+    setTimeout(()=>{ if (gameGen !== gen) return; clrCells=[]; resolve(); }, 400);
+  } else {
+    if (grid[0].some(v=>v!==-1)) { state='over'; snd('go'); showOL('ゲームオーバー','スコア: '+sc,'もういちど'); }
+    else { state='play'; spawn(); }
+  }
+}
+
+// ============ GHOST ============
+function ghostR() {
+  if (!cur) return -1;
+  let t = {...cur};
+  while(true) { t.pr++; if(!fit(t)){t.pr--;break;} }
+  return t.pr;
+}
+
+// ============ CHAIN POPUP ============
+function chainPop(n) {
+  const el = document.getElementById('chainPop');
+  el.textContent = n + 'れんさ！' + (n>=4?'！':'');
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'), 1200);
+}
+
+// ============ OVERLAY ============
+function showOL(t, s, btn) {
+  const ol = document.getElementById('overlay');
+  ol.querySelector('h1').textContent = t;
+  ol.querySelector('h2').textContent = s;
+  ol.querySelector('button').textContent = btn;
+  ol.classList.remove('hidden');
+}
+
+// ============ RENDER ============
+function render() {
+  // -- Main board --
+  cx.fillStyle = '#0e1e30';
+  cx.fillRect(0, 0, cv.width, cv.height);
+
+  // Grid lines
+  cx.strokeStyle = 'rgba(100,140,180,0.12)';
+  cx.lineWidth = 1;
+  for (let r=1; r<H; r++) { cx.beginPath(); cx.moveTo(0,r*SZ); cx.lineTo(cv.width,r*SZ); cx.stroke(); }
+  for (let c=1; c<W; c++) { cx.beginPath(); cx.moveTo(c*SZ,0); cx.lineTo(c*SZ,cv.height); cx.stroke(); }
+
+  // Danger line
+  cx.save();
+  cx.strokeStyle = 'rgba(255,80,80,0.3)';
+  cx.setLineDash([6,4]);
+  cx.beginPath(); cx.moveTo(0,SZ); cx.lineTo(cv.width,SZ); cx.stroke();
+  cx.setLineDash([]);
+  cx.restore();
+
+  // Board ducks
+  for (let r=0; r<H; r++) for (let c=0; c<W; c++) {
+    if (grid[r][c]!==-1) duck(cx, c*SZ, r*SZ, SZ, grid[r][c]);
+  }
+
+  // Clearing flash
+  if (clrCells.length && clrTmr > 0) {
+    const on = Math.floor(clrTmr/3)%2===0;
+    clrCells.forEach(cl => {
+      cx.fillStyle = on ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,150,0.4)';
+      cx.beginPath(); cx.arc(cl.c*SZ+SZ/2, cl.r*SZ+SZ/2, SZ*.42, 0, Math.PI*2); cx.fill();
+    });
+    clrTmr--;
+  }
+
+  // Ghost
+  if (cur && state==='play') {
+    const gr = ghostR();
+    if (gr > cur.pr) {
+      const gp = {...cur, pr:gr};
+      const gc = cPos(gp);
+      duck(cx, gp.pc*SZ, gr*SZ, SZ, cur.a, 0.2);
+      if (gc.r>=0) duck(cx, gc.c*SZ, gc.r*SZ, SZ, cur.b, 0.2);
+    }
+  }
+
+  // Current piece
+  if (cur && state==='play') {
+    const ch = cPos(cur);
+    if (cur.pr>=0) duck(cx, cur.pc*SZ, cur.pr*SZ, SZ, cur.a);
+    if (ch.r>=0)   duck(cx, ch.c*SZ, ch.r*SZ, SZ, cur.b);
+  }
+
+  // Particles
+  parts = parts.filter(p=>p.life>0);
+  parts.forEach(p => {
+    p.x+=p.vx; p.y+=p.vy; p.vy+=.18; p.life-=p.dec;
+    if (p.life <= 0) return;
+    cx.save(); cx.globalAlpha=p.life;
+    cx.fillStyle=p.col; cx.beginPath(); cx.arc(p.x,p.y,Math.max(0.1, p.sz*p.life),0,Math.PI*2); cx.fill();
+    cx.restore();
+  });
+
+  // -- Next panel --
+  nx.clearRect(0,0,nv.width,nv.height);
+  if (nxt) {
+    duck(nx, 10, 6, SZ, nxt.b);
+    duck(nx, 10, SZ+10, SZ, nxt.a);
+  }
+}
+
+// ============ LOOP ============
+let lt = -1;
+function loop(ts) {
+  const dt = (lt < 0) ? 16 : Math.min(ts - lt, 100);
+  lt = ts;
+  frame++;
+  if (state==='play' && cur) {
+    dTmr += dt;
+    if (dTmr >= dInt) { dTmr=0; if(!move(1,0)) lock(); }
+  }
+  try { render(); } catch(e) { console.error('render error:', e); }
+  requestAnimationFrame(loop);
+}
+
+// ============ INPUT ============
+document.addEventListener('keydown', e => {
+  if (state!=='play') return;
+  switch(e.key) {
+    case 'ArrowLeft': e.preventDefault(); move(0,-1); break;
+    case 'ArrowRight': e.preventDefault(); move(0,1); break;
+    case 'ArrowDown': e.preventDefault(); move(1,0); dTmr=0; break;
+    case 'ArrowUp': case 'x': case 'X': e.preventDefault(); rot(); break;
+    case ' ': e.preventDefault(); drop(); break;
+  }
+});
+
+// ============ START ============
+document.getElementById('startBtn').addEventListener('click', () => {
+  if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
+  document.getElementById('overlay').classList.add('hidden');
+  reset();
+});
+
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
