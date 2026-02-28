@@ -15,6 +15,9 @@ body {
   align-items: center;
   font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
   color: #fff;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 #wrap {
@@ -158,6 +161,64 @@ body {
 }
 
 #chainPop.show { opacity: 1; }
+
+/* Responsive */
+@media (max-width: 600px) {
+  body { align-items: flex-start; padding-top: 40px; }
+  #wrap { flex-direction: column; align-items: center; }
+  #rightCol { flex-direction: row; }
+  #scoreBar { font-size: 13px; }
+  #scoreBar span { font-size: 16px; }
+  #scoreBar div { padding: 4px 8px; }
+  .panel { padding: 8px 10px; }
+  .panel h3 { font-size: 12px; margin-bottom: 4px; }
+}
+
+@media (pointer: coarse) {
+  .kb-help { display: none; }
+}
+
+/* Touch Controls */
+.touch-controls {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 140px;
+  z-index: 50;
+  pointer-events: none;
+}
+
+@media (pointer: coarse) {
+  .touch-controls { display: flex; justify-content: space-between; align-items: flex-end; padding: 0 15px 20px; }
+}
+
+.touch-btn {
+  pointer-events: all;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.15);
+  border: 2px solid rgba(255,255,255,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  color: rgba(255,255,255,0.8);
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.touch-btn:active, .touch-btn.active {
+  background: rgba(255,215,0,0.4);
+  border-color: rgba(255,215,0,0.7);
+}
+
+.touch-left-group { display: flex; gap: 12px; }
+.touch-right-group { display: flex; gap: 12px; align-items: flex-end; }
+.touch-btn.small { width: 56px; height: 56px; font-size: 20px; margin-bottom: 80px; }
 </style>
 </head>
 <body>
@@ -181,10 +242,12 @@ body {
     </div>
     <div class="panel">
       <div id="helpText">
+        <span class="kb-help">
         <b>← →</b> 移動<br>
         <b>↑</b> 回転<br>
         <b>↓</b> 速く落下<br>
         <b>Space</b> 即落下<br><br>
+        </span>
         同じ色のアヒルを<br>
         <b>4匹以上</b>つなげると<br>
         消えるよ！
@@ -201,9 +264,29 @@ body {
 
 <div id="chainPop"></div>
 
+<div class="touch-controls" id="touchControls">
+  <div class="touch-left-group">
+    <div class="touch-btn" id="btnLeft">◀</div>
+    <div class="touch-btn" id="btnRight">▶</div>
+  </div>
+  <div class="touch-right-group">
+    <div class="touch-btn" id="btnRotate">↻</div>
+    <div class="touch-btn" id="btnDown">▼</div>
+    <div class="touch-btn small" id="btnDrop">⏬</div>
+  </div>
+</div>
+
 <script>
 // ============ CONFIG ============
-const W = 6, H = 12, SZ = 48;
+const W = 6, H = 12;
+const SZ = (() => {
+  if (window.innerWidth <= 600) {
+    const fromW = Math.floor((window.innerWidth - 20) / W);
+    const fromH = Math.floor((window.innerHeight - 330) / H);
+    return Math.max(20, Math.min(fromW, fromH, 48));
+  }
+  return 48;
+})();
 const COLORS = [
   { b:'#FFD700', bk:'#FF8C00', w:'#B8960E', bl:'#FFFACD' },
   { b:'#FF5252', bk:'#B71C1C', w:'#D32F2F', bl:'#FFCDD2' },
@@ -234,12 +317,50 @@ let clrCells = [], clrTmr = 0;
 let parts = [];
 let gameGen = 0; // generation counter to invalidate stale timeouts
 
+// ============ TOUCH ============
+const touchState = { left: false, right: false, down: false, rotate: false, drop: false };
+const touchJustPressed = { left: false, right: false, down: false, rotate: false, drop: false };
+let touchTimers = { left: 0, right: 0, down: 0 };
+const T_DELAY = 180, T_RATE = 70;
+
+function setupTouchBtn(id, key) {
+  const btn = document.getElementById(id);
+  if (!btn) return;
+  btn.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    touchState[key] = true;
+    touchJustPressed[key] = true;
+    if (key in touchTimers) touchTimers[key] = 0;
+    btn.classList.add('active');
+  }, {passive:false});
+  const onEnd = (e) => {
+    e.preventDefault();
+    touchState[key] = false;
+    btn.classList.remove('active');
+  };
+  btn.addEventListener('touchend', onEnd, {passive:false});
+  btn.addEventListener('touchcancel', onEnd, {passive:false});
+}
+setupTouchBtn('btnLeft', 'left');
+setupTouchBtn('btnRight', 'right');
+setupTouchBtn('btnDown', 'down');
+setupTouchBtn('btnRotate', 'rotate');
+setupTouchBtn('btnDrop', 'drop');
+
+function doTouchMove(key) {
+  if (key === 'left') move(0, -1);
+  else if (key === 'right') move(0, 1);
+  else if (key === 'down') { move(1, 0); dTmr = 0; }
+}
+
 function reset() {
   gameGen++;
   grid = Array.from({length:H}, ()=> Array(W).fill(-1));
   sc = 0; lv = 1; mxCh = 0; chCnt = 0;
   state = 'play'; dTmr = 0; dInt = 1000; frame = 0;
   clrCells = []; clrTmr = 0; parts = [];
+  Object.keys(touchJustPressed).forEach(k => touchJustPressed[k] = false);
+  Object.keys(touchTimers).forEach(k => touchTimers[k] = 0);
   document.getElementById('sc').textContent = '0';
   document.getElementById('ch').textContent = '0';
   document.getElementById('lv').textContent = '1';
@@ -544,6 +665,31 @@ function loop(ts) {
   if (state==='play' && cur) {
     dTmr += dt;
     if (dTmr >= dInt) { dTmr=0; if(!move(1,0)) lock(); }
+    // Touch: single-press actions
+    if (touchJustPressed.rotate) { rot(); touchJustPressed.rotate = false; }
+    if (touchJustPressed.drop) { drop(); touchJustPressed.drop = false; }
+    // Touch: repeating directional (DAS)
+    ['left', 'right', 'down'].forEach(key => {
+      if (touchState[key]) {
+        if (touchJustPressed[key]) {
+          doTouchMove(key);
+          touchJustPressed[key] = false;
+          touchTimers[key] = 0;
+        } else {
+          touchTimers[key] += dt;
+          if (touchTimers[key] >= T_DELAY) {
+            doTouchMove(key);
+            touchTimers[key] -= T_RATE;
+            if (touchTimers[key] < T_DELAY - T_RATE) touchTimers[key] = T_DELAY - T_RATE;
+          }
+        }
+      } else {
+        touchTimers[key] = 0;
+        touchJustPressed[key] = false;
+      }
+    });
+  } else {
+    Object.keys(touchJustPressed).forEach(k => touchJustPressed[k] = false);
   }
   try { render(); } catch(e) { console.error('render error:', e); }
   requestAnimationFrame(loop);
