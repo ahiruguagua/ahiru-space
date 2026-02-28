@@ -145,6 +145,98 @@ body {
 
 #startBtn:hover { transform: scale(1.05); }
 
+/* Game Over Overlay */
+.gameover-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 1000;
+  background: rgba(0,0,0,0.7);
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  font-family: inherit;
+}
+.gameover-overlay.active { display: flex; }
+.gameover-panel {
+  background: rgba(10,10,30,0.95);
+  border: 2px solid #FFD700;
+  border-radius: 20px;
+  padding: 2rem;
+  max-width: 380px;
+  width: 100%;
+  text-align: center;
+}
+.gameover-panel h2 { color: #FFD700; font-size: 1.8rem; margin-bottom: 1rem; }
+.gameover-panel .stats { color: #fff; font-size: 1rem; line-height: 2; margin-bottom: 1rem; }
+.gameover-panel .stats span { color: #FFD700; font-weight: 800; }
+.gameover-panel .highscore-entry { margin: 1rem 0; }
+.gameover-panel .highscore-entry p { color: #FFD700; font-weight: 700; margin-bottom: 0.5rem; }
+.gameover-panel input {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 2px solid rgba(255,215,0,0.4);
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+  font-size: 1rem;
+  font-family: inherit;
+  outline: none;
+  margin-bottom: 0.5rem;
+}
+.gameover-panel input:focus { border-color: #FFD700; }
+.gameover-panel input::placeholder { color: rgba(255,255,255,0.4); }
+.go-btn {
+  display: inline-block;
+  padding: 10px 24px;
+  border-radius: 50px;
+  border: none;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  margin: 6px;
+  transition: transform 0.2s;
+}
+.go-btn:active { transform: scale(0.95); }
+.go-btn.primary { background: #FFD700; color: #000; }
+.go-btn.secondary { background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.3); }
+.go-btn.secondary:hover { background: rgba(255,255,255,0.25); }
+.submitted-msg { color: #FFD700; font-weight: 700; margin: 0.5rem 0; }
+
+/* Leaderboard Overlay */
+.lb-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 1010;
+  background: rgba(0,0,0,0.8);
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.lb-overlay.active { display: flex; }
+.lb-panel {
+  background: rgba(10,10,30,0.97);
+  border: 2px solid #FFD700;
+  border-radius: 20px;
+  padding: 1.5rem;
+  max-width: 400px;
+  width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+.lb-panel h2 { color: #FFD700; text-align: center; font-size: 1.4rem; margin-bottom: 1rem; }
+.lb-row { display: flex; justify-content: space-between; padding: 6px 8px; color: rgba(255,255,255,0.8); font-size: 0.95rem; }
+.lb-row.top3 { color: #FFD700; font-weight: 700; }
+.lb-row .rank { width: 36px; }
+.lb-row .name { flex: 1; }
+.lb-row .score { text-align: right; }
+.lb-empty { color: rgba(255,255,255,0.5); text-align: center; padding: 2rem; }
+.lb-close { display: block; margin: 1rem auto 0; }
+
 #chainPop {
   position: fixed;
   top: 35%;
@@ -260,6 +352,34 @@ body {
   <h1>おちアヒル</h1>
   <h2>Duck Drop! 🐤</h2>
   <button id="startBtn">スタート</button>
+</div>
+
+<div class="gameover-overlay" id="gameoverOverlay">
+  <div class="gameover-panel">
+    <h2>ゲームオーバー</h2>
+    <div class="stats">
+      スコア: <span id="goScore">0</span><br>
+      さいだい連鎖: <span id="goChains">0</span>
+    </div>
+    <div class="highscore-entry" id="hsEntry" style="display:none;">
+      <p>ランキング入り！ なまえを入力:</p>
+      <input type="text" id="hsName" maxlength="15" placeholder="なまえ" autocomplete="off">
+      <button class="go-btn primary" id="hsSubmit">とうろく</button>
+    </div>
+    <div class="submitted-msg" id="hsSubmitted" style="display:none;">とうろくしました！</div>
+    <div>
+      <button class="go-btn primary" id="goRestart">もういちど</button>
+      <button class="go-btn secondary" id="goLeaderboard">ランキング</button>
+    </div>
+  </div>
+</div>
+
+<div class="lb-overlay" id="lbOverlay">
+  <div class="lb-panel">
+    <h2>ランキング TOP 20</h2>
+    <div id="lbList"></div>
+    <button class="go-btn secondary lb-close" id="lbClose">とじる</button>
+  </div>
 </div>
 
 <div id="chainPop"></div>
@@ -497,7 +617,7 @@ function spawn() {
   cur.pr = 1; cur.pc = 2; cur.rot = 0;
   nxt = mkPair();
   dTmr = 0;
-  if (!fit(cur)) { state='over'; snd('go'); showOL('ゲームオーバー','スコア: '+sc,'もういちど'); }
+  if (!fit(cur)) { state='over'; snd('go'); showGameOver(); }
 }
 
 // ============ GRAVITY + CLEAR ============
@@ -555,7 +675,7 @@ function resolve() {
     const gen = gameGen;
     setTimeout(()=>{ if (gameGen !== gen) return; clrCells=[]; resolve(); }, 400);
   } else {
-    if (grid[0].some(v=>v!==-1)) { state='over'; snd('go'); showOL('ゲームオーバー','スコア: '+sc,'もういちど'); }
+    if (grid[0].some(v=>v!==-1)) { state='over'; snd('go'); showGameOver(); }
     else { state='play'; spawn(); }
   }
 }
@@ -576,14 +696,62 @@ function chainPop(n) {
   setTimeout(()=>el.classList.remove('show'), 1200);
 }
 
-// ============ OVERLAY ============
-function showOL(t, s, btn) {
-  const ol = document.getElementById('overlay');
-  ol.querySelector('h1').textContent = t;
-  ol.querySelector('h2').textContent = s;
-  ol.querySelector('button').textContent = btn;
-  ol.classList.remove('hidden');
+// ============ LEADERBOARD ============
+let leaderboard = [];
+let scoreSubmitted = false;
+
+async function fetchLeaderboard() {
+  try {
+    const res = await fetch('/api/drop-scores');
+    if (res.ok) leaderboard = await res.json();
+  } catch(e) {}
 }
+
+async function submitScore(name, score, chains) {
+  try {
+    const res = await fetch('/api/drop-scores', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, score, chains })
+    });
+    if (res.ok) {
+      leaderboard = await res.json();
+      scoreSubmitted = true;
+    }
+  } catch(e) {}
+}
+
+function isHighScore(score) {
+  if (leaderboard.length < 20) return score > 0;
+  return score > leaderboard[leaderboard.length - 1].score;
+}
+
+function showLeaderboard() {
+  const list = document.getElementById('lbList');
+  if (leaderboard.length === 0) {
+    list.innerHTML = '<div class="lb-empty">まだスコアがありません</div>';
+  } else {
+    list.innerHTML = leaderboard.slice(0, 20).map((e, i) => {
+      const medal = i === 0 ? '👑' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}.`;
+      const chainsText = e.chains ? ` ${e.chains}連鎖` : '';
+      return `<div class="lb-row ${i < 3 ? 'top3' : ''}"><span class="rank">${medal}</span><span class="name">${e.name}</span><span class="score">${e.score.toLocaleString()}${chainsText}</span></div>`;
+    }).join('');
+  }
+  document.getElementById('lbOverlay').classList.add('active');
+}
+
+function showGameOver() {
+  fetchLeaderboard();
+  document.getElementById('goScore').textContent = sc.toLocaleString();
+  document.getElementById('goChains').textContent = mxCh;
+  document.getElementById('hsEntry').style.display = isHighScore(sc) ? 'block' : 'none';
+  document.getElementById('hsSubmitted').style.display = 'none';
+  document.getElementById('hsName').value = '';
+  scoreSubmitted = false;
+  document.getElementById('gameoverOverlay').classList.add('active');
+}
+
+fetchLeaderboard();
 
 // ============ RENDER ============
 function render() {
@@ -712,6 +880,38 @@ document.getElementById('startBtn').addEventListener('click', () => {
   if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
   document.getElementById('overlay').classList.add('hidden');
   reset();
+});
+
+// ============ GAME OVER BUTTONS ============
+document.getElementById('goRestart').addEventListener('click', () => {
+  document.getElementById('gameoverOverlay').classList.remove('active');
+  document.getElementById('lbOverlay').classList.remove('active');
+  reset();
+});
+
+document.getElementById('goLeaderboard').addEventListener('click', () => {
+  showLeaderboard();
+});
+
+document.getElementById('hsSubmit').addEventListener('click', async () => {
+  const nameEl = document.getElementById('hsName');
+  const name = nameEl.value.trim();
+  if (name.length > 0 && !scoreSubmitted) {
+    await submitScore(name, sc, mxCh);
+    document.getElementById('hsEntry').style.display = 'none';
+    document.getElementById('hsSubmitted').style.display = 'block';
+  }
+});
+
+document.getElementById('lbClose').addEventListener('click', () => {
+  document.getElementById('lbOverlay').classList.remove('active');
+});
+
+document.getElementById('hsName').addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    document.getElementById('hsSubmit').click();
+  }
 });
 
 requestAnimationFrame(loop);

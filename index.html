@@ -1344,6 +1344,7 @@
         </p>
         <div class="game-buttons">
           <a href="/drop.html" class="game-play-btn">あそぶ</a>
+          <button class="game-ranking-btn" data-api="/api/drop-scores" data-type="drop">ランキングを見る</button>
         </div>
       </div>
       <div class="game-banner fade-up">
@@ -1537,6 +1538,8 @@
               extra = e.wave ? ` W${e.wave}` : '';
             } else if (type === 'typing') {
               extra = e.level ? ` Lv.${e.level}` : '';
+            } else if (type === 'drop') {
+              extra = e.chains ? ` ${e.chains}連鎖` : '';
             } else {
               extra = e.eggs ? ` 🥚${e.eggs}` : ' 🥚?';
             }
