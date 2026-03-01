@@ -18,12 +18,14 @@
   body {
     font-family: 'Segoe UI', 'Hiragino Sans', sans-serif;
     min-height: 100vh;
+    min-height: 100dvh;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     user-select: none;
     background: linear-gradient(135deg, #a8edea, #fed6e3);
+    padding: 8px;
   }
 
   h1 {
@@ -62,12 +64,12 @@
   }
 
   .cell {
-    width: 42px;
-    height: 42px;
+    width: var(--cell-size, 42px);
+    height: var(--cell-size, 42px);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.5rem;
+    font-size: var(--cell-font, 1.5rem);
     border-radius: 8px;
     cursor: pointer;
     transition: transform 0.12s, background 0.15s, opacity 0.3s;
@@ -233,8 +235,12 @@
   .lb-tab:hover { border-color: #fcb69f; }
   .lb-tab.active { background: linear-gradient(135deg, #ffecd2, #fcb69f); color: #7c4a1e; border-color: transparent; }
 
-  @media (min-width: 500px) {
-    .cell { width: 48px; height: 48px; font-size: 1.7rem; }
+  @media (max-width: 400px) {
+    h1 { font-size: 1.4rem; }
+    .info { font-size: 0.85rem; gap: 6px; }
+    .info span { padding: 4px 10px; }
+    .buttons { gap: 6px; }
+    button { padding: 8px 14px; font-size: 0.85rem; }
   }
 </style>
 </head>
@@ -326,6 +332,24 @@ const remainingEl = document.getElementById('remaining');
 const highScoreEl = document.getElementById('highScore');
 const diffLabel = document.getElementById('diffLabel');
 
+// セルサイズを画面に合わせて計算
+function updateCellSize() {
+  const GAP = 2;
+  const PAD = 16; // board padding * 2
+  const MARGIN = 16; // body padding
+  // 画面の使える幅・高さ (UI要素分を引く: h1+info+buttons+hint ≈ 160px)
+  const availW = window.innerWidth - MARGIN * 2 - PAD;
+  const availH = (window.innerHeight || document.documentElement.clientHeight) - 180 - PAD;
+  const maxByW = Math.floor((availW - GAP * (cols - 1)) / cols);
+  const maxByH = Math.floor((availH - GAP * (rows - 1)) / rows);
+  const size = Math.max(20, Math.min(48, maxByW, maxByH));
+  const fontSize = Math.max(0.8, size / 28);
+  document.documentElement.style.setProperty('--cell-size', size + 'px');
+  document.documentElement.style.setProperty('--cell-font', fontSize + 'rem');
+}
+
+window.addEventListener('resize', () => { updateCellSize(); });
+
 // セーブ/ロード
 function saveHighScores() {
   localStorage.setItem('duckOsouji', JSON.stringify(highScores));
@@ -344,6 +368,7 @@ function newGame() {
   rows = diff.rows;
   numColors = diff.colors;
   diffLabel.textContent = diff.name;
+  updateCellSize();
 
   score = 0;
   history = [];
