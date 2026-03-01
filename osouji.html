@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🐤 アヒルのおそうじ</title>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-TXQFE7EYKZ"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-TXQFE7EYKZ');
+</script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Segoe UI', 'Hiragino Sans', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    background: linear-gradient(135deg, #a8edea, #fed6e3);
+  }
+
+  h1 {
+    font-size: 1.8rem;
+    color: #fff;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    margin-bottom: 8px;
+  }
+
+  .info {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+    font-size: 1rem;
+    color: #fff;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .info span {
+    background: rgba(255,255,255,0.3);
+    padding: 5px 14px;
+    border-radius: 20px;
+    backdrop-filter: blur(5px);
+  }
+
+  .board {
+    display: grid;
+    gap: 2px;
+    padding: 8px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 16px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  }
+
+  .cell {
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.12s, background 0.15s, opacity 0.3s;
+    position: relative;
+  }
+
+  .cell:hover {
+    transform: scale(1.1);
+  }
+
+  .cell.empty {
+    cursor: default;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .cell.empty:hover {
+    transform: none;
+  }
+
+  .cell.highlight {
+    transform: scale(1.12);
+    filter: brightness(1.2);
+    box-shadow: 0 0 12px rgba(255,255,255,0.6);
+  }
+
+  .buttons {
+    margin-top: 14px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  button {
+    padding: 10px 22px;
+    font-size: 0.95rem;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: transform 0.1s, box-shadow 0.2s;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+  }
+
+  button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+  }
+
+  button:active { transform: translateY(0); }
+
+  .btn-new { background: linear-gradient(135deg, #f6d365, #fda085); color: #fff; }
+  .btn-undo { background: linear-gradient(135deg, #ffecd2, #fcb69f); color: #7c4a1e; }
+  .btn-difficulty { background: linear-gradient(135deg, #a1c4fd, #c2e9fb); color: #555; }
+
+  .hint {
+    margin-top: 12px;
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.7);
+  }
+
+  .overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(5px);
+  }
+
+  .overlay.show { display: flex; }
+
+  .popup {
+    background: #fff;
+    border-radius: 24px;
+    padding: 36px 46px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    animation: popIn 0.4s ease;
+    max-width: 90vw;
+  }
+
+  .popup h2 { font-size: 1.8rem; margin-bottom: 10px; }
+  .popup p { font-size: 1.05rem; color: #666; margin-bottom: 8px; }
+  .popup .sub { font-size: 0.85rem; color: #999; margin-bottom: 18px; }
+
+  .popup button {
+    background: linear-gradient(135deg, #f6d365, #fda085);
+    color: #fff;
+    margin: 4px;
+  }
+
+  .score-popup {
+    position: fixed;
+    pointer-events: none;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #fff;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    z-index: 50;
+    animation: floatUp 1s ease-out forwards;
+  }
+
+  @keyframes floatUp {
+    0% { opacity: 1; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-60px) scale(1.3); }
+  }
+
+  @keyframes popIn {
+    0% { transform: scale(0.5); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  .back-link {
+    position: fixed; top: 10px; left: 10px; z-index: 300;
+    color: rgba(255,255,255,0.85); text-decoration: none; font-size: 14px;
+    font-weight: bold; padding: 4px 12px; background: rgba(0,0,0,0.25);
+    border-radius: 20px;
+  }
+  .back-link:hover { color: #FFD700; }
+
+  /* Highscore entry in game-over popup */
+  .hs-entry { margin: 12px 0 4px; }
+  .hs-entry p { font-size: 0.85rem; color: #888; margin-bottom: 6px; }
+  .hs-entry input[type="text"] {
+    width: 200px; padding: 8px 12px; border-radius: 10px;
+    border: 2px solid #eee; font-size: 0.95rem; outline: none;
+    font-family: inherit; margin-bottom: 6px;
+  }
+  .hs-entry input[type="text"]:focus { border-color: #fda085; }
+  .hs-submitted { color: #f7a046; font-weight: bold; font-size: 0.9rem; margin: 8px 0; }
+
+  /* Leaderboard Overlay */
+  .lb-overlay {
+    display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 200; background: rgba(0,0,0,0.6);
+    flex-direction: column; align-items: center; justify-content: center; padding: 20px;
+    backdrop-filter: blur(5px);
+  }
+  .lb-overlay.active { display: flex; }
+  .lb-panel {
+    background: #fff; border-radius: 20px;
+    padding: 1.5rem; max-width: 400px; width: 100%; max-height: 80vh; overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  }
+  .lb-panel h2 { text-align: center; font-size: 1.3rem; margin-bottom: 1rem; color: #333; }
+  .lb-row { display: flex; justify-content: space-between; padding: 6px 8px; color: #555; font-size: 0.95rem; }
+  .lb-row.top3 { color: #f7a046; font-weight: 700; }
+  .lb-row .rank { width: 36px; }
+  .lb-row .name { flex: 1; }
+  .lb-row .score { text-align: right; }
+  .lb-empty { color: #aaa; text-align: center; padding: 2rem; }
+  .btn-ranking { background: linear-gradient(135deg, #ffecd2, #fcb69f); color: #7c4a1e; }
+
+  @media (min-width: 500px) {
+    .cell { width: 48px; height: 48px; font-size: 1.7rem; }
+  }
+</style>
+</head>
+<body>
+<a href="/" class="back-link">&larr; Home</a>
+
+<h1>🐤 アヒルのおそうじ</h1>
+
+<div class="info">
+  <span>🎯 スコア: <strong id="score">0</strong></span>
+  <span>🧴 残り: <strong id="remaining">0</strong></span>
+  <span>🏆 ハイスコア: <strong id="highScore">0</strong></span>
+</div>
+
+<div class="board" id="board"></div>
+
+<div class="buttons">
+  <button class="btn-undo" onclick="undo()">↩ 戻す</button>
+  <button class="btn-new" onclick="newGame()">🔄 ニューゲーム</button>
+  <button class="btn-difficulty" onclick="changeDifficulty()">📐 <span id="diffLabel">ふつう</span></button>
+  <button class="btn-ranking" onclick="showLeaderboard()">🏆 ランキング</button>
+</div>
+
+<div class="hint" id="hint">🐤 同じグッズを2つ以上つなげてタップで消そう！</div>
+
+<!-- ゲームオーバー画面 -->
+<div class="overlay" id="endOverlay">
+  <div class="popup">
+    <h2 id="endTitle">🎉 ゲーム終了！</h2>
+    <p id="endMessage"></p>
+    <p class="sub" id="endSub"></p>
+    <div class="hs-entry" id="hsEntry" style="display:none;">
+      <p>ランキング入り！ なまえを入力:</p>
+      <input type="text" id="hsName" maxlength="15" placeholder="なまえ" autocomplete="off">
+      <button onclick="submitHighScore()">とうろく</button>
+    </div>
+    <div class="hs-submitted" id="hsSubmitted" style="display:none;">とうろくしました！</div>
+    <div>
+      <button onclick="closeEnd(); newGame();">もう一回遊ぶ 🐤</button>
+      <button onclick="closeEnd(); showLeaderboard();">ランキング</button>
+    </div>
+  </div>
+</div>
+
+<!-- ランキング画面 -->
+<div class="lb-overlay" id="lbOverlay">
+  <div class="lb-panel">
+    <h2>🏆 ランキング TOP 20</h2>
+    <div id="lbList"></div>
+    <button class="btn-ranking" onclick="closeLb()" style="display:block;margin:1rem auto 0;">とじる</button>
+  </div>
+</div>
+
+<script>
+const PIECES = [
+  { emoji: '🧴', bg: 'linear-gradient(135deg, #fff3b0, #ffe066)' },
+  { emoji: '🧼', bg: 'linear-gradient(135deg, #d3f9d8, #8ce99a)' },
+  { emoji: '🪥', bg: 'linear-gradient(135deg, #a5d8ff, #74c0fc)' },
+  { emoji: '🧽', bg: 'linear-gradient(135deg, #ffdeeb, #f783ac)' },
+  { emoji: '🪒', bg: 'linear-gradient(135deg, #d0bfff, #b197fc)' },
+];
+
+const DIFFICULTIES = [
+  { name: 'かんたん', cols: 10, rows: 8, colors: 3 },
+  { name: 'ふつう',   cols: 12, rows: 10, colors: 4 },
+  { name: 'むずかしい', cols: 15, rows: 10, colors: 5 },
+];
+
+let diffIdx = 1;
+let grid = [];
+let cols = 12;
+let rows = 10;
+let numColors = 4;
+let score = 0;
+let highScores = [0, 0, 0];
+let history = [];
+let highlighted = [];
+let gameOver = false;
+let endTimeout = null;
+
+const boardEl = document.getElementById('board');
+const scoreEl = document.getElementById('score');
+const remainingEl = document.getElementById('remaining');
+const highScoreEl = document.getElementById('highScore');
+const diffLabel = document.getElementById('diffLabel');
+
+// セーブ/ロード
+function saveHighScores() {
+  localStorage.setItem('duckOsouji', JSON.stringify(highScores));
+}
+
+function loadHighScores() {
+  try {
+    const data = JSON.parse(localStorage.getItem('duckOsouji'));
+    if (data) highScores = data;
+  } catch(e) {}
+}
+
+function newGame() {
+  const diff = DIFFICULTIES[diffIdx];
+  cols = diff.cols;
+  rows = diff.rows;
+  numColors = diff.colors;
+  diffLabel.textContent = diff.name;
+
+  score = 0;
+  history = [];
+  highlighted = [];
+  gameOver = false;
+  if (endTimeout) { clearTimeout(endTimeout); endTimeout = null; }
+  scoreEl.textContent = '0';
+  highScoreEl.textContent = highScores[diffIdx];
+
+  grid = [];
+  for (let y = 0; y < rows; y++) {
+    grid[y] = [];
+    for (let x = 0; x < cols; x++) {
+      grid[y][x] = Math.floor(Math.random() * numColors);
+    }
+  }
+
+  boardEl.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+  render();
+}
+
+// セル要素の2次元配列
+let cellEls = [];
+
+function render() {
+  boardEl.innerHTML = '';
+  cellEls = [];
+  let count = 0;
+
+  for (let y = 0; y < rows; y++) {
+    cellEls[y] = [];
+    for (let x = 0; x < cols; x++) {
+      const div = document.createElement('div');
+      div.className = 'cell';
+      div.dataset.x = x;
+      div.dataset.y = y;
+      const val = grid[y][x];
+
+      if (val >= 0) {
+        const piece = PIECES[val];
+        div.textContent = piece.emoji;
+        div.style.background = piece.bg;
+        div.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+        count++;
+      } else {
+        div.classList.add('empty');
+      }
+
+      cellEls[y][x] = div;
+      boardEl.appendChild(div);
+    }
+  }
+
+  remainingEl.textContent = count;
+
+  // ゲームオーバー判定
+  if (!gameOver && !hasValidMoves()) {
+    gameOver = true;
+    endTimeout = setTimeout(() => showEnd(count), 500);
+  }
+}
+
+// ハイライト更新（DOM直接操作、再描画しない）
+function updateHighlight(group) {
+  // 前のハイライトを消す
+  for (const { x, y } of highlighted) {
+    if (cellEls[y] && cellEls[y][x]) {
+      cellEls[y][x].classList.remove('highlight');
+    }
+  }
+  highlighted = group;
+  // 新しいハイライトを付ける
+  for (const { x, y } of highlighted) {
+    if (cellEls[y] && cellEls[y][x]) {
+      cellEls[y][x].classList.add('highlight');
+    }
+  }
+}
+
+function getGroup(x, y) {
+  const val = grid[y][x];
+  if (val < 0) return [];
+
+  const visited = new Set();
+  const group = [];
+  const stack = [{ x, y }];
+
+  while (stack.length > 0) {
+    const { x: cx, y: cy } = stack.pop();
+    const key = `${cx},${cy}`;
+    if (visited.has(key)) continue;
+    if (cx < 0 || cx >= cols || cy < 0 || cy >= rows) continue;
+    if (grid[cy][cx] !== val) continue;
+
+    visited.add(key);
+    group.push({ x: cx, y: cy });
+
+    stack.push({ x: cx + 1, y: cy });
+    stack.push({ x: cx - 1, y: cy });
+    stack.push({ x: cx, y: cy + 1 });
+    stack.push({ x: cx, y: cy - 1 });
+  }
+
+  return group;
+}
+
+function onHover(x, y) {
+  const group = getGroup(x, y);
+  updateHighlight(group.length >= 2 ? group : []);
+}
+
+function clearHighlight() {
+  updateHighlight([]);
+}
+
+function onClick(x, y) {
+  const group = getGroup(x, y);
+  if (group.length < 2) return;
+
+  // 履歴保存
+  history.push({
+    grid: grid.map(row => [...row]),
+    score: score,
+  });
+
+  // スコア計算: n*(n-1) ポイント
+  const points = group.length * (group.length - 1);
+  score += points;
+  scoreEl.textContent = score;
+
+  // ポイント表示アニメ
+  showScorePopup(points, x, y);
+
+  // ブロック消去
+  for (const { x: gx, y: gy } of group) {
+    grid[gy][gx] = -1;
+  }
+
+  // 落下処理
+  applyGravity();
+
+  // 列詰め処理
+  compactColumns();
+
+  highlighted = [];
+  render();
+}
+
+function applyGravity() {
+  for (let x = 0; x < cols; x++) {
+    let writeY = rows - 1;
+    for (let y = rows - 1; y >= 0; y--) {
+      if (grid[y][x] >= 0) {
+        grid[writeY][x] = grid[y][x];
+        if (writeY !== y) grid[y][x] = -1;
+        writeY--;
+      }
+    }
+    for (let y = writeY; y >= 0; y--) {
+      grid[y][x] = -1;
+    }
+  }
+}
+
+function compactColumns() {
+  // 空の列を左に詰める
+  let writeX = 0;
+  const newGrid = grid.map(row => new Array(cols).fill(-1));
+
+  for (let x = 0; x < cols; x++) {
+    // この列にブロックがあるか
+    let hasBlock = false;
+    for (let y = 0; y < rows; y++) {
+      if (grid[y][x] >= 0) { hasBlock = true; break; }
+    }
+    if (hasBlock) {
+      for (let y = 0; y < rows; y++) {
+        newGrid[y][writeX] = grid[y][x];
+      }
+      writeX++;
+    }
+  }
+
+  grid = newGrid;
+}
+
+function hasValidMoves() {
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      if (grid[y][x] < 0) continue;
+      const group = getGroup(x, y);
+      if (group.length >= 2) return true;
+    }
+  }
+  return false;
+}
+
+function showScorePopup(points, x, y) {
+  const popup = document.createElement('div');
+  popup.className = 'score-popup';
+  popup.textContent = `+${points}`;
+
+  const rect = boardEl.getBoundingClientRect();
+  const cellW = rect.width / cols;
+  const cellH = rect.height / rows;
+  popup.style.left = (rect.left + x * cellW + cellW / 2) + 'px';
+  popup.style.top = (rect.top + y * cellH) + 'px';
+
+  document.body.appendChild(popup);
+  setTimeout(() => popup.remove(), 1000);
+}
+
+function showEnd(remaining) {
+  if (!gameOver) return; // undoで復帰済みなら何もしない
+
+  // パーフェクトボーナスを先に加算
+  const bonus = remaining === 0 ? 100 : 0;
+  if (bonus > 0) {
+    score += bonus;
+    scoreEl.textContent = score;
+  }
+
+  // ハイスコア更新（ボーナス込み）
+  if (score > highScores[diffIdx]) {
+    highScores[diffIdx] = score;
+    saveHighScores();
+    highScoreEl.textContent = score;
+  }
+
+  if (remaining === 0) {
+    document.getElementById('endTitle').textContent = '🏆 パーフェクト！ 🏆';
+    document.getElementById('endMessage').textContent = `全消し！ スコア: ${score}（ボーナス+100）`;
+  } else {
+    document.getElementById('endTitle').textContent = '🎉 ゲーム終了！';
+    document.getElementById('endMessage').textContent = `スコア: ${score}`;
+  }
+
+  document.getElementById('endSub').textContent =
+    score >= highScores[diffIdx] ? 'ハイスコア更新！🌟' : `ハイスコア: ${highScores[diffIdx]}`;
+
+  // ランキング登録
+  scoreSubmitted = false;
+  document.getElementById('hsSubmitted').style.display = 'none';
+  document.getElementById('hsName').value = '';
+  fetchLeaderboard().then(() => {
+    document.getElementById('hsEntry').style.display = isHighScore(score) ? 'block' : 'none';
+  });
+
+  document.getElementById('endOverlay').classList.add('show');
+}
+
+function closeEnd() {
+  document.getElementById('endOverlay').classList.remove('show');
+}
+
+function undo() {
+  if (history.length === 0) return;
+  const prev = history.pop();
+  grid = prev.grid;
+  score = prev.score;
+  scoreEl.textContent = score;
+  highlighted = [];
+  gameOver = false;
+  if (endTimeout) { clearTimeout(endTimeout); endTimeout = null; }
+  render();
+}
+
+function changeDifficulty() {
+  diffIdx = (diffIdx + 1) % DIFFICULTIES.length;
+  newGame();
+}
+
+// イベント委譲（ボード全体で一括処理）
+function getCellCoords(el) {
+  const cell = el.closest('.cell');
+  if (!cell || cell.classList.contains('empty')) return null;
+  return { x: parseInt(cell.dataset.x), y: parseInt(cell.dataset.y) };
+}
+
+boardEl.addEventListener('mouseover', (e) => {
+  const coords = getCellCoords(e.target);
+  if (coords) {
+    onHover(coords.x, coords.y);
+  } else {
+    clearHighlight();
+  }
+});
+
+boardEl.addEventListener('mouseleave', () => {
+  clearHighlight();
+});
+
+boardEl.addEventListener('click', (e) => {
+  const coords = getCellCoords(e.target);
+  if (coords) onClick(coords.x, coords.y);
+});
+
+// ============ LEADERBOARD ============
+let leaderboard = [];
+let scoreSubmitted = false;
+
+async function fetchLeaderboard() {
+  try {
+    const res = await fetch('/api/osouji-scores');
+    if (res.ok) leaderboard = await res.json();
+  } catch(e) {}
+}
+
+function isHighScore(s) {
+  if (leaderboard.length < 20) return s > 0;
+  return s > leaderboard[leaderboard.length - 1].score;
+}
+
+async function submitHighScore() {
+  const nameEl = document.getElementById('hsName');
+  const name = nameEl.value.trim();
+  if (name.length === 0 || scoreSubmitted) return;
+  try {
+    const diff = DIFFICULTIES[diffIdx].name;
+    const res = await fetch('/api/osouji-scores', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, score, difficulty: diff })
+    });
+    if (res.ok) {
+      leaderboard = await res.json();
+      scoreSubmitted = true;
+      document.getElementById('hsEntry').style.display = 'none';
+      document.getElementById('hsSubmitted').style.display = 'block';
+    }
+  } catch(e) {}
+}
+
+function showLeaderboard() {
+  const list = document.getElementById('lbList');
+  list.innerHTML = '<div class="lb-empty">よみこみちゅう...</div>';
+  document.getElementById('lbOverlay').classList.add('active');
+  fetchLeaderboard().then(() => {
+    if (leaderboard.length === 0) {
+      list.innerHTML = '<div class="lb-empty">まだスコアがありません</div>';
+    } else {
+      list.innerHTML = leaderboard.slice(0, 20).map((e, i) => {
+        const medal = i === 0 ? '👑' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}.`;
+        const diff = e.difficulty ? ` ${e.difficulty}` : '';
+        return `<div class="lb-row ${i < 3 ? 'top3' : ''}"><span class="rank">${medal}</span><span class="name">${e.name}</span><span class="score">${e.score.toLocaleString()}${diff}</span></div>`;
+      }).join('');
+    }
+  });
+}
+
+function closeLb() {
+  document.getElementById('lbOverlay').classList.remove('active');
+}
+
+document.getElementById('hsName').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); submitHighScore(); }
+});
+
+document.getElementById('lbOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('lbOverlay')) closeLb();
+});
+
+// 起動
+loadHighScores();
+fetchLeaderboard();
+newGame();
+</script>
+</body>
+</html>

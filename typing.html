@@ -303,6 +303,253 @@ const WORDS = [
   {ja:'ここまで きたら もう やるしかない',roma:'kokomadekitaramouyarusikanai'},
 ];
 
+// ============ KANA → ROMAJI MAP ============
+const KANA_ROMAJI_MAP = {
+  // 2-char combos (must check before 1-char)
+  'しゃ':['sha','sya','sixya','shixya'],'しゅ':['shu','syu','sixyu','shixyu'],'しょ':['sho','syo','sixyo','shixyo'],
+  'ちゃ':['cha','tya','tixya','chixya'],'ちゅ':['chu','tyu','tixyu','chixyu'],'ちょ':['cho','tyo','tixyo','chixyo'],
+  'じゃ':['ja','zya','jya','zixya','jixya'],'じゅ':['ju','zyu','jyu','zixyu','jixyu'],'じょ':['jo','zyo','jyo','zixyo','jixyo'],
+  'きゃ':['kya','kixya'],'きゅ':['kyu','kixyu'],'きょ':['kyo','kixyo'],
+  'にゃ':['nya','nixya'],'にゅ':['nyu','nixyu'],'にょ':['nyo','nixyo'],
+  'ひゃ':['hya','hixya'],'ひゅ':['hyu','hixyu'],'ひょ':['hyo','hixyo'],
+  'みゃ':['mya','mixya'],'みゅ':['myu','mixyu'],'みょ':['myo','mixyo'],
+  'りゃ':['rya','rixya'],'りゅ':['ryu','rixyu'],'りょ':['ryo','rixyo'],
+  'ぎゃ':['gya','gixya'],'ぎゅ':['gyu','gixyu'],'ぎょ':['gyo','gixyo'],
+  'びゃ':['bya','bixya'],'びゅ':['byu','bixyu'],'びょ':['byo','bixyo'],
+  'ぴゃ':['pya','pixya'],'ぴゅ':['pyu','pixyu'],'ぴょ':['pyo','pixyo'],
+  'ふぁ':['fa','huxa','fuxa'],'ふぃ':['fi','huxi','fuxi'],'ふぇ':['fe','huxe','fuxe'],'ふぉ':['fo','huxo','fuxo'],
+  'てぃ':['thi','texi'],'でぃ':['dhi','dexi'],
+  'きぇ':['kye','kixe'],'にぇ':['nye','nixe'],
+  'うぃ':['wi','uxi'],'うぇ':['we','uxe'],'うぉ':['who','uxo'],
+  // katakana 2-char combos
+  'シャ':['sha','sya','sixya','shixya'],'シュ':['shu','syu','sixyu','shixyu'],'ショ':['sho','syo','sixyo','shixyo'],
+  'チャ':['cha','tya','tixya','chixya'],'チュ':['chu','tyu','tixyu','chixyu'],'チョ':['cho','tyo','tixyo','chixyo'],
+  'ジャ':['ja','zya','jya','zixya','jixya'],'ジュ':['ju','zyu','jyu','zixyu','jixyu'],'ジョ':['jo','zyo','jyo','zixyo','jixyo'],
+  'キャ':['kya','kixya'],'キュ':['kyu','kixyu'],'キョ':['kyo','kixyo'],
+  'ニャ':['nya','nixya'],'ニュ':['nyu','nixyu'],'ニョ':['nyo','nixyo'],
+  'ヒャ':['hya','hixya'],'ヒュ':['hyu','hixyu'],'ヒョ':['hyo','hixyo'],
+  'ミャ':['mya','mixya'],'ミュ':['myu','mixyu'],'ミョ':['myo','mixyo'],
+  'リャ':['rya','rixya'],'リュ':['ryu','rixyu'],'リョ':['ryo','rixyo'],
+  'ギャ':['gya','gixya'],'ギュ':['gyu','gixyu'],'ギョ':['gyo','gixyo'],
+  'ビャ':['bya','bixya'],'ビュ':['byu','bixyu'],'ビョ':['byo','bixyo'],
+  'ピャ':['pya','pixya'],'ピュ':['pyu','pixyu'],'ピョ':['pyo','pixyo'],
+  'ファ':['fa','huxa','fuxa'],'フィ':['fi','huxi','fuxi'],'フェ':['fe','huxe','fuxe'],'フォ':['fo','huxo','fuxo'],
+  'ティ':['thi','texi'],'ディ':['dhi','dexi'],
+  'ウィ':['wi','uxi'],'ウェ':['we','uxe'],'ウォ':['who','uxo'],
+  // 1-char hiragana
+  'あ':['a'],'い':['i'],'う':['u'],'え':['e'],'お':['o'],
+  'か':['ka'],'き':['ki'],'く':['ku'],'け':['ke'],'こ':['ko'],
+  'さ':['sa'],'し':['shi','si','ci'],'す':['su'],'せ':['se'],'そ':['so'],
+  'た':['ta'],'ち':['chi','ti'],'つ':['tsu','tu'],'て':['te'],'と':['to'],
+  'な':['na'],'に':['ni'],'ぬ':['nu'],'ね':['ne'],'の':['no'],
+  'は':['ha'],'ひ':['hi'],'ふ':['fu','hu'],'へ':['he'],'ほ':['ho'],
+  'ま':['ma'],'み':['mi'],'む':['mu'],'め':['me'],'も':['mo'],
+  'や':['ya'],'ゆ':['yu'],'よ':['yo'],
+  'ら':['ra'],'り':['ri'],'る':['ru'],'れ':['re'],'ろ':['ro'],
+  'わ':['wa'],'を':['wo'],'ん':['n','nn','xn'],
+  'が':['ga'],'ぎ':['gi'],'ぐ':['gu'],'げ':['ge'],'ご':['go'],
+  'ざ':['za'],'じ':['ji','zi'],'ず':['zu','du'],'ぜ':['ze'],'ぞ':['zo'],
+  'だ':['da'],'ぢ':['di','dhi'],'づ':['du','dzu'],'で':['de'],'ど':['do'],
+  'ば':['ba'],'び':['bi'],'ぶ':['bu'],'べ':['be'],'ぼ':['bo'],
+  'ぱ':['pa'],'ぴ':['pi'],'ぷ':['pu'],'ぺ':['pe'],'ぽ':['po'],
+  'ぁ':['xa','la'],'ぃ':['xi','li'],'ぅ':['xu','lu'],'ぇ':['xe','le'],'ぉ':['xo','lo'],
+  'ゃ':['xya','lya'],'ゅ':['xyu','lyu'],'ょ':['xyo','lyo'],
+  'っ':['xtu','ltu','xtsu','ltsu'],
+  'ー':['−','-'],
+  // 1-char katakana
+  'ア':['a'],'イ':['i'],'ウ':['u'],'エ':['e'],'オ':['o'],
+  'カ':['ka'],'キ':['ki'],'ク':['ku'],'ケ':['ke'],'コ':['ko'],
+  'サ':['sa'],'シ':['shi','si','ci'],'ス':['su'],'セ':['se'],'ソ':['so'],
+  'タ':['ta'],'チ':['chi','ti'],'ツ':['tsu','tu'],'テ':['te'],'ト':['to'],
+  'ナ':['na'],'ニ':['ni'],'ヌ':['nu'],'ネ':['ne'],'ノ':['no'],
+  'ハ':['ha'],'ヒ':['hi'],'フ':['fu','hu'],'ヘ':['he'],'ホ':['ho'],
+  'マ':['ma'],'ミ':['mi'],'ム':['mu'],'メ':['me'],'モ':['mo'],
+  'ヤ':['ya'],'ユ':['yu'],'ヨ':['yo'],
+  'ラ':['ra'],'リ':['ri'],'ル':['ru'],'レ':['re'],'ロ':['ro'],
+  'ワ':['wa'],'ヲ':['wo'],'ン':['n','nn','xn'],
+  'ガ':['ga'],'ギ':['gi'],'グ':['gu'],'ゲ':['ge'],'ゴ':['go'],
+  'ザ':['za'],'ジ':['ji','zi'],'ズ':['zu','du'],'ゼ':['ze'],'ゾ':['zo'],
+  'ダ':['da'],'ヂ':['di','dhi'],'ヅ':['du','dzu'],'デ':['de'],'ド':['do'],
+  'バ':['ba'],'ビ':['bi'],'ブ':['bu'],'ベ':['be'],'ボ':['bo'],
+  'パ':['pa'],'ピ':['pi'],'プ':['pu'],'ペ':['pe'],'ポ':['po'],
+  'ァ':['xa','la'],'ィ':['xi','li'],'ゥ':['xu','lu'],'ェ':['xe','le'],'ォ':['xo','lo'],
+  'ャ':['xya','lya'],'ュ':['xyu','lyu'],'ョ':['xyo','lyo'],
+  'ッ':['xtu','ltu','xtsu','ltsu'],
+};
+
+// ============ KANA SEGMENTATION ============
+function segmentKana(jaText) {
+  // Remove spaces
+  const text = jaText.replace(/\s/g, '');
+  const segments = [];
+  let i = 0;
+  while (i < text.length) {
+    // っ/ッ (sokuon) — combine with next kana
+    if ((text[i] === 'っ' || text[i] === 'ッ') && i + 1 < text.length) {
+      // Check 2-char combo after sokuon
+      let nextKana = null;
+      let nextLen = 0;
+      if (i + 2 < text.length && KANA_ROMAJI_MAP[text.substring(i+1, i+3)]) {
+        nextKana = text.substring(i+1, i+3);
+        nextLen = 3; // sokuon + 2-char combo
+      } else if (KANA_ROMAJI_MAP[text[i+1]]) {
+        nextKana = text[i+1];
+        nextLen = 2; // sokuon + 1-char
+      }
+      if (nextKana) {
+        const nextPatterns = KANA_ROMAJI_MAP[nextKana];
+        const combined = [];
+        for (const p of nextPatterns) {
+          // Double the first consonant
+          if (p.length > 0 && !'aiueo'.includes(p[0])) {
+            combined.push(p[0] + p);
+          }
+        }
+        // Also allow explicit xtu/ltu + next patterns
+        const sokuonPatterns = KANA_ROMAJI_MAP[text[i]]; // ['xtu','ltu','xtsu','ltsu']
+        for (const sp of sokuonPatterns) {
+          for (const np of nextPatterns) {
+            combined.push(sp + np);
+          }
+        }
+        if (combined.length > 0) {
+          segments.push({ kana: text.substring(i, i + nextLen), patterns: combined });
+          i += nextLen;
+          continue;
+        }
+      }
+    }
+    // Check 2-char combo
+    if (i + 1 < text.length && KANA_ROMAJI_MAP[text.substring(i, i+2)]) {
+      const kana = text.substring(i, i+2);
+      segments.push({ kana, patterns: [...KANA_ROMAJI_MAP[kana]] });
+      i += 2;
+      continue;
+    }
+    // ー (長音): repeat previous vowel or accept hyphen
+    if (text[i] === 'ー' && segments.length > 0) {
+      const prevPat = segments[segments.length - 1].patterns[0];
+      const lastChar = prevPat[prevPat.length - 1];
+      const patterns = ['-'];
+      if ('aiueo'.includes(lastChar)) patterns.push(lastChar);
+      segments.push({ kana: 'ー', patterns });
+      i += 1;
+      continue;
+    }
+    // 1-char
+    if (KANA_ROMAJI_MAP[text[i]]) {
+      const kana = text[i];
+      segments.push({ kana, patterns: [...KANA_ROMAJI_MAP[kana]] });
+      i += 1;
+      continue;
+    }
+    // Non-kana character (ASCII etc) — pass through
+    segments.push({ kana: text[i], patterns: [text[i].toLowerCase()] });
+    i += 1;
+  }
+  // Fix 'n' ambiguity: ん before vowel/ya-row/na-row needs nn/xn only
+  for (let s = 0; s < segments.length; s++) {
+    const seg = segments[s];
+    if (seg.kana !== 'ん' && seg.kana !== 'ン') continue;
+    if (s + 1 < segments.length) {
+      const nextFirst = segments[s+1].patterns[0][0];
+      if ('aiueony'.includes(nextFirst)) {
+        // Remove single 'n', keep 'nn' and 'xn'
+        seg.patterns = seg.patterns.filter(p => p !== 'n');
+      }
+    }
+  }
+  return segments;
+}
+
+// ============ INPUT CHECK ENGINE ============
+function checkInput(segments, input) {
+  const result = matchSegments(segments, 0, input, 0);
+  if (!result) return { correctLen: 0, complete: false, displayRomaji: buildDefaultRomaji(segments) };
+  // Build display romaji
+  let display = '';
+  for (let i = 0; i < segments.length; i++) {
+    if (i < result.matched.length) {
+      display += result.matched[i];
+    } else {
+      display += segments[i].patterns[0];
+    }
+  }
+  return {
+    correctLen: result.consumedInput,
+    complete: result.consumedInput === input.length && result.segIdx === segments.length,
+    displayRomaji: display,
+  };
+}
+
+function matchSegments(segments, segIdx, input, inputIdx) {
+  if (segIdx >= segments.length) {
+    return { segIdx, consumedInput: inputIdx, matched: [] };
+  }
+  if (inputIdx >= input.length) {
+    return { segIdx, consumedInput: inputIdx, matched: [] };
+  }
+
+  const seg = segments[segIdx];
+  let bestResult = null;
+
+  for (const pat of seg.patterns) {
+    let matchLen = 0;
+    let ok = true;
+    for (let j = 0; j < pat.length && inputIdx + j < input.length; j++) {
+      if (input[inputIdx + j] === pat[j]) {
+        matchLen++;
+      } else {
+        ok = false;
+        break;
+      }
+    }
+
+    if (!ok) {
+      // Partial match before mismatch — still record as best partial
+      if (matchLen > 0 && (!bestResult || (inputIdx + matchLen) > bestResult.consumedInput)) {
+        bestResult = { segIdx, consumedInput: inputIdx + matchLen, matched: [pat] };
+      }
+      continue;
+    }
+
+    if (matchLen === pat.length) {
+      // Full pattern match — recurse to next segment
+      const sub = matchSegments(segments, segIdx + 1, input, inputIdx + pat.length);
+      if (sub) {
+        if (!bestResult || sub.consumedInput > bestResult.consumedInput) {
+          bestResult = { segIdx: sub.segIdx, consumedInput: sub.consumedInput, matched: [pat, ...sub.matched] };
+        }
+      } else {
+        // Full segment matched but next failed — count this segment as correct
+        const partial = { segIdx: segIdx + 1, consumedInput: inputIdx + pat.length, matched: [pat] };
+        if (!bestResult || partial.consumedInput > bestResult.consumedInput) {
+          bestResult = partial;
+        }
+      }
+    } else if (inputIdx + matchLen === input.length) {
+      // Partial pattern match at end of input — valid partial
+      if (!bestResult || (inputIdx + matchLen) > bestResult.consumedInput) {
+        bestResult = { segIdx, consumedInput: inputIdx + matchLen, matched: [pat] };
+      }
+    }
+  }
+  return bestResult;
+}
+
+function buildDefaultRomaji(segments) {
+  return segments.map(s => s.patterns[0]).join('');
+}
+
+// ============ PREPROCESS WORDS ============
+function preprocessWords() {
+  for (const w of WORDS) {
+    w.segments = segmentKana(w.ja);
+    w.defaultRoma = buildDefaultRomaji(w.segments);
+  }
+}
+preprocessWords();
+
 const ENEMY_TYPES = [
   { name: 'slime',    color: '#44cc44', body: '🟢', size: 36, points: 100 },
   { name: 'bat',      color: '#8855cc', body: '🦇', size: 32, points: 120 },
@@ -454,18 +701,20 @@ function spawnEnemy() {
   const side = Math.random() < 0.5 ? 'left' : 'right';
   const x = side === 'left' ? -50 : W + 50;
   const targetY = H - 130 + (Math.random() * 40 - 20);
-  const lenFactor = Math.max(0.5, 1 - (entry.roma.length - 4) * 0.03);
+  const defaultRoma = entry.defaultRoma;
+  const lenFactor = Math.max(0.5, 1 - (defaultRoma.length - 4) * 0.03);
   const speed = (0.35 + level * 0.06 + Math.random() * 0.25) * lenFactor;
 
   enemies.push({
     x, y: 60 + Math.random() * (H * 0.35),
     targetX: chick.x + (Math.random() * 100 - 50),
     targetY, speed,
-    ja: entry.ja, roma: entry.roma,
+    ja: entry.ja, roma: defaultRoma,
+    segments: entry.segments, displayRoma: defaultRoma,
     typedStr: '', correctLen: 0, _lastLen: 0,
     type, side,
     wobble: Math.random() * Math.PI * 2,
-    alive: true,
+    alive: true, _labelOffsetY: 0,
   });
 }
 
@@ -506,6 +755,7 @@ function switchTarget() {
     activeEnemy.typedStr = '';
     activeEnemy.correctLen = 0;
     activeEnemy._lastLen = 0;
+    activeEnemy.displayRoma = buildDefaultRomaji(activeEnemy.segments);
   }
   const next = findClosestEnemy(activeEnemy);
   if (next) {
@@ -529,6 +779,7 @@ document.addEventListener('DOMContentLoaded', () => {
         activeEnemy.typedStr = '';
         activeEnemy.correctLen = 0;
         activeEnemy._lastLen = 0;
+        activeEnemy.displayRoma = buildDefaultRomaji(activeEnemy.segments);
       }
       return;
     }
@@ -537,23 +788,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     activeEnemy.typedStr = val;
 
-    // 先頭から連続正解数
-    let correct = 0;
-    for (let i = 0; i < val.length && i < activeEnemy.roma.length; i++) {
-      if (val[i] === activeEnemy.roma[i]) correct++;
-      else break;
-    }
-    activeEnemy.correctLen = correct;
+    // checkInput で再帰マッチング
+    const result = checkInput(activeEnemy.segments, val);
+    activeEnemy.correctLen = result.correctLen;
+    activeEnemy.displayRoma = result.displayRomaji;
 
     // ミスカウント
-    const hasMiss = correct < val.length;
+    const hasMiss = result.correctLen < val.length;
     if (hasMiss && val.length > activeEnemy._lastLen) {
       missCount++;
     }
     activeEnemy._lastLen = val.length;
 
     // 全文字正解で撃破
-    if (correct === activeEnemy.roma.length && val.length === activeEnemy.roma.length) {
+    if (result.complete) {
       const defeated = activeEnemy;
       activeEnemy = null;
       input.value = '';
@@ -760,6 +1008,56 @@ function getSkyTheme() {
   return SKY_THEMES[idx];
 }
 
+// ============ TEXT OVERLAP RESOLUTION ============
+function resolveTextOverlaps() {
+  const alive = enemies.filter(e => e.alive);
+  for (const e of alive) e._labelOffsetY = 0;
+  if (alive.length < 2) return;
+  const BOX_H = 58;
+  const PAD = 6;
+  const rects = alive.map(e => {
+    const wobbleX = Math.sin(e.wobble) * 4;
+    const ex = e.x + wobbleX;
+    ctx.font = 'bold 17px monospace';
+    const romaW = ctx.measureText(e.displayRoma).width + 24;
+    ctx.font = 'bold 16px "Hiragino Sans", "Noto Sans JP", sans-serif';
+    const jaW = ctx.measureText(e.ja).width + 24;
+    const w = Math.max(jaW, romaW);
+    const baseY = e.y + Math.cos(e.wobble * 1.3) * 3 - e.type.size - BOX_H - 6;
+    return { e, cx: ex, w, baseY, h: BOX_H };
+  });
+  // Sort by baseY so upper labels are placed first
+  rects.sort((a, b) => (a.baseY + a.e._labelOffsetY) - (b.baseY + b.e._labelOffsetY));
+  // Multi-pass: push overlapping labels up, repeat until stable
+  for (let pass = 0; pass < 5; pass++) {
+    let moved = false;
+    for (let i = 0; i < rects.length; i++) {
+      for (let j = i + 1; j < rects.length; j++) {
+        const a = rects[i], b = rects[j];
+        const overlapX = (a.w / 2 + b.w / 2 + PAD) - Math.abs(a.cx - b.cx);
+        if (overlapX <= 0) continue;
+        const ay = a.baseY + a.e._labelOffsetY;
+        const by = b.baseY + b.e._labelOffsetY;
+        const aBot = ay + a.h, bBot = by + b.h;
+        // Check Y overlap
+        if (ay < bBot && by < aBot) {
+          const shift = aBot - by + PAD;
+          // Push the lower one (larger Y) further up
+          if (ay <= by) {
+            b.e._labelOffsetY -= shift;
+          } else {
+            a.e._labelOffsetY -= shift;
+          }
+          moved = true;
+        }
+      }
+    }
+    if (!moved) break;
+    // Re-sort after adjustments
+    rects.sort((a, b) => (a.baseY + a.e._labelOffsetY) - (b.baseY + b.e._labelOffsetY));
+  }
+}
+
 // ============ DRAW ============
 function draw() {
   const theme = getSkyTheme();
@@ -778,7 +1076,9 @@ function draw() {
   drawClouds(theme);
   drawGround(theme);
 
-  for (const e of enemies) { if (e.alive) drawEnemy(e); }
+  resolveTextOverlaps();
+  for (const e of enemies) { if (e.alive && e !== activeEnemy) drawEnemy(e); }
+  if (activeEnemy && activeEnemy.alive) drawEnemy(activeEnemy);
 
   for (const p of particles) {
     const alpha = Math.max(0, p.life / p.maxLife);
@@ -869,7 +1169,7 @@ function drawEnemy(e) {
   ctx.shadowBlur = 0;
 
   // テキスト
-  const roma = e.roma;
+  const roma = e.displayRoma;
   const ja = e.ja;
   const typed = e.typedStr || '';
 
@@ -877,12 +1177,10 @@ function drawEnemy(e) {
   const jaWidth = ctx.measureText(ja).width + 24;
   ctx.font = 'bold 17px monospace';
   const romaWidth = ctx.measureText(roma).width + 24;
-  const displayRoma = typed.length > roma.length ? typed : roma;
-  const displayWidth = ctx.measureText(displayRoma).width + 24;
-  const boxWidth = Math.max(jaWidth, romaWidth, displayWidth);
+  const boxWidth = Math.max(jaWidth, romaWidth);
   const boxHeight = 50;
   const boxX = ex - boxWidth / 2;
-  const boxY = ey - e.type.size - boxHeight - 6;
+  const boxY = ey - e.type.size - boxHeight - 6 + (e._labelOffsetY || 0);
 
   ctx.fillStyle = isTarget ? 'rgba(0,0,0,0.82)' : 'rgba(0,0,0,0.6)';
   if (isTarget) {
@@ -911,8 +1209,10 @@ function drawEnemy(e) {
     let startX = ex - totalW / 2;
     for (let i = 0; i < roma.length; i++) {
       const ch = roma[i];
-      if (i < typed.length) {
-        ctx.fillStyle = (typed[i] === ch) ? '#7FFF00' : '#FF4444';
+      if (i < e.correctLen) {
+        ctx.fillStyle = '#7FFF00';
+      } else if (i < typed.length) {
+        ctx.fillStyle = '#FF4444';
       } else {
         ctx.fillStyle = '#ffffff';
       }
