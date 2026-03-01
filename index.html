@@ -1403,6 +1403,11 @@
   <div class="ranking-overlay" id="rankingOverlay">
     <div class="ranking-panel">
       <h2>ランキング TOP 20</h2>
+      <div id="rankingTabs" style="display:none;text-align:center;margin-bottom:12px;">
+        <button class="ranking-tab" data-diff="かんたん" style="padding:5px 12px;border-radius:16px;border:2px solid rgba(255,255,255,0.3);background:transparent;color:rgba(255,255,255,0.7);font-size:0.85rem;cursor:pointer;font-weight:bold;margin:0 2px;">かんたん</button>
+        <button class="ranking-tab active" data-diff="ふつう" style="padding:5px 12px;border-radius:16px;border:2px solid transparent;background:var(--duck-yellow);color:#333;font-size:0.85rem;cursor:pointer;font-weight:bold;margin:0 2px;">ふつう</button>
+        <button class="ranking-tab" data-diff="むずかしい" style="padding:5px 12px;border-radius:16px;border:2px solid rgba(255,255,255,0.3);background:transparent;color:rgba(255,255,255,0.7);font-size:0.85rem;cursor:pointer;font-weight:bold;margin:0 2px;">むずかしい</button>
+      </div>
       <div id="rankingList"><div class="ranking-empty">よみこみちゅう...</div></div>
       <button class="ranking-close" id="rankingClose">とじる</button>
     </div>
@@ -1532,42 +1537,75 @@
 
     // Ranking overlay
     const rankingOverlay = document.getElementById('rankingOverlay');
-    function showRankingFor(apiUrl, type) {
-      rankingOverlay.classList.add('active');
+    const rankingTabs = document.getElementById('rankingTabs');
+    let currentRankingApi = '';
+    let currentRankingType = '';
+
+    function renderRankingList(data, type) {
+      const list = document.getElementById('rankingList');
+      if (!data || data.length === 0) {
+        list.innerHTML = '<div class="ranking-empty">まだスコアがありません</div>';
+      } else {
+        list.innerHTML = data.slice(0, 20).map((e, i) => {
+          const medal = i === 0 ? '👑' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}.`;
+          let extra = '';
+          if (type === 'runner') {
+            const parts = [e.laps ? `${e.laps}周` : '', e.zone || ''].filter(Boolean).join(' ');
+            extra = parts ? ` (${parts})` : '';
+          } else if (type === 'shooter') {
+            extra = e.wave ? ` W${e.wave}` : '';
+          } else if (type === 'typing') {
+            extra = e.level ? ` Lv.${e.level}` : '';
+          } else if (type === 'drop') {
+            extra = e.chains ? ` ${e.chains}連鎖` : '';
+          } else if (type !== 'osouji') {
+            extra = e.eggs ? ` 🥚${e.eggs}` : ' 🥚?';
+          }
+          return `<div class="ranking-row ${i < 3 ? 'top3' : ''}"><span class="rank">${medal}</span><span class="name">${e.name}</span><span class="score">${e.score.toLocaleString()}${extra}</span></div>`;
+        }).join('');
+        if (type === 'duckup') {
+          const hasUnknown = data.slice(0, 20).some(e => !e.eggs);
+          if (hasUnknown) list.innerHTML += '<div class="ranking-footnote">🥚? = アヒルが何個拾ったか忘れちゃいました</div>';
+        }
+      }
+    }
+
+    function fetchAndShowRanking(url, type) {
       const list = document.getElementById('rankingList');
       list.innerHTML = '<div class="ranking-empty">よみこみちゅう...</div>';
-      fetch(apiUrl).then(r => r.json()).then(data => {
-        if (!data || data.length === 0) {
-          list.innerHTML = '<div class="ranking-empty">まだスコアがありません</div>';
-        } else {
-          list.innerHTML = data.slice(0, 20).map((e, i) => {
-            const medal = i === 0 ? '👑' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}.`;
-            let extra = '';
-            if (type === 'runner') {
-              const parts = [e.laps ? `${e.laps}周` : '', e.zone || ''].filter(Boolean).join(' ');
-              extra = parts ? ` (${parts})` : '';
-            } else if (type === 'shooter') {
-              extra = e.wave ? ` W${e.wave}` : '';
-            } else if (type === 'typing') {
-              extra = e.level ? ` Lv.${e.level}` : '';
-            } else if (type === 'drop') {
-              extra = e.chains ? ` ${e.chains}連鎖` : '';
-            } else if (type === 'osouji') {
-              extra = e.difficulty ? ` ${e.difficulty}` : '';
-            } else {
-              extra = e.eggs ? ` 🥚${e.eggs}` : ' 🥚?';
-            }
-            return `<div class="ranking-row ${i < 3 ? 'top3' : ''}"><span class="rank">${medal}</span><span class="name">${e.name}</span><span class="score">${e.score.toLocaleString()}${extra}</span></div>`;
-          }).join('');
-          if (type === 'duckup') {
-            const hasUnknown = data.slice(0, 20).some(e => !e.eggs);
-            if (hasUnknown) list.innerHTML += '<div class="ranking-footnote">🥚? = アヒルが何個拾ったか忘れちゃいました</div>';
-          }
-        }
-      }).catch(() => {
-        list.innerHTML = '<div class="ranking-empty">ランキングを取得できませんでした</div>';
-      });
+      fetch(url).then(r => r.json()).then(data => renderRankingList(data, type))
+        .catch(() => { list.innerHTML = '<div class="ranking-empty">ランキングを取得できませんでした</div>'; });
     }
+
+    function showRankingFor(apiUrl, type) {
+      rankingOverlay.classList.add('active');
+      currentRankingApi = apiUrl;
+      currentRankingType = type;
+      if (type === 'osouji') {
+        rankingTabs.style.display = 'block';
+        switchOsoujiTab('ふつう');
+      } else {
+        rankingTabs.style.display = 'none';
+        fetchAndShowRanking(apiUrl, type);
+      }
+    }
+
+    function switchOsoujiTab(diff) {
+      document.querySelectorAll('.ranking-tab').forEach(t => {
+        const isActive = t.dataset.diff === diff;
+        t.classList.toggle('active', isActive);
+        t.style.background = isActive ? 'var(--duck-yellow)' : 'transparent';
+        t.style.color = isActive ? '#333' : 'rgba(255,255,255,0.7)';
+        t.style.borderColor = isActive ? 'transparent' : 'rgba(255,255,255,0.3)';
+      });
+      fetchAndShowRanking(currentRankingApi + '?difficulty=' + encodeURIComponent(diff), 'osouji');
+    }
+
+    rankingTabs.addEventListener('click', e => {
+      const tab = e.target.closest('.ranking-tab');
+      if (tab) switchOsoujiTab(tab.dataset.diff);
+    });
+
     document.querySelectorAll('.game-ranking-btn').forEach(btn => {
       btn.addEventListener('click', () => showRankingFor(btn.dataset.api, btn.dataset.type));
     });

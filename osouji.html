@@ -224,6 +224,14 @@
   .lb-row .score { text-align: right; }
   .lb-empty { color: #aaa; text-align: center; padding: 2rem; }
   .btn-ranking { background: linear-gradient(135deg, #ffecd2, #fcb69f); color: #7c4a1e; }
+  .lb-tabs { display: flex; gap: 4px; margin-bottom: 12px; justify-content: center; }
+  .lb-tab {
+    padding: 6px 14px; border-radius: 20px; border: 2px solid #eee;
+    background: #fff; color: #888; font-size: 0.85rem; cursor: pointer;
+    font-weight: bold; transition: all 0.15s;
+  }
+  .lb-tab:hover { border-color: #fcb69f; }
+  .lb-tab.active { background: linear-gradient(135deg, #ffecd2, #fcb69f); color: #7c4a1e; border-color: transparent; }
 
   @media (min-width: 500px) {
     .cell { width: 48px; height: 48px; font-size: 1.7rem; }
@@ -275,6 +283,11 @@
 <div class="lb-overlay" id="lbOverlay">
   <div class="lb-panel">
     <h2>🏆 ランキング TOP 20</h2>
+    <div class="lb-tabs" id="lbTabs">
+      <button class="lb-tab" data-diff="かんたん">かんたん</button>
+      <button class="lb-tab active" data-diff="ふつう">ふつう</button>
+      <button class="lb-tab" data-diff="むずかしい">むずかしい</button>
+    </div>
     <div id="lbList"></div>
     <button class="btn-ranking" onclick="closeLb()" style="display:block;margin:1rem auto 0;">とじる</button>
   </div>
@@ -575,7 +588,7 @@ function showEnd(remaining) {
   scoreSubmitted = false;
   document.getElementById('hsSubmitted').style.display = 'none';
   document.getElementById('hsName').value = '';
-  fetchLeaderboard().then(() => {
+  fetchLeaderboardFor(DIFFICULTIES[diffIdx].name).then(() => {
     document.getElementById('hsEntry').style.display = isHighScore(score) ? 'block' : 'none';
   });
 
@@ -629,19 +642,23 @@ boardEl.addEventListener('click', (e) => {
 });
 
 // ============ LEADERBOARD ============
-let leaderboard = [];
+let lbCache = {};  // { 'かんたん': [...], ... }
 let scoreSubmitted = false;
+let lbCurrentDiff = 'ふつう';
 
-async function fetchLeaderboard() {
+async function fetchLeaderboardFor(diff) {
   try {
-    const res = await fetch('/api/osouji-scores');
-    if (res.ok) leaderboard = await res.json();
+    const res = await fetch('/api/osouji-scores?difficulty=' + encodeURIComponent(diff));
+    if (res.ok) { lbCache[diff] = await res.json(); }
   } catch(e) {}
+  return lbCache[diff] || [];
 }
 
 function isHighScore(s) {
-  if (leaderboard.length < 20) return s > 0;
-  return s > leaderboard[leaderboard.length - 1].score;
+  const diff = DIFFICULTIES[diffIdx].name;
+  const lb = lbCache[diff] || [];
+  if (lb.length < 20) return s > 0;
+  return s > lb[lb.length - 1].score;
 }
 
 async function submitHighScore() {
@@ -656,7 +673,7 @@ async function submitHighScore() {
       body: JSON.stringify({ name, score, difficulty: diff })
     });
     if (res.ok) {
-      leaderboard = await res.json();
+      lbCache[diff] = await res.json();
       scoreSubmitted = true;
       document.getElementById('hsEntry').style.display = 'none';
       document.getElementById('hsSubmitted').style.display = 'block';
@@ -664,26 +681,41 @@ async function submitHighScore() {
   } catch(e) {}
 }
 
-function showLeaderboard() {
+function renderLbList(scores) {
+  const list = document.getElementById('lbList');
+  if (!scores || scores.length === 0) {
+    list.innerHTML = '<div class="lb-empty">まだスコアがありません</div>';
+  } else {
+    list.innerHTML = scores.slice(0, 20).map((e, i) => {
+      const medal = i === 0 ? '👑' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}.`;
+      return `<div class="lb-row ${i < 3 ? 'top3' : ''}"><span class="rank">${medal}</span><span class="name">${e.name}</span><span class="score">${e.score.toLocaleString()}</span></div>`;
+    }).join('');
+  }
+}
+
+function setLbTab(diff) {
+  lbCurrentDiff = diff;
+  document.querySelectorAll('.lb-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.diff === diff);
+  });
   const list = document.getElementById('lbList');
   list.innerHTML = '<div class="lb-empty">よみこみちゅう...</div>';
+  fetchLeaderboardFor(diff).then(scores => renderLbList(scores));
+}
+
+function showLeaderboard() {
   document.getElementById('lbOverlay').classList.add('active');
-  fetchLeaderboard().then(() => {
-    if (leaderboard.length === 0) {
-      list.innerHTML = '<div class="lb-empty">まだスコアがありません</div>';
-    } else {
-      list.innerHTML = leaderboard.slice(0, 20).map((e, i) => {
-        const medal = i === 0 ? '👑' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}.`;
-        const diff = e.difficulty ? ` ${e.difficulty}` : '';
-        return `<div class="lb-row ${i < 3 ? 'top3' : ''}"><span class="rank">${medal}</span><span class="name">${e.name}</span><span class="score">${e.score.toLocaleString()}${diff}</span></div>`;
-      }).join('');
-    }
-  });
+  setLbTab(DIFFICULTIES[diffIdx].name);
 }
 
 function closeLb() {
   document.getElementById('lbOverlay').classList.remove('active');
 }
+
+document.getElementById('lbTabs').addEventListener('click', e => {
+  const tab = e.target.closest('.lb-tab');
+  if (tab) setLbTab(tab.dataset.diff);
+});
 
 document.getElementById('hsName').addEventListener('keydown', e => {
   if (e.key === 'Enter') { e.preventDefault(); submitHighScore(); }
@@ -695,7 +727,7 @@ document.getElementById('lbOverlay').addEventListener('click', e => {
 
 // 起動
 loadHighScores();
-fetchLeaderboard();
+fetchLeaderboardFor('ふつう');
 newGame();
 </script>
 </body>

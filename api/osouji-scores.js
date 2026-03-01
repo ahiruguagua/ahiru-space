@@ -1,7 +1,12 @@
 import { kv } from '@vercel/kv';
 
-const LEADERBOARD_KEY = 'duck-osouji-leaderboard';
+const KEY_PREFIX = 'duck-osouji-lb-';
+const VALID_DIFFS = ['かんたん', 'ふつう', 'むずかしい'];
 const MAX_ENTRIES = 20;
+
+function keyFor(diff) {
+  return KEY_PREFIX + (VALID_DIFFS.includes(diff) ? diff : 'ふつう');
+}
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -14,8 +19,16 @@ export default async function handler(req, res) {
 
   try {
     if (req.method === 'GET') {
-      const scores = await kv.get(LEADERBOARD_KEY) || [];
-      return res.status(200).json(scores);
+      const diff = req.query.difficulty;
+      if (diff && VALID_DIFFS.includes(diff)) {
+        const scores = await kv.get(keyFor(diff)) || [];
+        return res.status(200).json(scores);
+      }
+      // No difficulty specified: return all 3
+      const [easy, normal, hard] = await Promise.all(
+        VALID_DIFFS.map(d => kv.get(keyFor(d)).then(s => s || []))
+      );
+      return res.status(200).json({ 'かんたん': easy, 'ふつう': normal, 'むずかしい': hard });
     }
 
     if (req.method === 'POST') {
@@ -28,20 +41,22 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Invalid score' });
       }
 
+      const diff = VALID_DIFFS.includes(difficulty) ? difficulty : 'ふつう';
       const cleanName = name.trim().slice(0, 15);
-      let scores = await kv.get(LEADERBOARD_KEY) || [];
+      const key = keyFor(diff);
+      let scores = await kv.get(key) || [];
 
       scores.push({
         name: cleanName,
         score: Math.floor(score),
-        difficulty: typeof difficulty === 'string' ? difficulty.slice(0, 10) : '',
+        difficulty: diff,
         date: new Date().toISOString()
       });
 
       scores.sort((a, b) => b.score - a.score);
       scores = scores.slice(0, MAX_ENTRIES);
 
-      await kv.set(LEADERBOARD_KEY, scores);
+      await kv.set(key, scores);
       return res.status(200).json(scores);
     }
 
