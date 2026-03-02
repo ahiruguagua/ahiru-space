@@ -1360,6 +1360,18 @@
         </div>
       </div>
       <div class="game-banner fade-up">
+        <h3>アヒルの弁当屋</h3>
+        <p>
+          弁当を仕入れて、売って、利益を出そう！<br>
+          3日間チャレンジで目指せトップランカー。<br>
+          アヒルが営む小さなお弁当屋さん経営シミュレーション 🐤🍱
+        </p>
+        <div class="game-buttons">
+          <a href="/bento.html" class="game-play-btn">あそぶ</a>
+          <button class="game-ranking-btn" data-api="/api/bento-scores" data-type="bento">ランキングを見る</button>
+        </div>
+      </div>
+      <div class="game-banner fade-up">
         <h3>アヒルランナー 世界一周</h3>
         <p>
           走って、飛んで、世界を一周！<br>
@@ -1558,6 +1570,8 @@
             extra = e.level ? ` Lv.${e.level}` : '';
           } else if (type === 'drop') {
             extra = e.chains ? ` ${e.chains}連鎖` : '';
+          } else if (type === 'bento') {
+            extra = e.reputation ? ` ${e.reputation}` : '';
           } else if (type !== 'osouji') {
             extra = e.eggs ? ` 🥚${e.eggs}` : ' 🥚?';
           }
