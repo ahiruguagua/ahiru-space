@@ -116,16 +116,20 @@ resize();
 const input = { x: -1, y: -1, tapped: false };
 
 function getCanvasPos(clientX, clientY) {
+  const r = canvas.getBoundingClientRect();
   if (forcedLandscape) {
-    // When CSS-rotated 90deg, remap coordinates
-    const r = canvas.getBoundingClientRect();
-    // getBoundingClientRect returns post-transform bounds
+    // CSS rotate(90deg) CW applied — undo rotation for touch coordinates
+    const cx = r.left + r.width / 2;
+    const cy = r.top + r.height / 2;
+    const dx = clientX - cx;
+    const dy = clientY - cy;
+    // Inverse of 90deg CW: canvas-relative = (-dy, dx)
+    // After rotation: r.height = original CSS width, r.width = original CSS height
     return {
-      x: (clientX - r.left) * (W / r.width),
-      y: (clientY - r.top) * (H / r.height)
+      x: (-dy + r.height / 2) * (W / r.height),
+      y: (dx + r.width / 2) * (H / r.width)
     };
   }
-  const r = canvas.getBoundingClientRect();
   return {
     x: (clientX - r.left) * (W / r.width),
     y: (clientY - r.top) * (H / r.height)
