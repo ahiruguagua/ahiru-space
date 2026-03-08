@@ -3,7 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ひよこタイピングバトル</title>
+<title>アヒルタイピングバトル</title>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-TXQFE7EYKZ"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-TXQFE7EYKZ');
+</script>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -143,7 +151,7 @@
   </div>
 </div>
 <div id="start-screen">
-  <h1>🐤 ひよこタイピングバトル</h1>
+  <h1>🐤 アヒルタイピングバトル</h1>
   <p>迫りくる敵を正しくタイピングして倒そう！</p>
   <p class="hint">Escキーでターゲット切り替え / Backspaceでミス修正</p>
   <button class="btn" id="start-btn">ゲームスタート</button>
@@ -261,12 +269,12 @@ const WORDS = [
   // 関西弁・ユーモア文章
   {ja:'なんでやねん それ',roma:'nandeyannensore'},
   {ja:'ほんまに すごいな',roma:'honmanisugoina'},
-  {ja:'おおきに まいど',roma:'ookinimado'}, // intentionally simplified
+  {ja:'おおきに まいど',roma:'ookinimaido'}, // intentionally simplified
   {ja:'しらんがな それ',roma:'shiranganasore'},
   {ja:'アホちゃいまんねん',roma:'ahochaimannen'},
   {ja:'おもろすぎて わろた',roma:'omorosugitewarota'},
-  {ja:'それな わかるわ',roma:'sorenawakruwa'},
-  {ja:'ぴえん こえて ぱおん',roma:'pienkoeteipaon'},
+  {ja:'それな わかるわ',roma:'sorenawakaruwa'},
+  {ja:'ぴえん こえて ぱおん',roma:'pienkoeTepaon'},
   {ja:'やばい おくれる',roma:'yabaiokureru'},
   {ja:'ねむい けど がんばる',roma:'nemuikedoganbaru'},
 
@@ -1011,24 +1019,21 @@ function getSkyTheme() {
 // ============ TEXT OVERLAP RESOLUTION ============
 function resolveTextOverlaps() {
   const alive = enemies.filter(e => e.alive);
-  for (const e of alive) e._labelOffsetY = 0;
   if (alive.length < 2) return;
   const BOX_H = 58;
   const PAD = 6;
+  const MAX_OFFSET = -120;
   const rects = alive.map(e => {
-    const wobbleX = Math.sin(e.wobble) * 4;
-    const ex = e.x + wobbleX;
+    const ex = e.x;
     ctx.font = 'bold 17px monospace';
     const romaW = ctx.measureText(e.displayRoma).width + 24;
     ctx.font = 'bold 16px "Hiragino Sans", "Noto Sans JP", sans-serif';
     const jaW = ctx.measureText(e.ja).width + 24;
     const w = Math.max(jaW, romaW);
-    const baseY = e.y + Math.cos(e.wobble * 1.3) * 3 - e.type.size - BOX_H - 6;
-    return { e, cx: ex, w, baseY, h: BOX_H };
+    const baseY = e.y - e.type.size - BOX_H - 6;
+    return { e, cx: ex, w, baseY, h: BOX_H, targetOffset: 0 };
   });
-  // Sort by baseY so upper labels are placed first
-  rects.sort((a, b) => (a.baseY + a.e._labelOffsetY) - (b.baseY + b.e._labelOffsetY));
-  // Multi-pass: push overlapping labels up, repeat until stable
+  rects.sort((a, b) => a.baseY - b.baseY);
   for (let pass = 0; pass < 5; pass++) {
     let moved = false;
     for (let i = 0; i < rects.length; i++) {
@@ -1036,25 +1041,25 @@ function resolveTextOverlaps() {
         const a = rects[i], b = rects[j];
         const overlapX = (a.w / 2 + b.w / 2 + PAD) - Math.abs(a.cx - b.cx);
         if (overlapX <= 0) continue;
-        const ay = a.baseY + a.e._labelOffsetY;
-        const by = b.baseY + b.e._labelOffsetY;
+        const ay = a.baseY + a.targetOffset;
+        const by = b.baseY + b.targetOffset;
         const aBot = ay + a.h, bBot = by + b.h;
-        // Check Y overlap
         if (ay < bBot && by < aBot) {
           const shift = aBot - by + PAD;
-          // Push the lower one (larger Y) further up
           if (ay <= by) {
-            b.e._labelOffsetY -= shift;
+            b.targetOffset = Math.max(MAX_OFFSET, b.targetOffset - shift);
           } else {
-            a.e._labelOffsetY -= shift;
+            a.targetOffset = Math.max(MAX_OFFSET, a.targetOffset - shift);
           }
           moved = true;
         }
       }
     }
     if (!moved) break;
-    // Re-sort after adjustments
-    rects.sort((a, b) => (a.baseY + a.e._labelOffsetY) - (b.baseY + b.e._labelOffsetY));
+    rects.sort((a, b) => (a.baseY + a.targetOffset) - (b.baseY + b.targetOffset));
+  }
+  for (const r of rects) {
+    r.e._labelOffsetY += (r.targetOffset - r.e._labelOffsetY) * 0.15;
   }
 }
 
