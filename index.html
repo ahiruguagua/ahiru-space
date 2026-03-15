@@ -1427,11 +1427,7 @@
   <div class="ranking-overlay" id="rankingOverlay">
     <div class="ranking-panel">
       <h2>ランキング TOP 20</h2>
-      <div id="rankingTabs" style="display:none;text-align:center;margin-bottom:12px;">
-        <button class="ranking-tab" data-diff="かんたん" style="padding:5px 12px;border-radius:16px;border:2px solid rgba(255,255,255,0.3);background:transparent;color:rgba(255,255,255,0.7);font-size:0.85rem;cursor:pointer;font-weight:bold;margin:0 2px;">かんたん</button>
-        <button class="ranking-tab active" data-diff="ふつう" style="padding:5px 12px;border-radius:16px;border:2px solid transparent;background:var(--duck-yellow);color:#333;font-size:0.85rem;cursor:pointer;font-weight:bold;margin:0 2px;">ふつう</button>
-        <button class="ranking-tab" data-diff="むずかしい" style="padding:5px 12px;border-radius:16px;border:2px solid rgba(255,255,255,0.3);background:transparent;color:rgba(255,255,255,0.7);font-size:0.85rem;cursor:pointer;font-weight:bold;margin:0 2px;">むずかしい</button>
-      </div>
+      <div id="rankingTabs" style="display:none;text-align:center;margin-bottom:12px;"></div>
       <div id="rankingList"><div class="ranking-empty">よみこみちゅう...</div></div>
       <button class="ranking-close" id="rankingClose">とじる</button>
     </div>
@@ -1607,20 +1603,29 @@
         .catch(() => { list.innerHTML = '<div class="ranking-empty">ランキングを取得できませんでした</div>'; });
     }
 
+    const RANKING_TABS_DEF = {
+      osouji: { tabs: ['かんたん', 'ふつう', 'むずかしい'], default: 'ふつう' },
+      solitaire: { tabs: ['1枚めくり', '3枚めくり'], default: '1枚めくり' }
+    };
+
     function showRankingFor(apiUrl, type) {
       rankingOverlay.classList.add('active');
       currentRankingApi = apiUrl;
       currentRankingType = type;
-      if (type === 'osouji') {
+      const def = RANKING_TABS_DEF[type];
+      if (def) {
+        rankingTabs.innerHTML = def.tabs.map(t =>
+          `<button class="ranking-tab" data-diff="${t}" style="padding:5px 12px;border-radius:16px;border:2px solid rgba(255,255,255,0.3);background:transparent;color:rgba(255,255,255,0.7);font-size:0.85rem;cursor:pointer;font-weight:bold;margin:0 2px;">${t}</button>`
+        ).join('');
         rankingTabs.style.display = 'block';
-        switchOsoujiTab('ふつう');
+        switchDiffTab(def.default);
       } else {
         rankingTabs.style.display = 'none';
         fetchAndShowRanking(apiUrl, type);
       }
     }
 
-    function switchOsoujiTab(diff) {
+    function switchDiffTab(diff) {
       document.querySelectorAll('.ranking-tab').forEach(t => {
         const isActive = t.dataset.diff === diff;
         t.classList.toggle('active', isActive);
@@ -1628,12 +1633,12 @@
         t.style.color = isActive ? '#333' : 'rgba(255,255,255,0.7)';
         t.style.borderColor = isActive ? 'transparent' : 'rgba(255,255,255,0.3)';
       });
-      fetchAndShowRanking(currentRankingApi + '?difficulty=' + encodeURIComponent(diff), 'osouji');
+      fetchAndShowRanking(currentRankingApi + '?difficulty=' + encodeURIComponent(diff), currentRankingType);
     }
 
     rankingTabs.addEventListener('click', e => {
       const tab = e.target.closest('.ranking-tab');
-      if (tab) switchOsoujiTab(tab.dataset.diff);
+      if (tab) switchDiffTab(tab.dataset.diff);
     });
 
     document.querySelectorAll('.game-ranking-btn').forEach(btn => {

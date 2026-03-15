@@ -134,7 +134,7 @@ body{
 }
 #win-overlay{
   display:none;position:fixed;inset:0;
-  background:rgba(0,0,0,.7);z-index:2000;
+  background:rgba(0,0,0,.7);z-index:80;
   flex-direction:column;align-items:center;justify-content:center;
   padding:20px;
 }
@@ -168,7 +168,7 @@ body{
 #win-box button.submit-btn{background:#1565C0}
 #win-box button.submit-btn:hover{background:#0D47A1}
 .celeb-duck{
-  position:fixed;font-size:28px;z-index:2001;
+  position:fixed;font-size:28px;z-index:90;
   animation:floatUp 3s ease-out forwards;pointer-events:none;
 }
 @keyframes floatUp{
@@ -296,8 +296,13 @@ const game={};
 let leaderboard=[];
 let scoreSubmitted=false;
 
+function currentDifficulty(){ return drawCount===1?'1枚めくり':'3枚めくり'; }
+
 async function fetchLeaderboard(){
-  try{ const r=await fetch('/api/solitaire-scores'); if(r.ok) leaderboard=await r.json(); }catch(e){}
+  try{
+    const r=await fetch('/api/solitaire-scores?difficulty='+encodeURIComponent(currentDifficulty()));
+    if(r.ok) leaderboard=await r.json();
+  }catch(e){}
 }
 fetchLeaderboard();
 
@@ -310,7 +315,7 @@ async function submitScore(name,score){
   try{
     const r=await fetch('/api/solitaire-scores',{
       method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({name,score,moves:moveCount,time:elapsed})
+      body:JSON.stringify({name,score,moves:moveCount,time:elapsed,difficulty:currentDifficulty()})
     });
     if(r.ok){leaderboard=await r.json();scoreSubmitted=true;}
   }catch(e){}
@@ -329,9 +334,12 @@ document.getElementById('hsName').addEventListener('keydown',e=>{if(e.key==='Ent
 
 /* ===== Draw mode ===== */
 game.setDraw=function(n){
+  if(n===drawCount)return;
+  if(started&&!confirm('切り替えるとゲームがリセットされますが、よろしいですか？'))return;
   drawCount=n;
   document.getElementById('btn-d1').classList.toggle('active',n===1);
   document.getElementById('btn-d3').classList.toggle('active',n===3);
+  fetchLeaderboard();
   game.init();
 };
 

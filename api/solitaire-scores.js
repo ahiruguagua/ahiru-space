@@ -1,7 +1,12 @@
 import { kv } from '@vercel/kv';
 
-const LEADERBOARD_KEY = 'duck-solitaire-leaderboard';
+const KEY_PREFIX = 'duck-solitaire-lb-';
+const VALID_DIFFS = ['1枚めくり', '3枚めくり'];
 const MAX_ENTRIES = 20;
+
+function keyFor(diff) {
+  return KEY_PREFIX + (VALID_DIFFS.includes(diff) ? diff : '1枚めくり');
+}
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -14,12 +19,20 @@ export default async function handler(req, res) {
 
   try {
     if (req.method === 'GET') {
-      const scores = await kv.get(LEADERBOARD_KEY) || [];
-      return res.status(200).json(scores);
+      const diff = req.query.difficulty;
+      if (diff && VALID_DIFFS.includes(diff)) {
+        const scores = await kv.get(keyFor(diff)) || [];
+        return res.status(200).json(scores);
+      }
+      // No difficulty specified: return all
+      const [draw1, draw3] = await Promise.all(
+        VALID_DIFFS.map(d => kv.get(keyFor(d)).then(s => s || []))
+      );
+      return res.status(200).json({ '1枚めくり': draw1, '3枚めくり': draw3 });
     }
 
     if (req.method === 'POST') {
-      const { name, score, moves, time } = req.body;
+      const { name, score, moves, time, difficulty } = req.body;
 
       if (!name || typeof name !== 'string' || name.trim().length === 0) {
         return res.status(400).json({ error: 'Name is required' });
@@ -28,8 +41,10 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Invalid score' });
       }
 
+      const diff = VALID_DIFFS.includes(difficulty) ? difficulty : '1枚めくり';
       const cleanName = name.trim().slice(0, 15);
-      let scores = await kv.get(LEADERBOARD_KEY) || [];
+      const key = keyFor(diff);
+      let scores = await kv.get(key) || [];
 
       scores.push({
         name: cleanName,
@@ -42,7 +57,7 @@ export default async function handler(req, res) {
       scores.sort((a, b) => b.score - a.score);
       scores = scores.slice(0, MAX_ENTRIES);
 
-      await kv.set(LEADERBOARD_KEY, scores);
+      await kv.set(key, scores);
       return res.status(200).json(scores);
     }
 
