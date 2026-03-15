@@ -1383,6 +1383,18 @@
           <button class="game-ranking-btn" data-api="/api/runner-scores" data-type="runner">ランキングを見る</button>
         </div>
       </div>
+      <div class="game-banner fade-up">
+        <h3>アヒルソリティア</h3>
+        <p>
+          おなじみのカードゲームがアヒル仕様に！<br>
+          少ない手数と短い時間でクリアしてハイスコアを狙おう。<br>
+          ドラッグ&ドロップで直感操作 🦆♠️
+        </p>
+        <div class="game-buttons">
+          <a href="/solitaire.html" class="game-play-btn">あそぶ</a>
+          <button class="game-ranking-btn" data-api="/api/solitaire-scores" data-type="solitaire">ランキングを見る</button>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -1572,6 +1584,10 @@
             extra = e.chains ? ` ${e.chains}連鎖` : '';
           } else if (type === 'bento') {
             extra = e.reputation ? ` ${e.reputation}` : '';
+          } else if (type === 'solitaire') {
+            const m = Math.floor((e.time||0)/60);
+            const ss = String((e.time||0)%60).padStart(2,'0');
+            extra = ` ${e.moves||0}手 ${m}:${ss}`;
           } else if (type !== 'osouji') {
             extra = e.eggs ? ` 🥚${e.eggs}` : ' 🥚?';
           }
