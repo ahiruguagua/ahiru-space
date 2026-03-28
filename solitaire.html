@@ -32,7 +32,7 @@ body{
 .back-link:hover { color: #FFD700; }
 #header{
   display:flex;align-items:center;justify-content:space-between;
-  width:660px;padding:10px 5px;color:#FFD700;flex-wrap:wrap;gap:6px;
+  width:100%;max-width:660px;padding:10px 5px;color:#FFD700;flex-wrap:wrap;gap:6px;
 }
 #header h1{font-size:19px;text-shadow:1px 1px 2px rgba(0,0,0,.5)}
 #stats{display:flex;gap:14px;color:#A5D6A7;font-size:13px}
@@ -51,15 +51,15 @@ body{
 .draw-sel button:first-child{border-radius:14px 0 0 14px}
 .draw-sel button:last-child{border-radius:0 14px 14px 0}
 .draw-sel button.active{background:#FF8F00;color:#fff}
-#board{position:relative;width:660px;min-height:620px;margin-bottom:30px;touch-action:none}
+#board{position:relative;width:var(--board-w);min-height:620px;margin-bottom:30px;touch-action:none}
 .pile-marker{
-  position:absolute;width:80px;height:112px;
-  border:2px dashed rgba(255,255,255,.2);border-radius:8px;
+  position:absolute;width:var(--cw);height:var(--ch);
+  border:2px dashed rgba(255,255,255,.2);border-radius:var(--card-radius);
 }
 .pile-marker.foundation::after{
   content:attr(data-suit);position:absolute;
   top:50%;left:50%;transform:translate(-50%,-50%);
-  font-size:28px;opacity:.3;
+  font-size:var(--found-font);opacity:.3;
 }
 .pile-marker.stock-area{cursor:pointer}
 .pile-marker.stock-area::after{
@@ -67,7 +67,7 @@ body{
   transform:translate(-50%,-50%);font-size:22px;opacity:.3;
 }
 .card{
-  position:absolute;width:80px;height:112px;border-radius:8px;
+  position:absolute;width:var(--cw);height:var(--ch);border-radius:var(--card-radius);
   cursor:pointer;transition:left .15s,top .15s;
   will-change:left,top,transform;
 }
@@ -83,9 +83,9 @@ body{
   box-shadow:none!important;
 }
 .card-back{
-  width:100%;height:100%;border-radius:8px;
+  width:100%;height:100%;border-radius:var(--card-radius);
   background-color:#4FC3F7;
-  background-size:38px 34px;
+  background-size:var(--back-bg-w) var(--back-bg-h);
   border:2.5px solid #FFD700;
   position:relative;overflow:hidden;
 }
@@ -95,7 +95,7 @@ body{
   pointer-events:none;
 }
 .card-face{
-  width:100%;height:100%;border-radius:8px;
+  width:100%;height:100%;border-radius:var(--card-radius);
   background:#FFFDE7;border:2px solid #FFB300;
   position:relative;
   box-shadow:0 2px 6px rgba(0,0,0,.18);
@@ -106,21 +106,24 @@ body{
   position:absolute;display:flex;flex-direction:column;
   align-items:center;font-weight:bold;line-height:1;
 }
-.corner-tl{top:4px;left:5px}
-.corner-br{bottom:4px;right:5px;transform:rotate(180deg)}
-.corner .rank{font-size:14px}
-.corner .suit{font-size:11px;margin-top:1px}
+.corner-tl{top:5%;left:6%}
+.corner-br{bottom:5%;right:6%;transform:rotate(180deg)}
+.corner .rank{font-size:var(--rank-font)}
+.corner .suit{font-size:var(--suit-font);margin-top:1px}
 .card-center{
   position:absolute;top:50%;left:50%;
   transform:translate(-50%,-50%);
-  font-size:26px;text-align:center;line-height:1.2;
+  font-size:var(--center-font);text-align:center;line-height:1.2;
 }
-.card-center.face-card{font-size:16px;width:60px}
-.card-center.ace-card{font-size:36px}
+.card-center.face-card{font-size:16px;width:75%}
+.card-center.ace-card{font-size:var(--ace-font)}
 .duck-wm{
-  position:absolute;bottom:18px;right:4px;
+  position:absolute;bottom:16%;right:5%;
   opacity:.12;pointer-events:none;
 }
+.pip-area{position:absolute;top:22%;bottom:22%;left:12%;right:12%}
+.pip{position:absolute;transform:translate(-50%,-50%);font-size:var(--pip-font);line-height:1}
+.pip-inv{transform:translate(-50%,-50%) rotate(180deg)}
 #auto-btn{
   display:none;position:absolute;bottom:8px;left:50%;
   transform:translateX(-50%);background:#4CAF50;color:#fff;
@@ -217,17 +220,108 @@ body{
 const SUITS=['♠','♥','♦','♣'];
 const COLORS={'♠':'black','♥':'red','♦':'red','♣':'black'};
 const RANKS=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
-const CW=80,CH=112,COL=94;
-const TAB_Y=142,CASC_DN=18,CASC_UP=26;
 const DRAG_TH=5;
-const BOARD_W=660;
-const BOARD_PAD=Math.floor((BOARD_W-7*COL+COL-CW)/2);
 
-function pileX(c){return BOARD_PAD+c*COL}
-const STOCK={x:pileX(0),y:0};
-const WASTE={x:pileX(1),y:0};
-function foundXY(i){return{x:pileX(3+i),y:0}}
-function tabXY(i){return{x:pileX(i),y:TAB_Y}}
+/* ===== Layout object ===== */
+const L={};
+
+function calcLayout(){
+  const vw=window.innerWidth;
+  const mobile=vw<500;
+  const scale=Math.min(1,(vw-12)/660);
+  L.scale=scale;
+  L.mobile=mobile;
+  L.CW=Math.floor(80*scale);
+  L.CH=Math.floor(112*scale);
+  L.COL=Math.floor(94*scale);
+  L.CASC_DN=Math.floor(18*scale);
+  L.CASC_UP=Math.floor(26*scale);
+  L.cardRadius=Math.max(4,Math.floor(8*scale));
+  L.rankFont=Math.max(9,Math.floor(14*scale));
+  L.suitFont=Math.max(7,Math.floor(11*scale));
+  L.centerFont=Math.max(16,Math.floor(26*scale));
+  L.aceFont=Math.max(22,Math.floor(36*scale));
+  L.foundFont=Math.max(16,Math.floor(28*scale));
+  L.pipFont=Math.max(10,Math.floor(16*scale));
+  L.backBgW=Math.floor(38*scale);
+  L.backBgH=Math.floor(34*scale);
+  L.faceDuckW=Math.floor(48*scale);
+  L.faceDuckH=Math.floor(46*scale);
+  L.miniDuckW=Math.floor(16*scale);
+  L.miniDuckH=Math.floor(14*scale);
+
+  if(mobile){
+    // Mobile: 2-row top area
+    const pad=Math.floor(6*scale);
+    const gap=Math.floor(8*scale);
+    L.BOARD_W=vw-12;
+    // Row 1: stock + waste (left)
+    L.STOCK={x:pad,y:0};
+    L.WASTE={x:pad+L.CW+gap,y:0};
+    // Row 2: 4 foundations spread across width
+    const row2Y=L.CH+gap;
+    const foundGap=Math.floor((L.BOARD_W-4*L.CW)/(4+1));
+    L.foundXY=function(i){return{x:foundGap+i*(L.CW+foundGap),y:row2Y}};
+    // Row 3: tableau 7 cols full width
+    const tabTop=row2Y+L.CH+gap;
+    L.TAB_Y=tabTop;
+    const tabGap=Math.floor((L.BOARD_W-7*L.CW)/8);
+    L.tabXY=function(i){return{x:tabGap+i*(L.CW+tabGap),y:tabTop}};
+  }else{
+    // Desktop: single row top
+    L.BOARD_W=Math.floor(660*scale);
+    const boardPad=Math.floor((L.BOARD_W-7*L.COL+L.COL-L.CW)/2);
+    function pileX(c){return boardPad+c*L.COL}
+    L.STOCK={x:pileX(0),y:0};
+    L.WASTE={x:pileX(1),y:0};
+    L.foundXY=function(i){return{x:pileX(3+i),y:0}};
+    const tabY=Math.floor(142*scale);
+    L.TAB_Y=tabY;
+    L.tabXY=function(i){return{x:pileX(i),y:tabY}};
+  }
+}
+
+function applyLayoutCSS(){
+  const r=document.documentElement.style;
+  r.setProperty('--cw',L.CW+'px');
+  r.setProperty('--ch',L.CH+'px');
+  r.setProperty('--card-radius',L.cardRadius+'px');
+  r.setProperty('--rank-font',L.rankFont+'px');
+  r.setProperty('--suit-font',L.suitFont+'px');
+  r.setProperty('--center-font',L.centerFont+'px');
+  r.setProperty('--ace-font',L.aceFont+'px');
+  r.setProperty('--found-font',L.foundFont+'px');
+  r.setProperty('--pip-font',L.pipFont+'px');
+  r.setProperty('--back-bg-w',L.backBgW+'px');
+  r.setProperty('--back-bg-h',L.backBgH+'px');
+  r.setProperty('--board-w',L.BOARD_W+'px');
+}
+
+/* ===== Pip layouts for number cards ===== */
+const PIP_LAYOUTS={
+  2:[[12,50,0],[88,50,1]],
+  3:[[12,50,0],[50,50,0],[88,50,1]],
+  4:[[12,25,0],[12,75,0],[88,25,1],[88,75,1]],
+  5:[[12,25,0],[12,75,0],[50,50,0],[88,25,1],[88,75,1]],
+  6:[[12,25,0],[12,75,0],[50,25,0],[50,75,0],[88,25,1],[88,75,1]],
+  7:[[12,25,0],[12,75,0],[31,50,0],[50,25,0],[50,75,0],[88,25,1],[88,75,1]],
+  8:[[12,25,0],[12,75,0],[31,50,0],[50,25,0],[50,75,0],[69,50,1],[88,25,1],[88,75,1]],
+  9:[[12,25,0],[12,75,0],[37,25,0],[37,75,0],[50,50,0],[63,25,1],[63,75,1],[88,25,1],[88,75,1]],
+  10:[[12,25,0],[12,75,0],[25,50,0],[37,25,0],[37,75,0],[63,25,1],[63,75,1],[75,50,1],[88,25,1],[88,75,1]]
+};
+
+function pipHTML(suit,rank){
+  const num=parseInt(rank);
+  const layout=PIP_LAYOUTS[num];
+  if(!layout)return'';
+  let h='<div class="pip-area">';
+  for(const p of layout){
+    const cls=p[2]?'pip pip-inv':'pip';
+    h+=`<div class="${cls}" style="top:${p[0]}%;left:${p[1]}%">${suit}</div>`;
+  }
+  h+='</div>';
+  return h;
+}
 
 /* ===== Rubber Duck SVGs ===== */
 const DUCK_TILE_SVG=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 36"><ellipse cx="16" cy="24" rx="12" ry="9" fill="#FFD700"/><ellipse cx="10" cy="22" rx="6" ry="4" fill="#FFC107" transform="rotate(-10,10,22)"/><circle cx="25" cy="14" r="9" fill="#FFD700"/><circle cx="29" cy="11" r="1.8" fill="#333"/><circle cx="29.5" cy="10.5" r=".6" fill="white"/><ellipse cx="35" cy="14" rx="4" ry="2" fill="#FF6D00"/><circle cx="26" cy="18" r="2.5" fill="#FFAB91" opacity=".3"/></svg>`;
@@ -259,11 +353,11 @@ function faceDuckSVG(rank){
     <circle cx="30" cy="4" r="1.2" fill="#4CAF50"/>
     <circle cx="44" cy="4" r="1.2" fill="#2196F3"/>`;
   }
-  return `<svg viewBox="-2 -4 58 56" width="48" height="46">${acc}${DUCK_BODY}</svg>`;
+  return `<svg viewBox="-2 -4 58 56" width="${L.faceDuckW}" height="${L.faceDuckH}">${acc}${DUCK_BODY}</svg>`;
 }
 
 function miniDuckSVG(){
-  return `<svg viewBox="0 0 40 36" width="16" height="14"><ellipse cx="16" cy="24" rx="12" ry="9" fill="#DAA520"/><circle cx="25" cy="14" r="9" fill="#DAA520"/><ellipse cx="35" cy="14" rx="4" ry="2" fill="#DAA520"/></svg>`;
+  return `<svg viewBox="0 0 40 36" width="${L.miniDuckW}" height="${L.miniDuckH}"><ellipse cx="16" cy="24" rx="12" ry="9" fill="#DAA520"/><circle cx="25" cy="14" r="9" fill="#DAA520"/><ellipse cx="35" cy="14" rx="4" ry="2" fill="#DAA520"/></svg>`;
 }
 
 /* ===== Card class ===== */
@@ -286,9 +380,10 @@ let history,moveCount;
 let timerId=null,elapsed=0,started=false;
 let drag=null;
 let lastClick={card:null,time:0};
-let boardScale=1;
 let drawCount=1;
 const WASTE_SPREAD=22;
+
+let markers={stock:null,waste:null,founds:[],tabs:[]};
 
 const game={};
 
@@ -388,32 +483,52 @@ function shuffle(a){
 }
 
 function createMarkers(){
+  markers={stock:null,waste:null,founds:[],tabs:[]};
+
   const sm=mk('div','pile-marker stock-area');
-  sm.style.left=STOCK.x+'px';sm.style.top=STOCK.y+'px';
+  sm.style.left=L.STOCK.x+'px';sm.style.top=L.STOCK.y+'px';
   sm.addEventListener('pointerdown',()=>game.recycle());
   board.appendChild(sm);
+  markers.stock=sm;
 
   const wm=mk('div','pile-marker');
-  wm.style.left=WASTE.x+'px';wm.style.top=WASTE.y+'px';
+  wm.style.left=L.WASTE.x+'px';wm.style.top=L.WASTE.y+'px';
   board.appendChild(wm);
+  markers.waste=wm;
 
   for(let i=0;i<4;i++){
     const fm=mk('div','pile-marker foundation');
-    const p=foundXY(i);
+    const p=L.foundXY(i);
     fm.style.left=p.x+'px';fm.style.top=p.y+'px';
     fm.dataset.suit=SUITS[i];
     board.appendChild(fm);
+    markers.founds.push(fm);
   }
   for(let i=0;i<7;i++){
     const tm=mk('div','pile-marker');
-    const p=tabXY(i);
+    const p=L.tabXY(i);
     tm.style.left=p.x+'px';tm.style.top=p.y+'px';
     board.appendChild(tm);
+    markers.tabs.push(tm);
   }
   const ab=document.createElement('button');
   ab.id='auto-btn';ab.textContent='🦆 自動完成';
   ab.addEventListener('click',()=>game.autoComplete());
   board.appendChild(ab);
+}
+
+function repositionMarkers(){
+  if(!markers.stock)return;
+  markers.stock.style.left=L.STOCK.x+'px';markers.stock.style.top=L.STOCK.y+'px';
+  markers.waste.style.left=L.WASTE.x+'px';markers.waste.style.top=L.WASTE.y+'px';
+  for(let i=0;i<4;i++){
+    const p=L.foundXY(i);
+    markers.founds[i].style.left=p.x+'px';markers.founds[i].style.top=p.y+'px';
+  }
+  for(let i=0;i<7;i++){
+    const p=L.tabXY(i);
+    markers.tabs[i].style.left=p.x+'px';markers.tabs[i].style.top=p.y+'px';
+  }
 }
 
 function mk(tag,cls){const e=document.createElement(tag);e.className=cls;return e}
@@ -428,23 +543,23 @@ function createCardEl(card){
 /* ===== Render ===== */
 function render(){
   let z=1;
-  stock.forEach(c=>{pos(c,STOCK.x,STOCK.y,z++);updDisp(c)});
+  stock.forEach(c=>{pos(c,L.STOCK.x,L.STOCK.y,z++);updDisp(c)});
   const wShow=Math.max(0,waste.length-(drawCount===3?3:1));
   waste.forEach((c,i)=>{
-    let wx=WASTE.x;
-    if(drawCount===3&&i>=wShow){wx+=(i-wShow)*WASTE_SPREAD}
-    pos(c,wx,WASTE.y,z++);updDisp(c);
+    let wx=L.WASTE.x;
+    if(drawCount===3&&i>=wShow){wx+=(i-wShow)*Math.floor(WASTE_SPREAD*L.scale)}
+    pos(c,wx,L.WASTE.y,z++);updDisp(c);
   });
   founds.forEach((pile,fi)=>{
-    const p=foundXY(fi);
+    const p=L.foundXY(fi);
     pile.forEach(c=>{pos(c,p.x,p.y,z++);updDisp(c)});
   });
   tabs.forEach((pile,ti)=>{
-    const p=tabXY(ti);
+    const p=L.tabXY(ti);
     let y=p.y;
     pile.forEach(c=>{
       pos(c,p.x,y,z++);updDisp(c);
-      y+=c.faceUp?CASC_UP:CASC_DN;
+      y+=c.faceUp?L.CASC_UP:L.CASC_DN;
     });
   });
 }
@@ -463,23 +578,31 @@ function updDisp(card){
   }else{
     card.el.className='card face-up';
     const cc=card.color;
-    let center,cls='card-center';
     if(card.rank==='J'||card.rank==='Q'||card.rank==='K'){
-      center=faceDuckSVG(card.rank);
-      cls+=' face-card';
+      card.el.innerHTML=
+        `<div class="card-face ${cc}">
+          <div class="corner corner-tl"><span class="rank">${card.rank}</span><span class="suit">${card.suit}</span></div>
+          <div class="card-center face-card">${faceDuckSVG(card.rank)}</div>
+          <div class="corner corner-br"><span class="rank">${card.rank}</span><span class="suit">${card.suit}</span></div>
+          <div class="duck-wm">${miniDuckSVG()}</div>
+        </div>`;
     }else if(card.rank==='A'){
-      center=`<span>${card.suit}</span>`;
-      cls+=' ace-card';
+      card.el.innerHTML=
+        `<div class="card-face ${cc}">
+          <div class="corner corner-tl"><span class="rank">${card.rank}</span><span class="suit">${card.suit}</span></div>
+          <div class="card-center ace-card"><span>${card.suit}</span></div>
+          <div class="corner corner-br"><span class="rank">${card.rank}</span><span class="suit">${card.suit}</span></div>
+          <div class="duck-wm">${miniDuckSVG()}</div>
+        </div>`;
     }else{
-      center=card.suit;
+      card.el.innerHTML=
+        `<div class="card-face ${cc}">
+          <div class="corner corner-tl"><span class="rank">${card.rank}</span><span class="suit">${card.suit}</span></div>
+          ${pipHTML(card.suit,card.rank)}
+          <div class="corner corner-br"><span class="rank">${card.rank}</span><span class="suit">${card.suit}</span></div>
+          <div class="duck-wm">${miniDuckSVG()}</div>
+        </div>`;
     }
-    card.el.innerHTML=
-      `<div class="card-face ${cc}">
-        <div class="corner corner-tl"><span class="rank">${card.rank}</span><span class="suit">${card.suit}</span></div>
-        <div class="${cls}">${center}</div>
-        <div class="corner corner-br"><span class="rank">${card.rank}</span><span class="suit">${card.suit}</span></div>
-        <div class="duck-wm">${miniDuckSVG()}</div>
-      </div>`;
   }
 }
 
@@ -725,7 +848,7 @@ function onDown(e){
   if(info.pile==='found'&&info.ci!==pile.length-1)return;
 
   e.preventDefault();
-  const rect=el.getBoundingClientRect();
+  const rect=board.getBoundingClientRect();
   let cards=[card];
   if(info.pile==='tab')cards=pile.slice(info.ci);
 
@@ -733,8 +856,8 @@ function onDown(e){
   const firstT=parseFloat(cards[0].el.style.top);
   drag={
     cards,info,
-    ox:(e.clientX-rect.left)/boardScale,
-    oy:(e.clientY-rect.top)/boardScale,
+    ox:e.clientX-rect.left-firstL,
+    oy:e.clientY-rect.top-firstT,
     sx:e.clientX,sy:e.clientY,
     started:false,
     origPos:cards.map(c=>({
@@ -760,8 +883,8 @@ function onMove(e){
     });
   }
   const br=board.getBoundingClientRect();
-  const bx=(e.clientX-br.left)/boardScale-drag.ox;
-  const by=(e.clientY-br.top)/boardScale-drag.oy;
+  const bx=e.clientX-br.left-drag.ox;
+  const by=e.clientY-br.top-drag.oy;
   drag.cards.forEach((c,i)=>{
     c.el.style.left=(bx+drag.relPos[i].dx)+'px';
     c.el.style.top=(by+drag.relPos[i].dy)+'px';
@@ -777,8 +900,8 @@ function onUp(e){
   if(d.started){
     d.cards.forEach(c=>{c.el.classList.remove('dragging','drag-head','drag-tail')});
     const br=board.getBoundingClientRect();
-    const cx=(e.clientX-br.left)/boardScale;
-    const cy=(e.clientY-br.top)/boardScale;
+    const cx=e.clientX-br.left;
+    const cy=e.clientY-br.top;
     const target=findTarget(cx,cy);
 
     let moved=false;
@@ -812,17 +935,18 @@ function onUp(e){
 }
 
 function findTarget(x,y){
+  const pad=Math.max(12,L.CW*0.15);
   // check foundations first (priority)
   for(let i=0;i<4;i++){
-    const p=foundXY(i);
-    if(x>=p.x-12&&x<=p.x+CW+12&&y>=p.y-12&&y<=p.y+CH+20){
+    const p=L.foundXY(i);
+    if(x>=p.x-pad&&x<=p.x+L.CW+pad&&y>=p.y-pad&&y<=p.y+L.CH+pad){
       return{pile:'found',pi:i};
     }
   }
   // check tableau columns
   for(let i=0;i<7;i++){
-    const p=tabXY(i);
-    if(x>=p.x-10&&x<=p.x+CW+10&&y>=TAB_Y-20){
+    const p=L.tabXY(i);
+    if(x>=p.x-pad&&x<=p.x+L.CW+pad&&y>=L.TAB_Y-pad){
       return{pile:'tab',pi:i};
     }
   }
@@ -831,14 +955,23 @@ function findTarget(x,y){
 
 /* ===== Responsive ===== */
 function fitBoard(){
-  const w=window.innerWidth-16;
-  boardScale=Math.min(1,w/670);
-  board.style.transform=`scale(${boardScale})`;
-  board.style.transformOrigin='top center';
+  calcLayout();
+  applyLayoutCSS();
+  repositionMarkers();
+  // invalidate display cache to re-render with new sizes
+  if(stock){
+    const allCards=[...stock,...waste];
+    for(const f of founds)allCards.push(...f);
+    for(const t of tabs)allCards.push(...t);
+    allCards.forEach(c=>{c._disp=null});
+  }
   const hdr=document.getElementById('header');
-  hdr.style.maxWidth=Math.min(660,w)+'px';
+  hdr.style.maxWidth=L.BOARD_W+'px';
+  if(stock)render();
 }
-window.addEventListener('resize',fitBoard);
+
+let resizeTimer;
+window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(fitBoard,100)});
 board.addEventListener('contextmenu',e=>e.preventDefault());
 
 /* ===== Apply duck background ===== */
@@ -849,8 +982,9 @@ board.addEventListener('contextmenu',e=>e.preventDefault());
 })();
 
 /* ===== Start ===== */
+calcLayout();
+applyLayoutCSS();
 game.init();
-fitBoard();
 window.game=game;
 
 })();
