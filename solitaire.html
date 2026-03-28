@@ -597,9 +597,9 @@ function updDisp(card){
     }else{
       card.el.innerHTML=
         `<div class="card-face ${cc}">
-          <div class="corner corner-tl"><span class="rank">${card.rank}</span><span class="suit">${card.suit}</span></div>
+          <div class="corner corner-tl"><span class="rank">${card.rank}</span></div>
           ${pipHTML(card.suit,card.rank)}
-          <div class="corner corner-br"><span class="rank">${card.rank}</span><span class="suit">${card.suit}</span></div>
+          <div class="corner corner-br"><span class="rank">${card.rank}</span></div>
           <div class="duck-wm">${miniDuckSVG()}</div>
         </div>`;
     }
