@@ -414,6 +414,7 @@ let timerId=null,elapsed=0,started=false;
 let drag=null;
 let lastClick={card:null,time:0};
 let drawCount=1;
+let recycleCount=0;
 const WASTE_SPREAD=22;
 
 let markers={stock:null,waste:null,founds:[],tabs:[]};
@@ -451,10 +452,11 @@ async function submitScore(name,score){
 }
 
 function calcScore(){
-  // ベース5000pt + 手数ボーナス + タイムボーナス
+  // ベース5000pt + 手数ボーナス + タイムボーナス - 山札リサイクルペナルティ
   const moveBonus=Math.max(0,Math.floor(3000*(1-Math.max(0,moveCount-80)/120)));
   const timeBonus=Math.max(0,Math.floor(4000*Math.exp(-elapsed/300)));
-  return Math.max(1,5000+moveBonus+timeBonus);
+  const recyclePenalty=recycleCount*300;
+  return Math.max(1,5000+moveBonus+timeBonus-recyclePenalty);
 }
 
 document.getElementById('hsSubmit').addEventListener('click',async()=>{
@@ -508,7 +510,7 @@ game.init=function(){
   stock=[];waste=[];
   founds=[[],[],[],[]];
   tabs=[[],[],[],[],[],[],[]];
-  history=[];moveCount=0;moveEl.textContent='0';
+  history=[];moveCount=0;recycleCount=0;moveEl.textContent='0';
 
   const deck=[];
   for(const s of SUITS)for(const r of RANKS)deck.push(new Card(s,r));
@@ -710,6 +712,7 @@ game.recycle=function(){
   if(!started)startTimer();
   const cnt=waste.length;
   while(waste.length>0){const c=waste.pop();c.faceUp=false;stock.push(c)}
+  recycleCount++;
   history.push({type:'recycle',count:cnt});
   moveCount++;moveEl.textContent=moveCount;
   render();updateAutoBtn();
@@ -765,6 +768,7 @@ game.undo=function(){
     }
     case 'recycle':{
       for(let i=0;i<h.count;i++){const c=stock.pop();c.faceUp=true;waste.push(c)}
+      recycleCount--;
       break;
     }
     case 'move':{
@@ -847,7 +851,7 @@ function checkWin(){
     const m=Math.floor(elapsed/60),s=elapsed%60;
     document.getElementById('win-score-val').textContent=lastWinScore.toLocaleString()+' pt';
     document.getElementById('win-detail').textContent=
-      `${moveCount}手 ・ ${m}分${String(s).padStart(2,'0')}秒`;
+      `${moveCount}手 ・ ${m}分${String(s).padStart(2,'0')}秒 ・ 山札${recycleCount}周`;
     scoreSubmitted=false;
     document.getElementById('hsEntry').style.display=isHighScore(lastWinScore)?'':'none';
     document.getElementById('hsSubmitted').style.display='none';
