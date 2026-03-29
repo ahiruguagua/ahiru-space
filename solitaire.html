@@ -423,6 +423,7 @@ const game={};
 /* ===== Leaderboard ===== */
 let leaderboard=[];
 let scoreSubmitted=false;
+let lastWinScore=0;
 
 function currentDifficulty(){ return drawCount===1?'1枚めくり':'3枚めくり'; }
 
@@ -449,11 +450,17 @@ async function submitScore(name,score){
   }catch(e){}
 }
 
+function calcScore(){
+  // ベース5000pt + 手数ボーナス + タイムボーナス
+  const moveBonus=Math.max(0,Math.floor(3000*(1-Math.max(0,moveCount-80)/120)));
+  const timeBonus=Math.max(0,Math.floor(4000*Math.exp(-elapsed/300)));
+  return Math.max(1,5000+moveBonus+timeBonus);
+}
+
 document.getElementById('hsSubmit').addEventListener('click',async()=>{
   const name=document.getElementById('hsName').value.trim();
   if(name.length>0&&!scoreSubmitted){
-    const score=Math.max(1,10000-moveCount*10-elapsed*2);
-    await submitScore(name,score);
+    await submitScore(name,lastWinScore);
     document.getElementById('hsEntry').style.display='none';
     document.getElementById('hsSubmitted').style.display='block';
   }
@@ -836,13 +843,13 @@ function delay(ms){return new Promise(r=>setTimeout(r,ms))}
 function checkWin(){
   if(founds.reduce((s,f)=>s+f.length,0)===52){
     clearInterval(timerId);timerId=null;
-    const score=Math.max(1,10000-moveCount*10-elapsed*2);
+    lastWinScore=calcScore();
     const m=Math.floor(elapsed/60),s=elapsed%60;
-    document.getElementById('win-score-val').textContent=score.toLocaleString()+' pt';
+    document.getElementById('win-score-val').textContent=lastWinScore.toLocaleString()+' pt';
     document.getElementById('win-detail').textContent=
       `${moveCount}手 ・ ${m}分${String(s).padStart(2,'0')}秒`;
     scoreSubmitted=false;
-    document.getElementById('hsEntry').style.display=isHighScore(score)?'':'none';
+    document.getElementById('hsEntry').style.display=isHighScore(lastWinScore)?'':'none';
     document.getElementById('hsSubmitted').style.display='none';
     document.getElementById('hsName').value='';
     setTimeout(()=>{
