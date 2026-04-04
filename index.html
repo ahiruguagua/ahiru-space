@@ -1395,6 +1395,17 @@
           <button class="game-ranking-btn" data-api="/api/solitaire-scores" data-type="solitaire">ランキングを見る</button>
         </div>
       </div>
+      <div class="game-banner fade-up">
+        <h3>アヒル連打レース</h3>
+        <p>
+          スペースキー（またはタップ）を連打してアヒルを走らせろ！<br>
+          CPUの3羽に勝って最速タイムを目指そう 🏁🦆
+        </p>
+        <div class="game-buttons">
+          <a href="/race.html" class="game-play-btn">あそぶ</a>
+          <button class="game-ranking-btn" data-api="/api/race-scores" data-type="race">ランキングを見る</button>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -1584,6 +1595,9 @@
             const m = Math.floor((e.time||0)/60);
             const ss = String((e.time||0)%60).padStart(2,'0');
             extra = ` ${e.moves||0}手 ${m}:${ss}`;
+          } else if (type === 'race') {
+            const sec = ((e.time||0)/1000).toFixed(2);
+            return `<div class="ranking-row ${i < 3 ? 'top3' : ''}"><span class="rank">${medal}</span><span class="name">${e.name}</span><span class="score">${sec}秒</span></div>`;
           } else if (type !== 'osouji') {
             extra = e.eggs ? ` 🥚${e.eggs}` : ' 🥚?';
           }
