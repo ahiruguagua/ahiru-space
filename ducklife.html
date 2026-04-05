@@ -1,0 +1,1842 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>アヒルの人生ゲーム - ahiru-space.com</title>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-TXQFE7EYKZ"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-TXQFE7EYKZ');
+</script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&family=Noto+Sans+JP:wght@400;700;900&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: linear-gradient(135deg, #87CEEB 0%, #E0F7FA 50%, #FFF9C4 100%);
+  font-family: 'Nunito', 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', sans-serif;
+  display: flex; justify-content: center; align-items: center;
+  min-height: 100vh; overflow-y: auto;
+  touch-action: manipulation; user-select: none; -webkit-user-select: none;
+}
+
+.back-link {
+  position: fixed; top: 10px; left: 10px;
+  color: rgba(0,0,0,0.5); text-decoration: none;
+  font-size: 14px; font-weight: 700; z-index: 100;
+  padding: 4px 12px; background: rgba(255,255,255,0.5); border-radius: 20px;
+}
+.back-link:hover { color: #F57F17; }
+
+#game-container {
+  max-width: 480px; width: 100%; background: #fff; border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  overflow: hidden; position: relative;
+}
+
+#status-bar {
+  background: linear-gradient(90deg, #FFD54F, #FFF176);
+  padding: 10px 16px; display: flex; justify-content: space-between;
+  align-items: center; font-size: 13px; font-weight: bold;
+  color: #5D4037; border-bottom: 2px solid #FFB300;
+  flex-wrap: wrap; gap: 2px;
+}
+
+#status-bar .stat { display: flex; align-items: center; gap: 4px; }
+
+#canvas-wrapper {
+  width: 100%; aspect-ratio: 480/400; position: relative;
+  background: #B3E5FC; overflow: hidden;
+}
+
+canvas { display: block; width: 100%; height: 100%; }
+
+#message-box {
+  position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+  background: rgba(255,255,255,0.92); border-radius: 12px;
+  padding: 10px 18px; font-size: 14px; text-align: center;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.12); max-width: 90%;
+  pointer-events: none; min-height: 40px; display: flex;
+  align-items: center; justify-content: center;
+  border: 2px solid #FFD54F;
+}
+
+#action-panel {
+  padding: 12px; background: #FFFDE7;
+  border-top: 2px solid #FFB300; min-height: 120px;
+  max-height: 260px; overflow-y: auto;
+}
+
+#action-panel h3 {
+  font-size: 14px; color: #F57F17; margin-bottom: 8px; text-align: center;
+}
+
+#buttons {
+  display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+}
+
+.btn {
+  padding: 10px 14px; border: 2px solid #FFB300; border-radius: 12px;
+  background: linear-gradient(180deg, #FFF9C4, #FFE082);
+  font-size: 13px; font-weight: bold; cursor: pointer;
+  color: #5D4037; transition: all 0.15s;
+  min-width: 100px; text-align: center;
+  font-family: inherit;
+}
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255,179,0,0.4);
+  background: linear-gradient(180deg, #FFECB3, #FFD54F);
+}
+.btn:active { transform: translateY(0); }
+.btn:disabled {
+  opacity: 0.5; cursor: not-allowed; transform: none;
+  box-shadow: none;
+}
+
+.btn-primary {
+  background: linear-gradient(180deg, #FFD54F, #FFB300);
+  border-color: #FF8F00; color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+.btn-small { min-width: 70px; padding: 6px 10px; font-size: 12px; }
+
+.btn-baito {
+  background: linear-gradient(180deg, #C8E6C9, #81C784);
+  border-color: #43A047;
+}
+
+#shop-modal {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.5); display: none;
+  justify-content: center; align-items: center; z-index: 10;
+}
+
+#shop-content {
+  background: #fff; border-radius: 16px; padding: 20px;
+  width: 90%; max-height: 80%; overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+}
+
+#shop-content h3 { text-align: center; margin-bottom: 12px; color: #F57F17; }
+
+.shop-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 12px; border-bottom: 1px solid #eee;
+  flex-wrap: wrap; gap: 4px;
+}
+
+.shop-item button {
+  padding: 4px 12px; border: 2px solid #FFB300; border-radius: 8px;
+  background: #FFF9C4; cursor: pointer; font-weight: bold; font-size: 12px;
+  font-family: inherit;
+}
+.shop-item button:hover { background: #FFE082; }
+.shop-item button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.shop-item .owned { color: #4CAF50; font-weight: bold; font-size: 12px; }
+
+#exp-panel {
+  display: flex; gap: 4px; flex-wrap: wrap; justify-content: center;
+  font-size: 10px; padding: 4px 10px;
+  background: rgba(255,255,255,0.5);
+}
+.exp-tag {
+  background: #E8F5E9; padding: 2px 6px; border-radius: 8px;
+  border: 1px solid #A5D6A7;
+}
+.rest-tag {
+  background: #FFF3E0; padding: 2px 6px; border-radius: 8px;
+  border: 1px solid #FFCC80; color: #E65100;
+}
+
+.job-req {
+  font-size: 10px; color: #888; display: block; margin-top: 2px;
+}
+
+/* Leaderboard overlay */
+.lb-overlay {
+  display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 90; background: rgba(0,0,0,0.7);
+  flex-direction: column; align-items: center; justify-content: center; padding: 20px;
+}
+.lb-overlay.active { display: flex; }
+.lb-panel {
+  background: rgba(255,255,255,0.97); border: 3px solid #FFB300;
+  border-radius: 20px; padding: 1.5rem; max-width: 400px; width: 100%;
+  max-height: 80vh; overflow-y: auto;
+}
+.lb-panel h2 { color: #F57F17; text-align: center; font-size: 1.3rem; margin-bottom: 1rem; }
+.lb-row { display: flex; justify-content: space-between; padding: 6px 8px; color: #5D4037; font-size: 0.9rem; border-bottom: 1px solid #FFF9C4; }
+.lb-row.top3 { color: #F57F17; font-weight: 700; background: #FFFDE7; border-radius: 8px; }
+.lb-row .rank { width: 36px; }
+.lb-row .name { flex: 1; }
+.lb-row .score { text-align: right; font-size: 0.85rem; }
+.lb-empty { color: #999; text-align: center; padding: 2rem; }
+.lb-close {
+  display: block; margin: 1rem auto 0; padding: 10px 24px; border-radius: 50px;
+  border: 2px solid #FFB300; background: linear-gradient(180deg, #FFF9C4, #FFE082);
+  font-family: inherit; font-size: 1rem; font-weight: 800; cursor: pointer; color: #5D4037;
+}
+
+@media (max-width: 500px) {
+  #status-bar { font-size: 11px; padding: 8px 10px; }
+  .btn { min-width: 80px; padding: 8px 10px; font-size: 12px; }
+  #action-panel { padding: 10px 8px; }
+  #action-panel h3 { font-size: 13px; }
+  .shop-item { font-size: 12px; }
+  #message-box { font-size: 12px; padding: 8px 12px; }
+}
+</style>
+</head>
+<body>
+<a href="/" class="back-link">&larr; Home</a>
+<div id="game-container">
+  <div id="status-bar">
+    <span class="stat" id="phase-label">🥚 はじまり</span>
+    <span class="stat" id="day-label"></span>
+    <span class="stat" id="money-label">🪙 0</span>
+    <span class="stat" id="exp-label">⭐ 0</span>
+  </div>
+  <div id="exp-panel"></div>
+  <div id="canvas-wrapper">
+    <canvas id="canvas" width="480" height="400"></canvas>
+    <div id="message-box">🥚 たまごがある...</div>
+    <div id="shop-modal">
+      <div id="shop-content"></div>
+    </div>
+  </div>
+  <div id="action-panel">
+    <h3 id="action-title">見守る</h3>
+    <div id="buttons"></div>
+  </div>
+</div>
+
+<div class="lb-overlay" id="lbOverlay">
+  <div class="lb-panel">
+    <h2>🏆 ランキング TOP 20</h2>
+    <div id="lbList"></div>
+    <button class="lb-close" id="lbClose">とじる</button>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const msgBox = document.getElementById('message-box');
+const btnContainer = document.getElementById('buttons');
+const actionTitle = document.getElementById('action-title');
+const phaseLabel = document.getElementById('phase-label');
+const dayLabel = document.getElementById('day-label');
+const moneyLabel = document.getElementById('money-label');
+const expLabel = document.getElementById('exp-label');
+const expPanel = document.getElementById('exp-panel');
+const shopModal = document.getElementById('shop-modal');
+const shopContent = document.getElementById('shop-content');
+
+// ========== Leaderboard ==========
+let leaderboard = [];
+let scoreSubmitted = false;
+
+async function fetchLeaderboard() {
+  try { const r = await fetch('/api/ducklife-scores'); if (r.ok) leaderboard = await r.json(); } catch(e){}
+}
+
+async function submitScore(name, score, job, rank) {
+  try {
+    const r = await fetch('/api/ducklife-scores', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ name, score, job, rank })
+    });
+    if (r.ok) { leaderboard = await r.json(); scoreSubmitted = true; }
+  } catch(e){}
+}
+
+function isHighScore(score) {
+  if (leaderboard.length < 20) return score > 0;
+  return score > leaderboard[leaderboard.length-1].score;
+}
+
+function showLeaderboardOverlay() {
+  const list = document.getElementById('lbList');
+  if (leaderboard.length === 0) {
+    list.innerHTML = '<div class="lb-empty">まだスコアがありません</div>';
+  } else {
+    list.innerHTML = leaderboard.slice(0, 20).map((e, i) => {
+      const medal = i===0?'👑':i===1?'🥈':i===2?'🥉':`${i+1}.`;
+      const jobText = e.job ? ` ${e.job}` : '';
+      return `<div class="lb-row ${i<3?'top3':''}"><span class="rank">${medal}</span><span class="name">${e.name}</span><span class="score">${e.score.toLocaleString()}点${jobText}</span></div>`;
+    }).join('');
+  }
+  document.getElementById('lbOverlay').classList.add('active');
+}
+
+document.getElementById('lbClose').addEventListener('click', () => document.getElementById('lbOverlay').classList.remove('active'));
+fetchLeaderboard();
+
+// ========== Game State ==========
+const G = {
+  phase: 'opening',
+  day: 0, maxDays: 0,
+  money: 0, exp: 0,
+  specialExp: { medical: 0, cooking: 0, art: 0, construction: 0, music: 0, dance: 0, tech: 0, farming: 0, science: 0 },
+  job: null,
+  items: [],
+  house: 0,
+  actionsLeft: 0,
+  expression: 'normal',
+  costume: null,
+  animTime: 0,
+  eggShake: 0, eggCrack: 0,
+  duckAppear: false,
+  openingTimer: 0,
+  rested: false,
+  jobHistory: [],
+  jobWorkCount: 0,
+  jobRank: 0,
+};
+
+const SPEC_NAMES = {
+  medical: '🏥医療', cooking: '🍳料理', art: '🎨芸術', construction: '🏗️建築',
+  music: '🎵音楽', dance: '💃ダンス', tech: '💻技術', farming: '🌾農業', science: '🔬科学'
+};
+
+function getJobRankName() {
+  if (!G.job || !G.job.ranks) return '';
+  return G.job.ranks[G.jobRank] || G.job.ranks[0];
+}
+
+function getJobSalary() {
+  if (!G.job) return 0;
+  return Math.floor(G.job.salary * JOB_RANK_SALARY_MULT[G.jobRank]);
+}
+
+function checkRankUp() {
+  const oldRank = G.jobRank;
+  for (let r = JOB_RANK_THRESHOLDS.length - 1; r >= 0; r--) {
+    if (G.jobWorkCount >= JOB_RANK_THRESHOLDS[r]) { G.jobRank = r; break; }
+  }
+  return G.jobRank > oldRank;
+}
+
+const HOUSES = [
+  { name: '📦 ダンボールハウス', price: 0 },
+  { name: '🏠 アパート', price: 300 },
+  { name: '🏡 一軒家', price: 800 },
+  { name: '🏰 豪邸', price: 2000 },
+  { name: '🏯 お城', price: 5000 },
+];
+
+const SHOP_ITEMS = [
+  { id: 'ribbon', name: '🎀 リボン', price: 50 },
+  { id: 'scarf', name: '🧣 マフラー', price: 80 },
+  { id: 'tie', name: '👔 ネクタイ', price: 100 },
+  { id: 'sunglasses', name: '🕶️ サングラス', price: 120 },
+  { id: 'tophat', name: '🎩 シルクハット', price: 150 },
+  { id: 'cap', name: '🧢 キャップ', price: 60 },
+  { id: 'watch', name: '⌚ 腕時計', price: 200 },
+  { id: 'ring', name: '💍 指輪', price: 250 },
+  { id: 'necklace', name: '📿 ネックレス', price: 180 },
+  { id: 'backpack', name: '🎒 リュック', price: 90 },
+  { id: 'umbrella', name: '🌂 おしゃれ傘', price: 70 },
+  { id: 'bowtie', name: '🎀 蝶ネクタイ', price: 130 },
+  { id: 'headphones', name: '🎧 ヘッドホン', price: 160 },
+  { id: 'mic', name: '🎤 マイク', price: 140 },
+  { id: 'medal', name: '🏅 メダル', price: 300 },
+  { id: 'crown', name: '👑 王冠', price: 500 },
+  { id: 'diamond', name: '💎 ダイヤモンド', price: 1000 },
+];
+
+const JOB_RANK_THRESHOLDS = [0, 2, 4, 7, 10];
+const JOB_RANK_SALARY_MULT = [1.0, 1.2, 1.5, 2.0, 3.0];
+
+const JOBS = [
+  { id: 'janitor', name: '🧹 清掃員', reqExp: 0, salary: 80, reqSpecial: null, itemBonus: null,
+    ranks: ['見習い清掃員', '清掃員', 'ベテラン清掃員', '清掃マイスター', '伝説の清掃員'] },
+  { id: 'farmer', name: '🌾 農家', reqExp: 30, salary: 120, reqSpecial: { farming: 15 },
+    itemBonus: { backpack: { farming: 5 } },
+    ranks: ['新米農家', '農家', '熟練農家', 'カリスマ農家', '伝説の農家'] },
+  { id: 'cook', name: '🍳 コック', reqExp: 50, salary: 150, reqSpecial: { cooking: 20 },
+    itemBonus: { scarf: { cooking: 5 } },
+    ranks: ['見習いコック', 'コック', '一流コック', 'スターシェフ', '伝説のシェフ'] },
+  { id: 'patissier', name: '🧁 パティシエ', reqExp: 50, salary: 160, reqSpecial: { cooking: 25 },
+    itemBonus: { ribbon: { cooking: 5 } },
+    ranks: ['見習いパティシエ', 'パティシエ', '一流パティシエ', 'スターパティシエ', '伝説のパティシエ'] },
+  { id: 'artist', name: '🎨 画家', reqExp: 50, salary: 150, reqSpecial: { art: 20 },
+    itemBonus: { backpack: { art: 5 }, umbrella: { art: 5 } },
+    ranks: ['新人画家', '画家', '人気画家', '巨匠', '伝説の画家'] },
+  { id: 'musician', name: '🎵 ミュージシャン', reqExp: 50, salary: 160, reqSpecial: { music: 20 },
+    itemBonus: { headphones: { music: 10 }, mic: { music: 5 } },
+    ranks: ['路上ミュージシャン', 'ミュージシャン', '人気ミュージシャン', 'トップアーティスト', '伝説のミュージシャン'] },
+  { id: 'rapper', name: '🎤 ラッパー', reqExp: 60, salary: 200, reqSpecial: { music: 20 },
+    itemBonus: { sunglasses: { music: 10 }, mic: { music: 10, _exp: 30 }, necklace: { music: 5 }, cap: { _exp: 10 } },
+    ranks: ['新人ラッパー', 'ラッパー', '有名ラッパー', '世界的ラッパー', '伝説のラッパー'] },
+  { id: 'idol', name: '🌟 アイドル', reqExp: 60, salary: 220, reqSpecial: { dance: 20, music: 10 },
+    itemBonus: { ribbon: { dance: 5 }, mic: { music: 5, _exp: 10 }, medal: { _exp: 15 } },
+    ranks: ['研修生', 'アイドル', '人気アイドル', 'トップアイドル', '伝説のアイドル'] },
+  { id: 'teacher', name: '📚 先生', reqExp: 70, salary: 180, reqSpecial: { science: 10 },
+    itemBonus: { tophat: { _exp: 10 } },
+    ranks: ['新任先生', '先生', 'ベテラン先生', 'カリスマ先生', '伝説の先生'] },
+  { id: 'programmer', name: '💻 プログラマー', reqExp: 70, salary: 220, reqSpecial: { tech: 25 },
+    itemBonus: { headphones: { tech: 10 }, watch: { _exp: 10 } },
+    ranks: ['駆け出しプログラマー', 'プログラマー', 'シニアエンジニア', '天才プログラマー', '伝説のプログラマー'] },
+  { id: 'architect', name: '🏗️ 建築家', reqExp: 80, salary: 200, reqSpecial: { construction: 30 },
+    itemBonus: { watch: { _exp: 10 } },
+    ranks: ['新人建築家', '建築家', '一級建築家', '巨匠建築家', '伝説の建築家'] },
+  { id: 'scientist', name: '🔬 科学者', reqExp: 90, salary: 250, reqSpecial: { science: 25, tech: 15 },
+    itemBonus: { watch: { science: 5 }, headphones: { tech: 5 } },
+    ranks: ['研究生', '科学者', '主任研究員', '天才科学者', '伝説の科学者'] },
+  { id: 'doctor', name: '🏥 医者', reqExp: 100, salary: 300, reqSpecial: { medical: 30 },
+    itemBonus: { watch: { _exp: 15 }, ring: { medical: 5 } },
+    ranks: ['研修医', '医者', '名医', 'ゴッドハンド', '伝説の医者'] },
+  { id: 'pilot', name: '✈️ パイロット', reqExp: 110, salary: 350, reqSpecial: { tech: 20, science: 15 },
+    itemBonus: { sunglasses: { _exp: 15 }, watch: { tech: 5 } },
+    ranks: ['副操縦士', 'パイロット', '機長', 'エースパイロット', '伝説のパイロット'] },
+  { id: 'investor', name: '💰 投資家', reqExp: 130, salary: 450, reqSpecial: { tech: 20, science: 20 },
+    itemBonus: { diamond: { _exp: 30 }, watch: { _exp: 10 }, tie: { science: 5 } },
+    ranks: ['新人投資家', '投資家', '敏腕投資家', 'カリスマ投資家', '伝説の投資家'] },
+  { id: 'ceo', name: '👑 社長', reqExp: 150, salary: 500, reqSpecial: { medical: 15, cooking: 15, art: 15, construction: 15 },
+    itemBonus: { crown: { _exp: 20, medical: 5, cooking: 5, art: 5, construction: 5 }, diamond: { _exp: 20 }, tie: { _exp: 10 } },
+    ranks: ['新米社長', '社長', 'やり手社長', 'カリスマ社長', '伝説の社長'] },
+];
+
+const PART_TIME_JOBS = [
+  { id: 'baito_conbini', name: '🏪 コンビニバイト', pay: 50, msg: '🏪 レジ打ちがんばった！', exp: 3, specKey: null, specVal: 0 },
+  { id: 'baito_delivery', name: '🚲 配達バイト', pay: 60, msg: '🚲 荷物を届けた！ いい運動！', exp: 3, specKey: 'construction', specVal: 2 },
+  { id: 'baito_cafe', name: '☕ カフェバイト', pay: 55, msg: '☕ コーヒーを淹れた！ いい香り〜', exp: 3, specKey: 'cooking', specVal: 2 },
+  { id: 'baito_tutor', name: '📝 家庭教師バイト', pay: 70, msg: '📝 教えるのも勉強になる！', exp: 4, specKey: 'science', specVal: 2 },
+  { id: 'baito_moving', name: '📦 引越しバイト', pay: 80, msg: '📦 力仕事でヘトヘト... でも高時給！', exp: 3, specKey: 'construction', specVal: 3 },
+  { id: 'baito_clinic', name: '💊 薬局バイト', pay: 65, msg: '💊 薬の整理をお手伝い！', exp: 3, specKey: 'medical', specVal: 2 },
+  { id: 'baito_farm', name: '🌾 農作業バイト', pay: 60, msg: '🌾 畑仕事で汗を流した！', exp: 3, specKey: 'farming', specVal: 2 },
+  { id: 'baito_livehaus', name: '🎵 ライブハウスバイト', pay: 55, msg: '🎵 音響スタッフ体験！', exp: 3, specKey: 'music', specVal: 2 },
+  { id: 'baito_pcshop', name: '🖥️ PCショップバイト', pay: 65, msg: '🖥️ パソコンに詳しくなった！', exp: 3, specKey: 'tech', specVal: 2 },
+  { id: 'baito_gallery', name: '🖼️ ギャラリーバイト', pay: 55, msg: '🖼️ 芸術に触れた！', exp: 3, specKey: 'art', specVal: 2 },
+];
+
+const SKILL_COURSES = [
+  { id: 'sk_medical', name: '🏥 医療講座', cost: 80, specKey: 'medical', specVal: 12, exp: 8 },
+  { id: 'sk_cooking', name: '🍳 料理教室', cost: 80, specKey: 'cooking', specVal: 12, exp: 8 },
+  { id: 'sk_art', name: '🎨 美術教室', cost: 80, specKey: 'art', specVal: 12, exp: 8 },
+  { id: 'sk_construction', name: '🏗️ 建築講座', cost: 80, specKey: 'construction', specVal: 12, exp: 8 },
+  { id: 'sk_music', name: '🎵 音楽レッスン', cost: 80, specKey: 'music', specVal: 12, exp: 8 },
+  { id: 'sk_dance', name: '💃 ダンスレッスン', cost: 80, specKey: 'dance', specVal: 12, exp: 8 },
+  { id: 'sk_tech', name: '💻 プログラミング講座', cost: 100, specKey: 'tech', specVal: 14, exp: 10 },
+  { id: 'sk_science', name: '🔬 科学セミナー', cost: 100, specKey: 'science', specVal: 14, exp: 10 },
+  { id: 'sk_farming', name: '🌾 農業研修', cost: 70, specKey: 'farming', specVal: 12, exp: 8 },
+];
+
+const CHILD_PLACES = [
+  { id: 'school', name: '🏫 学校', desc: '勉強する', effect: () => {
+    let bonus = G.rested ? 8 : 0;
+    G.exp += 15 + bonus; G.rested = false;
+    setMsg(`📖 一生懸命勉強した！ EXP+${15+bonus}${bonus ? ' (休憩ボーナス✨)' : ''}`);
+    G.expression = 'happy'; G.costume = null;
+  }},
+  { id: 'hospital', name: '🏥 病院 -10🪙', desc: '職業体験', effect: () => {
+    if (G.money < 10) { setMsg('💦 お金が足りない！(10🪙必要)'); G.expression = 'sad'; G.actionsLeft++; updateUI(); showPlaces(); return; }
+    G.money -= 10; let bonus = G.rested ? 5 : 0;
+    G.exp += 20 + bonus; G.specialExp.medical += 10 + bonus; G.rested = false;
+    setMsg(`🩺 お医者さん体験！ EXP+${20+bonus} 医療+${10+bonus}${bonus ? ' ✨' : ''}`);
+    G.expression = 'happy'; G.costume = 'doctor';
+  }},
+  { id: 'restaurant', name: '🍳 レストラン -10🪙', desc: '職業体験', effect: () => {
+    if (G.money < 10) { setMsg('💦 お金が足りない！(10🪙必要)'); G.expression = 'sad'; G.actionsLeft++; updateUI(); showPlaces(); return; }
+    G.money -= 10; let bonus = G.rested ? 5 : 0;
+    G.exp += 20 + bonus; G.specialExp.cooking += 10 + bonus; G.rested = false;
+    setMsg(`👨‍🍳 料理体験！ EXP+${20+bonus} 料理+${10+bonus}${bonus ? ' ✨' : ''}`);
+    G.expression = 'happy'; G.costume = 'chef';
+  }},
+  { id: 'atelier', name: '🎨 アトリエ -10🪙', desc: '職業体験', effect: () => {
+    if (G.money < 10) { setMsg('💦 お金が足りない！(10🪙必要)'); G.expression = 'sad'; G.actionsLeft++; updateUI(); showPlaces(); return; }
+    G.money -= 10; let bonus = G.rested ? 5 : 0;
+    G.exp += 20 + bonus; G.specialExp.art += 10 + bonus; G.rested = false;
+    setMsg(`🖌️ お絵かき体験！ EXP+${20+bonus} 芸術+${10+bonus}${bonus ? ' ✨' : ''}`);
+    G.expression = 'happy'; G.costume = 'artist';
+  }},
+  { id: 'construction', name: '🏗️ 工事現場 -10🪙', desc: '職業体験', effect: () => {
+    if (G.money < 10) { setMsg('💦 お金が足りない！(10🪙必要)'); G.expression = 'sad'; G.actionsLeft++; updateUI(); showPlaces(); return; }
+    G.money -= 10; let bonus = G.rested ? 5 : 0;
+    G.exp += 20 + bonus; G.specialExp.construction += 10 + bonus; G.rested = false;
+    setMsg(`🔨 建設体験！ EXP+${20+bonus} 建築+${10+bonus}${bonus ? ' ✨' : ''}`);
+    G.expression = 'happy'; G.costume = 'builder';
+  }},
+  { id: 'musicroom', name: '🎵 音楽教室 -10🪙', desc: '職業体験', effect: () => {
+    if (G.money < 10) { setMsg('💦 お金が足りない！(10🪙必要)'); G.expression = 'sad'; G.actionsLeft++; updateUI(); showPlaces(); return; }
+    G.money -= 10; let bonus = G.rested ? 5 : 0;
+    G.exp += 20 + bonus; G.specialExp.music += 10 + bonus; G.rested = false;
+    setMsg(`🎵 楽器を演奏した！ EXP+${20+bonus} 音楽+${10+bonus}${bonus ? ' ✨' : ''}`);
+    G.expression = 'happy'; G.costume = 'musician';
+  }},
+  { id: 'danceroom', name: '💃 ダンス教室 -10🪙', desc: '職業体験', effect: () => {
+    if (G.money < 10) { setMsg('💦 お金が足りない！(10🪙必要)'); G.expression = 'sad'; G.actionsLeft++; updateUI(); showPlaces(); return; }
+    G.money -= 10; let bonus = G.rested ? 5 : 0;
+    G.exp += 20 + bonus; G.specialExp.dance += 10 + bonus; G.rested = false;
+    setMsg(`💃 ダンスレッスン！ EXP+${20+bonus} ダンス+${10+bonus}${bonus ? ' ✨' : ''}`);
+    G.expression = 'happy'; G.costume = 'idol';
+  }},
+  { id: 'pcroom', name: '💻 PC教室 -10🪙', desc: '職業体験', effect: () => {
+    if (G.money < 10) { setMsg('💦 お金が足りない！(10🪙必要)'); G.expression = 'sad'; G.actionsLeft++; updateUI(); showPlaces(); return; }
+    G.money -= 10; let bonus = G.rested ? 5 : 0;
+    G.exp += 20 + bonus; G.specialExp.tech += 10 + bonus; G.rested = false;
+    setMsg(`💻 プログラミング体験！ EXP+${20+bonus} 技術+${10+bonus}${bonus ? ' ✨' : ''}`);
+    G.expression = 'happy'; G.costume = 'programmer';
+  }},
+  { id: 'farm', name: '🌾 農場 -10🪙', desc: '職業体験', effect: () => {
+    if (G.money < 10) { setMsg('💦 お金が足りない！(10🪙必要)'); G.expression = 'sad'; G.actionsLeft++; updateUI(); showPlaces(); return; }
+    G.money -= 10; let bonus = G.rested ? 5 : 0;
+    G.exp += 20 + bonus; G.specialExp.farming += 10 + bonus; G.rested = false;
+    setMsg(`🌾 農業体験！ EXP+${20+bonus} 農業+${10+bonus}${bonus ? ' ✨' : ''}`);
+    G.expression = 'happy'; G.costume = 'farmer';
+  }},
+  { id: 'sciencemuseum', name: '🔬 科学館 -10🪙', desc: '職業体験', effect: () => {
+    if (G.money < 10) { setMsg('💦 お金が足りない！(10🪙必要)'); G.expression = 'sad'; G.actionsLeft++; updateUI(); showPlaces(); return; }
+    G.money -= 10; let bonus = G.rested ? 5 : 0;
+    G.exp += 20 + bonus; G.specialExp.science += 10 + bonus; G.rested = false;
+    setMsg(`🔬 科学の実験！ EXP+${20+bonus} 科学+${10+bonus}${bonus ? ' ✨' : ''}`);
+    G.expression = 'happy'; G.costume = 'scientist';
+  }},
+  { id: 'shop', name: '🛒 お店', desc: '買い物', effect: () => { openShop('child'); }},
+  { id: 'home', name: '🏠 家', desc: '休憩', effect: () => {
+    G.rested = true;
+    setMsg('😴 おうちでゆっくり休んだ！ 次の活動にボーナス✨');
+    G.expression = 'normal'; G.costume = null;
+  }},
+];
+
+const ADULT_PLACES = [
+  { id: 'work', name: '🏢 職場', desc: '仕事する', effect: () => {
+    const sal = getJobSalary();
+    let bonus = G.rested ? Math.floor(sal * 0.3) : 0;
+    const total = sal + bonus;
+    G.money += total;
+    const restBonus = G.rested;
+    G.rested = false;
+    G.jobWorkCount++;
+    let skillMsg = '';
+    if (G.job.reqSpecial) {
+      const specBonus = restBonus ? 2 : 0;
+      for (const key of Object.keys(G.job.reqSpecial)) {
+        const gain = 3 + specBonus;
+        G.specialExp[key] += gain;
+        skillMsg += ` ${SPEC_NAMES[key]}+${gain}`;
+      }
+    }
+    G.exp += 2;
+    const ranked = checkRankUp();
+    let msg = `💼 今日もお仕事！ +${total}ダック ⭐+2${skillMsg}${bonus ? ' (休憩ボーナス✨)' : ''}`;
+    if (ranked) {
+      msg += `\n🎊 ランクアップ！→【${getJobRankName()}】`;
+      G.expression = 'happy';
+    } else {
+      G.expression = 'normal';
+    }
+    setMsg(msg);
+    G.costume = getJobCostume();
+  }},
+  { id: 'baito', name: '🏪 アルバイト', desc: 'バイトする', effect: () => { openBaitoSelect(); }},
+  { id: 'skillschool', name: '📖 スキル教室', desc: 'スキル習得', effect: () => { openSkillSelect(); }},
+  { id: 'realtor', name: '🏠 不動産屋', desc: '家を買う', effect: () => { openShop('house'); }},
+  { id: 'shop', name: '🛒 お店', desc: '買い物', effect: () => { openShop('adult'); }},
+  { id: 'play', name: '🎉 遊びにいく', desc: '遊ぶ', effect: () => { openPlaySelect(); }},
+  { id: 'home', name: '🏠 家', desc: '休憩', effect: () => {
+    G.rested = true;
+    setMsg('🛋️ おうちでまったり... 次の仕事にボーナス✨');
+    G.expression = 'normal'; G.costume = null;
+  }},
+];
+
+function getJobCostume() {
+  if (!G.job) return null;
+  const map = {
+    cook: 'chef', patissier: 'chef', artist: 'artist', architect: 'builder',
+    doctor: 'doctor', ceo: 'ceo', janitor: 'janitor', musician: 'musician',
+    rapper: 'rapper', idol: 'idol', programmer: 'programmer', farmer: 'farmer', teacher: 'teacher',
+    scientist: 'scientist', pilot: 'pilot', investor: 'investor'
+  };
+  return map[G.job.id] || null;
+}
+
+// ========== UI Helpers ==========
+function setMsg(text) { msgBox.textContent = text; }
+
+function updateUI() {
+  const phaseNames = { opening: '🥚 はじまり', childhood: '🐣 子供時代', 'job-select': '💼 就職', adulthood: '🐤 大人時代', ending: '🏆 エンディング' };
+  phaseLabel.textContent = phaseNames[G.phase] || '';
+  if (G.phase === 'childhood') {
+    dayLabel.textContent = `📅 ${G.day}日目 (残り${7 - G.day}日)`;
+  } else if (G.phase === 'adulthood') {
+    dayLabel.textContent = `📅 ${G.day}日目 (残り${10 - G.day}日)`;
+  } else {
+    dayLabel.textContent = '';
+  }
+  moneyLabel.textContent = `🪙 ${G.money}`;
+  expLabel.textContent = `⭐ ${G.exp}`;
+
+  let expHtml = '';
+  if (G.phase === 'adulthood' && G.job) {
+    const rankStars = '★'.repeat(G.jobRank) + '☆'.repeat(4 - G.jobRank);
+    expHtml += `<div style="text-align:center;font-size:12px;font-weight:bold;margin-bottom:4px;">💼 ${getJobRankName()} ${rankStars} <span style="font-size:11px;color:#666;">(日給${getJobSalary()}🪙)</span></div>`;
+  }
+  if (G.phase === 'childhood' || G.phase === 'job-select' || G.phase === 'adulthood') {
+    for (const [key, label] of Object.entries(SPEC_NAMES)) {
+      if (G.specialExp[key] > 0) {
+        expHtml += `<span class="exp-tag">${label}:${G.specialExp[key]}</span>`;
+      }
+    }
+    if (G.rested) {
+      expHtml += `<span class="rest-tag">✨休憩済み</span>`;
+    }
+  }
+  expPanel.innerHTML = expHtml;
+}
+
+function clearButtons() { btnContainer.innerHTML = ''; }
+
+function addButton(text, onClick, cls = '') {
+  const b = document.createElement('button');
+  b.className = 'btn ' + cls;
+  b.textContent = text;
+  b.addEventListener('click', onClick);
+  btnContainer.appendChild(b);
+  return b;
+}
+
+function addButtonHTML(html, onClick, cls = '') {
+  const b = document.createElement('button');
+  b.className = 'btn ' + cls;
+  b.innerHTML = html;
+  b.addEventListener('click', onClick);
+  btnContainer.appendChild(b);
+  return b;
+}
+
+// ========== Drawing ==========
+function drawBackground(scene) {
+  ctx.save();
+  switch(scene) {
+    case 'egg':
+      const skyGrad = ctx.createLinearGradient(0, 0, 0, 400);
+      skyGrad.addColorStop(0, '#87CEEB');
+      skyGrad.addColorStop(1, '#E1F5FE');
+      ctx.fillStyle = skyGrad;
+      ctx.fillRect(0, 0, 480, 400);
+      ctx.fillStyle = '#66BB6A';
+      ctx.fillRect(0, 300, 480, 100);
+      ctx.fillStyle = '#43A047';
+      for (let i = 0; i < 20; i++) {
+        const x = i * 25 + Math.sin(i) * 5;
+        ctx.beginPath(); ctx.moveTo(x, 300);
+        ctx.quadraticCurveTo(x + 5, 280, x + 10, 300); ctx.fill();
+      }
+      drawFlowers();
+      break;
+    case 'school':
+      drawSkyAndGround('#E3F2FD');
+      drawBuilding(140, 140, 200, 160, '#BBDEFB', '🏫 学校');
+      break;
+    case 'hospital':
+      drawSkyAndGround('#FCE4EC');
+      drawBuilding(140, 140, 200, 160, '#F8BBD0', '🏥 病院');
+      drawCross(240, 180);
+      break;
+    case 'restaurant':
+      drawSkyAndGround('#FFF3E0');
+      drawBuilding(140, 140, 200, 160, '#FFCC80', '🍳 レストラン');
+      break;
+    case 'atelier':
+      drawSkyAndGround('#F3E5F5');
+      drawBuilding(140, 140, 200, 160, '#CE93D8', '🎨 アトリエ');
+      break;
+    case 'construction':
+      drawSkyAndGround('#FBE9E7');
+      ctx.strokeStyle = '#FF8A65'; ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.moveTo(340, 300); ctx.lineTo(340, 100); ctx.lineTo(200, 100); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(200, 100); ctx.lineTo(200, 130); ctx.stroke();
+      drawBuilding(100, 200, 180, 100, '#FFAB91', '🏗️ 工事現場');
+      break;
+    case 'musicroom':
+      drawSkyAndGround('#E8EAF6');
+      drawBuilding(140, 140, 200, 160, '#9FA8DA', '🎵 音楽教室');
+      ctx.fillStyle = '#333'; ctx.font = '28px sans-serif';
+      ctx.fillText('♪', 100, 130); ctx.fillText('♫', 360, 120); ctx.fillText('♪', 380, 160);
+      break;
+    case 'danceroom':
+      drawSkyAndGround('#FCE4EC');
+      drawBuilding(140, 140, 200, 160, '#F48FB1', '💃 ダンス教室');
+      ctx.fillStyle = '#E91E63'; ctx.font = '24px sans-serif';
+      ctx.fillText('✨', 110, 140); ctx.fillText('⭐', 360, 130); ctx.fillText('✨', 370, 170);
+      break;
+    case 'skillschool':
+      drawSkyAndGround('#E3F2FD');
+      drawBuilding(120, 140, 240, 160, '#90CAF9', '📖 スキル教室');
+      ctx.fillStyle = '#1565C0'; ctx.font = 'bold 14px sans-serif';
+      ctx.textAlign = 'center'; ctx.fillText('大人のための学びの場', 240, 133); ctx.textAlign = 'start';
+      break;
+    case 'pcroom':
+      drawSkyAndGround('#E0F7FA');
+      drawBuilding(140, 140, 200, 160, '#80DEEA', '💻 PC教室');
+      ctx.fillStyle = 'rgba(0,200,255,0.15)';
+      ctx.fillRect(180, 170, 40, 30); ctx.fillRect(260, 170, 40, 30);
+      break;
+    case 'farm':
+      drawSkyAndGround('#F1F8E9');
+      ctx.fillStyle = '#D32F2F';
+      ctx.fillRect(160, 180, 160, 120);
+      ctx.fillStyle = '#B71C1C';
+      ctx.beginPath(); ctx.moveTo(150, 180); ctx.lineTo(240, 120); ctx.lineTo(330, 180); ctx.fill();
+      ctx.font = 'bold 16px sans-serif'; ctx.fillStyle = '#333'; ctx.textAlign = 'center';
+      ctx.fillText('🌾 農場', 240, 115); ctx.textAlign = 'start';
+      ctx.fillStyle = '#AED581';
+      for (let i = 0; i < 6; i++) {
+        ctx.fillRect(60 + i * 25, 310, 8, -15 - Math.sin(i) * 8);
+        ctx.fillRect(350 + i * 20, 310, 8, -12 - Math.cos(i) * 6);
+      }
+      break;
+    case 'sciencemuseum':
+      drawSkyAndGround('#E8EAF6');
+      drawBuilding(120, 140, 240, 160, '#B39DDB', '🔬 科学館');
+      ctx.strokeStyle = 'rgba(103,58,183,0.4)'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.ellipse(240, 130, 30, 10, 0, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(240, 130, 30, 10, 1, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(240, 130, 30, 10, 2, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = '#7C4DFF';
+      ctx.beginPath(); ctx.arc(240, 130, 4, 0, Math.PI * 2); ctx.fill();
+      break;
+    case 'shop':
+      drawSkyAndGround('#E8F5E9');
+      drawBuilding(120, 160, 240, 140, '#A5D6A7', '🛒 お店');
+      ctx.fillStyle = '#EF5350';
+      for (let i = 0; i < 6; i++) {
+        ctx.beginPath(); ctx.arc(140 + i * 40, 160, 22, Math.PI, 0); ctx.fill();
+      }
+      break;
+    case 'home':
+      drawSkyAndGround('#FFFDE7');
+      if (G.house === 0) {
+        ctx.fillStyle = '#8D6E63'; ctx.fillRect(180, 220, 120, 80);
+        ctx.fillStyle = '#6D4C41'; ctx.fillRect(190, 250, 40, 50);
+        ctx.font = '12px sans-serif'; ctx.fillStyle = '#fff'; ctx.fillText('ダンボール', 195, 245);
+      } else if (G.house === 1) {
+        drawBuilding(160, 180, 160, 120, '#90CAF9', '🏠');
+      } else if (G.house === 2) {
+        drawBuilding(140, 160, 200, 140, '#81C784', '🏡');
+        ctx.fillStyle = '#C62828';
+        ctx.beginPath(); ctx.moveTo(130, 160); ctx.lineTo(240, 110); ctx.lineTo(350, 160); ctx.fill();
+      } else if (G.house === 3) {
+        drawBuilding(100, 140, 280, 160, '#FFD54F', '🏰');
+        ctx.fillStyle = '#FFA726';
+        ctx.fillRect(100, 100, 40, 60); ctx.fillRect(340, 100, 40, 60);
+        ctx.fillStyle = '#E65100';
+        ctx.beginPath(); ctx.moveTo(95, 100); ctx.lineTo(120, 60); ctx.lineTo(145, 100); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(335, 100); ctx.lineTo(360, 60); ctx.lineTo(385, 100); ctx.fill();
+      } else {
+        drawBuilding(80, 130, 320, 170, '#CE93D8', '🏯');
+        ctx.fillStyle = '#AB47BC';
+        ctx.fillRect(80, 85, 50, 60); ctx.fillRect(350, 85, 50, 60);
+        ctx.fillRect(200, 70, 80, 70);
+        ctx.fillStyle = '#7B1FA2';
+        ctx.beginPath(); ctx.moveTo(75, 85); ctx.lineTo(105, 45); ctx.lineTo(135, 85); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(345, 85); ctx.lineTo(375, 45); ctx.lineTo(405, 85); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(195, 70); ctx.lineTo(240, 25); ctx.lineTo(285, 70); ctx.fill();
+        ctx.strokeStyle = '#333'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(240, 25); ctx.lineTo(240, 5); ctx.stroke();
+        ctx.fillStyle = '#F44336';
+        ctx.beginPath(); ctx.moveTo(240, 5); ctx.lineTo(260, 12); ctx.lineTo(240, 19); ctx.fill();
+      }
+      break;
+    case 'work':
+      drawSkyAndGround('#E8EAF6');
+      drawBuilding(140, 120, 200, 180, '#9FA8DA', '🏢 職場');
+      for (let r = 0; r < 3; r++)
+        for (let c = 0; c < 3; c++) {
+          ctx.fillStyle = '#E8EAF6';
+          ctx.fillRect(160 + c * 55, 145 + r * 50, 30, 30);
+        }
+      break;
+    case 'baito':
+      drawSkyAndGround('#E8F5E9');
+      drawBuilding(140, 160, 200, 140, '#C8E6C9', '🏪 アルバイト');
+      ctx.fillStyle = '#43A047';
+      ctx.fillRect(180, 155, 120, 8);
+      break;
+    case 'jobcenter':
+      drawSkyAndGround('#FFF3E0');
+      drawBuilding(120, 150, 240, 150, '#FFE0B2', '📋 ハローワーク');
+      ctx.fillStyle = '#FF9800'; ctx.font = 'bold 14px sans-serif';
+      ctx.textAlign = 'center'; ctx.fillText('お仕事さがし', 240, 143); ctx.textAlign = 'start';
+      break;
+    case 'realtor':
+      drawSkyAndGround('#E0F2F1');
+      drawBuilding(140, 160, 200, 140, '#80CBC4', '🏠 不動産屋');
+      break;
+    case 'pond':
+      ctx.fillStyle = '#81D4FA'; ctx.fillRect(0, 0, 480, 400);
+      ctx.fillStyle = '#4FC3F7'; ctx.fillRect(0, 200, 480, 200);
+      ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 1;
+      for (let i = 0; i < 5; i++) {
+        ctx.beginPath(); ctx.ellipse(120 + i * 80, 280 + (i % 2) * 30, 40 + i * 5, 8, 0, 0, Math.PI * 2); ctx.stroke();
+      }
+      ctx.strokeStyle = '#66BB6A'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(30, 300); ctx.lineTo(25, 180); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(50, 300); ctx.lineTo(55, 190); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(440, 300); ctx.lineTo(435, 185); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(460, 300); ctx.lineTo(465, 195); ctx.stroke();
+      ctx.fillStyle = '#FFF176'; ctx.beginPath(); ctx.arc(400, 60, 35, 0, Math.PI * 2); ctx.fill();
+      break;
+    case 'dinner':
+      ctx.fillStyle = '#FFCCBC'; ctx.fillRect(0, 0, 480, 400);
+      ctx.fillStyle = '#8D6E63'; ctx.fillRect(0, 280, 480, 120);
+      ctx.fillStyle = '#EFEBE9'; ctx.fillRect(100, 250, 280, 20);
+      ctx.fillStyle = '#5D4037';
+      ctx.fillRect(140, 270, 10, 50); ctx.fillRect(330, 270, 10, 50);
+      ctx.fillStyle = '#fff';
+      ctx.beginPath(); ctx.ellipse(180, 245, 25, 8, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(300, 245, 25, 8, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.font = '20px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText('🍔', 180, 243); ctx.fillText('🍰', 300, 243);
+      ctx.fillStyle = '#FFEE58'; ctx.beginPath(); ctx.ellipse(340, 230, 18, 15, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#FFF9C4'; ctx.beginPath(); ctx.arc(340, 210, 13, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#FF8F00'; ctx.beginPath(); ctx.moveTo(345, 212); ctx.lineTo(356, 210); ctx.lineTo(345, 215); ctx.fill();
+      ctx.fillStyle = '#333'; ctx.beginPath(); ctx.arc(336, 207, 2, 0, Math.PI * 2); ctx.fill();
+      ctx.textAlign = 'start';
+      break;
+    case 'festival':
+      ctx.fillStyle = '#1A237E'; ctx.fillRect(0, 0, 480, 400);
+      ctx.fillStyle = '#283593'; ctx.fillRect(0, 280, 480, 120);
+      ctx.fillStyle = '#424242'; ctx.fillRect(100, 120, 280, 160);
+      ctx.fillStyle = '#616161'; ctx.fillRect(110, 130, 260, 10);
+      const lightColors = ['#F44336', '#4CAF50', '#2196F3', '#FF9800', '#E91E63'];
+      for (let i = 0; i < 5; i++) {
+        ctx.fillStyle = lightColors[i];
+        ctx.globalAlpha = 0.4;
+        ctx.beginPath(); ctx.moveTo(140 + i * 50, 130); ctx.lineTo(110 + i * 50, 280); ctx.lineTo(170 + i * 50, 280); ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+      ctx.fillStyle = '#212121';
+      ctx.fillRect(105, 145, 30, 40); ctx.fillRect(345, 145, 30, 40);
+      ctx.fillStyle = '#424242';
+      ctx.beginPath(); ctx.arc(120, 165, 10, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(360, 165, 10, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#FFF176'; ctx.font = '24px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText('♪', 200, 110); ctx.fillText('♫', 280, 100); ctx.fillText('♪', 350, 115);
+      ctx.textAlign = 'start';
+      break;
+    default:
+      drawSkyAndGround('#E1F5FE');
+  }
+  ctx.restore();
+}
+
+function drawSkyAndGround(tint) {
+  const g = ctx.createLinearGradient(0, 0, 0, 400);
+  g.addColorStop(0, '#87CEEB');
+  g.addColorStop(0.7, tint || '#E1F5FE');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 480, 400);
+  ctx.fillStyle = '#66BB6A';
+  ctx.fillRect(0, 300, 480, 100);
+  drawCloud(60, 50); drawCloud(300, 80); drawCloud(420, 40);
+}
+
+function drawCloud(x, y) {
+  ctx.fillStyle = 'rgba(255,255,255,0.8)';
+  ctx.beginPath();
+  ctx.arc(x, y, 20, 0, Math.PI * 2);
+  ctx.arc(x + 25, y - 10, 25, 0, Math.PI * 2);
+  ctx.arc(x + 50, y, 20, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawFlowers() {
+  const colors = ['#EF5350', '#AB47BC', '#42A5F5', '#FFCA28', '#FF7043'];
+  for (let i = 0; i < 8; i++) {
+    const x = 30 + i * 60 + Math.sin(i * 3) * 15;
+    const y = 310 + Math.sin(i * 2) * 10;
+    ctx.fillStyle = '#43A047'; ctx.fillRect(x + 3, y, 3, 15);
+    ctx.fillStyle = colors[i % colors.length];
+    for (let p = 0; p < 5; p++) {
+      const a = (p / 5) * Math.PI * 2;
+      ctx.beginPath(); ctx.arc(x + 4 + Math.cos(a) * 5, y - 2 + Math.sin(a) * 5, 3, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.fillStyle = '#FFF176';
+    ctx.beginPath(); ctx.arc(x + 4, y - 2, 3, 0, Math.PI * 2); ctx.fill();
+  }
+}
+
+function drawBuilding(x, y, w, h, color, label) {
+  ctx.fillStyle = color; ctx.fillRect(x, y, w, h);
+  ctx.strokeStyle = 'rgba(0,0,0,0.2)'; ctx.lineWidth = 2; ctx.strokeRect(x, y, w, h);
+  ctx.fillStyle = '#6D4C41'; ctx.fillRect(x + w / 2 - 15, y + h - 50, 30, 50);
+  ctx.fillStyle = '#FFD54F';
+  ctx.beginPath(); ctx.arc(x + w / 2 + 8, y + h - 25, 3, 0, Math.PI * 2); ctx.fill();
+  if (label) {
+    ctx.font = 'bold 16px sans-serif'; ctx.fillStyle = '#333'; ctx.textAlign = 'center';
+    ctx.fillText(label, x + w / 2, y - 8); ctx.textAlign = 'start';
+  }
+}
+
+function drawCross(x, y) {
+  ctx.fillStyle = '#EF5350';
+  ctx.fillRect(x - 5, y - 15, 10, 30); ctx.fillRect(x - 15, y - 5, 30, 10);
+}
+
+// ========== Duck Drawing ==========
+function drawEgg(x, y, shake, crack) {
+  ctx.save(); ctx.translate(x, y);
+  if (shake > 0) ctx.rotate(Math.sin(G.animTime * 15) * 0.08 * shake);
+  ctx.fillStyle = 'rgba(0,0,0,0.1)';
+  ctx.beginPath(); ctx.ellipse(0, 40, 35, 8, 0, 0, Math.PI * 2); ctx.fill();
+  const eggGrad = ctx.createRadialGradient(-8, -15, 5, 0, 0, 45);
+  eggGrad.addColorStop(0, '#FFFDE7'); eggGrad.addColorStop(0.6, '#FFF9C4'); eggGrad.addColorStop(1, '#F9A825');
+  ctx.fillStyle = eggGrad;
+  ctx.beginPath(); ctx.ellipse(0, 0, 30, 40, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.beginPath(); ctx.ellipse(-10, -18, 8, 14, -0.3, 0, Math.PI * 2); ctx.fill();
+  if (crack > 0) {
+    ctx.strokeStyle = '#5D4037'; ctx.lineWidth = 2; ctx.beginPath();
+    ctx.moveTo(-5, -10); ctx.lineTo(0, 0); ctx.lineTo(8, -5);
+    if (crack > 1) { ctx.lineTo(12, 5); ctx.lineTo(5, 12); ctx.moveTo(0, 0); ctx.lineTo(-8, 10); }
+    if (crack > 2) { ctx.moveTo(-15, -5); ctx.lineTo(-8, 5); ctx.lineTo(-18, 15); ctx.moveTo(8, -5); ctx.lineTo(18, -12); }
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawDuck(x, y) {
+  ctx.save(); ctx.translate(x, y);
+  const bounce = Math.sin(G.animTime * 3) * 4;
+  const squish = 1 + Math.sin(G.animTime * 3) * 0.03;
+  ctx.translate(0, bounce); ctx.scale(squish, 1 / squish);
+  ctx.fillStyle = 'rgba(0,0,0,0.1)';
+  ctx.beginPath(); ctx.ellipse(0, 55 - bounce, 40, 10, 0, 0, Math.PI * 2); ctx.fill();
+  const bodyGrad = ctx.createRadialGradient(-10, 10, 5, 0, 10, 50);
+  bodyGrad.addColorStop(0, '#FFEE58'); bodyGrad.addColorStop(0.5, '#FFD600'); bodyGrad.addColorStop(1, '#F9A825');
+  ctx.fillStyle = bodyGrad;
+  ctx.beginPath(); ctx.ellipse(0, 20, 38, 35, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  ctx.beginPath(); ctx.ellipse(-12, 8, 14, 20, -0.2, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#FFD600';
+  ctx.beginPath(); ctx.moveTo(30, 15); ctx.quadraticCurveTo(55, 0, 48, -10);
+  ctx.quadraticCurveTo(45, -5, 32, 5); ctx.fill();
+  const headGrad = ctx.createRadialGradient(-5, -30, 3, 0, -25, 30);
+  headGrad.addColorStop(0, '#FFEE58'); headGrad.addColorStop(0.7, '#FFD600'); headGrad.addColorStop(1, '#F9A825');
+  ctx.fillStyle = headGrad;
+  ctx.beginPath(); ctx.arc(0, -25, 25, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.beginPath(); ctx.ellipse(-8, -35, 8, 12, -0.2, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#FF6F00';
+  ctx.beginPath(); ctx.moveTo(-8, -22); ctx.quadraticCurveTo(-25, -18, -8, -14); ctx.closePath(); ctx.fill();
+  drawEyes(0, -30);
+  ctx.fillStyle = 'rgba(255,138,128,0.3)';
+  ctx.beginPath(); ctx.ellipse(-15, -18, 6, 4, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(12, -18, 6, 4, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#FBC02D';
+  ctx.beginPath(); ctx.ellipse(-32, 15, 12, 22, 0.2, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(32, 15, 12, 22, -0.2, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#E65100';
+  ctx.beginPath(); ctx.ellipse(-14, 52, 14, 5, 0.15, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(14, 52, 14, 5, -0.15, 0, Math.PI * 2); ctx.fill();
+  drawCostume();
+  drawEquippedItems();
+  ctx.restore();
+}
+
+function drawEyes(cx, cy) {
+  if (G.expression === 'happy') {
+    ctx.strokeStyle = '#333'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(cx - 8, cy + 2, 5, Math.PI, 0); ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx + 8, cy + 2, 5, Math.PI, 0); ctx.stroke();
+  } else if (G.expression === 'sad') {
+    ctx.fillStyle = '#333';
+    ctx.beginPath(); ctx.arc(cx - 8, cy, 3, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx + 8, cy, 3, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(100,181,246,0.6)';
+    ctx.beginPath(); ctx.ellipse(cx - 12, cy + 8, 2, 4, 0, 0, Math.PI * 2); ctx.fill();
+  } else {
+    ctx.fillStyle = '#333';
+    ctx.beginPath(); ctx.arc(cx - 8, cy, 3.5, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx + 8, cy, 3.5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(cx - 6, cy - 2, 1.5, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx + 10, cy - 2, 1.5, 0, Math.PI * 2); ctx.fill();
+  }
+}
+
+function drawCostume() {
+  if (!G.costume) return;
+  ctx.save();
+  switch (G.costume) {
+    case 'doctor':
+      ctx.fillStyle = '#fff'; ctx.fillRect(-30, 0, 60, 40);
+      ctx.strokeStyle = '#bbb'; ctx.strokeRect(-30, 0, 60, 40);
+      ctx.fillStyle = '#B0BEC5';
+      ctx.beginPath(); ctx.arc(12, -48, 6, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.beginPath(); ctx.arc(12, -48, 4, 0, Math.PI * 2); ctx.fill();
+      break;
+    case 'chef':
+      ctx.fillStyle = '#fff';
+      ctx.beginPath(); ctx.ellipse(0, -55, 20, 12, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillRect(-16, -68, 32, 18);
+      ctx.beginPath(); ctx.ellipse(0, -68, 18, 10, 0, 0, Math.PI * 2); ctx.fill();
+      break;
+    case 'artist':
+      ctx.fillStyle = '#E53935';
+      ctx.beginPath(); ctx.ellipse(0, -48, 22, 8, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(-2, -52, 14, 0, Math.PI, true); ctx.fill();
+      ctx.strokeStyle = '#6D4C41'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(-42, 10); ctx.lineTo(-65, -10); ctx.stroke();
+      ctx.fillStyle = '#2196F3';
+      ctx.beginPath(); ctx.arc(-66, -12, 4, 0, Math.PI * 2); ctx.fill();
+      break;
+    case 'builder':
+      ctx.fillStyle = '#FF8F00';
+      ctx.beginPath(); ctx.ellipse(0, -46, 26, 8, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#FFA726';
+      ctx.beginPath(); ctx.arc(0, -48, 18, Math.PI, 0); ctx.fill();
+      break;
+    case 'ceo':
+      ctx.fillStyle = '#FFD600';
+      ctx.beginPath();
+      ctx.moveTo(-15, -45); ctx.lineTo(-18, -60); ctx.lineTo(-8, -50);
+      ctx.lineTo(0, -65); ctx.lineTo(8, -50); ctx.lineTo(18, -60);
+      ctx.lineTo(15, -45); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = '#F9A825'; ctx.lineWidth = 1; ctx.stroke();
+      ctx.fillStyle = '#E53935';
+      ctx.beginPath(); ctx.arc(0, -50, 3, 0, Math.PI * 2); ctx.fill();
+      break;
+    case 'janitor':
+      ctx.fillStyle = '#78909C';
+      ctx.beginPath(); ctx.ellipse(0, -46, 24, 6, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#607D8B';
+      ctx.beginPath(); ctx.arc(0, -48, 16, Math.PI, 0); ctx.fill();
+      ctx.strokeStyle = '#8D6E63'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(42, 10); ctx.lineTo(65, -20); ctx.stroke();
+      ctx.fillStyle = '#A1887F'; ctx.fillRect(60, -30, 12, 15);
+      break;
+    case 'musician':
+      ctx.strokeStyle = '#333'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(0, -38, 22, Math.PI, 0); ctx.stroke();
+      ctx.fillStyle = '#333';
+      ctx.beginPath(); ctx.ellipse(-22, -35, 6, 9, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(22, -35, 6, 9, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#E53935';
+      ctx.beginPath(); ctx.ellipse(-22, -35, 4, 7, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(22, -35, 4, 7, 0, 0, Math.PI * 2); ctx.fill();
+      break;
+    case 'idol':
+      ctx.fillStyle = '#E91E63';
+      ctx.font = '16px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText('⭐', 16, -42); ctx.textAlign = 'start';
+      ctx.fillStyle = '#F48FB1';
+      ctx.beginPath();
+      ctx.moveTo(-30, 5); ctx.lineTo(-35, 40); ctx.lineTo(-20, 45);
+      ctx.lineTo(0, 48); ctx.lineTo(20, 45); ctx.lineTo(35, 40); ctx.lineTo(30, 5);
+      ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = '#EC407A'; ctx.lineWidth = 1; ctx.stroke();
+      ctx.fillStyle = '#F8BBD0';
+      for (let i = 0; i < 7; i++) {
+        ctx.beginPath(); ctx.arc(-28 + i * 9, 44, 5, Math.PI, 0); ctx.fill();
+      }
+      break;
+    case 'rapper':
+      ctx.fillStyle = '#212121';
+      ctx.beginPath(); ctx.ellipse(0, -46, 22, 6, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(0, -48, 16, Math.PI, 0); ctx.fill();
+      ctx.fillStyle = '#333';
+      ctx.beginPath(); ctx.ellipse(16, -44, 16, 5, 0.2, -Math.PI * 0.5, Math.PI * 0.5); ctx.fill();
+      ctx.strokeStyle = '#FFD600'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(0, 2, 18, 0.2, Math.PI - 0.2); ctx.stroke();
+      ctx.fillStyle = '#FFD600';
+      ctx.beginPath(); ctx.arc(0, 19, 6, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#FFF176'; ctx.font = 'bold 8px sans-serif';
+      ctx.textAlign = 'center'; ctx.fillText('$', 0, 22); ctx.textAlign = 'start';
+      ctx.fillStyle = '#555';
+      ctx.fillRect(-46, 0, 6, 18);
+      ctx.fillStyle = '#333';
+      ctx.beginPath(); ctx.arc(-43, -2, 7, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#888'; ctx.lineWidth = 0.8;
+      for (let i = -5; i <= 5; i += 2.5) {
+        ctx.beginPath(); ctx.moveTo(-48, -2 + i); ctx.lineTo(-38, -2 + i); ctx.stroke();
+      }
+      break;
+    case 'programmer':
+      ctx.strokeStyle = '#1565C0'; ctx.lineWidth = 2;
+      ctx.strokeRect(-16, -34, 13, 10); ctx.strokeRect(3, -34, 13, 10);
+      ctx.beginPath(); ctx.moveTo(-3, -29); ctx.lineTo(3, -29); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-16, -29); ctx.lineTo(-22, -31); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(16, -29); ctx.lineTo(22, -31); ctx.stroke();
+      ctx.fillStyle = 'rgba(33,150,243,0.3)';
+      ctx.fillRect(-20, 10, 40, 5);
+      break;
+    case 'farmer':
+      ctx.fillStyle = '#F9A825';
+      ctx.beginPath(); ctx.ellipse(0, -46, 28, 7, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#FDD835';
+      ctx.beginPath(); ctx.arc(0, -50, 18, Math.PI, 0); ctx.fill();
+      ctx.fillStyle = '#E65100';
+      ctx.fillRect(-18, -48, 36, 4);
+      break;
+    case 'teacher':
+      ctx.strokeStyle = '#5D4037'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(-8, -29, 7, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(8, -29, 7, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-1, -29); ctx.lineTo(1, -29); ctx.stroke();
+      ctx.strokeStyle = '#795548'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(42, 10); ctx.lineTo(70, -15); ctx.stroke();
+      ctx.fillStyle = '#F44336';
+      ctx.beginPath(); ctx.arc(71, -16, 3, 0, Math.PI * 2); ctx.fill();
+      break;
+    case 'scientist':
+      ctx.fillStyle = 'rgba(200,200,200,0.6)';
+      ctx.fillRect(-18, -35, 14, 10); ctx.fillRect(4, -35, 14, 10);
+      ctx.strokeStyle = '#666'; ctx.lineWidth = 1.5;
+      ctx.strokeRect(-18, -35, 14, 10); ctx.strokeRect(4, -35, 14, 10);
+      ctx.beginPath(); ctx.moveTo(-4, -30); ctx.lineTo(4, -30); ctx.stroke();
+      ctx.fillStyle = '#fff'; ctx.fillRect(-28, 2, 56, 35);
+      ctx.strokeStyle = '#ccc'; ctx.strokeRect(-28, 2, 56, 35);
+      break;
+    case 'pilot':
+      ctx.fillStyle = '#5D4037';
+      ctx.beginPath(); ctx.arc(0, -38, 22, Math.PI, 0); ctx.fill();
+      ctx.fillRect(-22, -38, 44, 8);
+      ctx.fillStyle = '#FFD54F';
+      ctx.fillRect(-12, -42, 24, 6);
+      ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      ctx.fillRect(-10, -41, 9, 4); ctx.fillRect(1, -41, 9, 4);
+      break;
+    case 'investor':
+      ctx.fillStyle = '#1A237E';
+      ctx.fillRect(-30, -2, 60, 42);
+      ctx.fillStyle = '#0D47A1';
+      ctx.beginPath(); ctx.moveTo(-5, -2); ctx.lineTo(0, 40); ctx.lineTo(5, -2); ctx.fill();
+      ctx.strokeStyle = '#FFD600'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(0, 8, 12, 0.3, Math.PI - 0.3); ctx.stroke();
+      break;
+    case 'retired':
+      ctx.fillStyle = '#5D4037';
+      ctx.beginPath();
+      ctx.moveTo(-32, -2); ctx.lineTo(-35, 42); ctx.lineTo(35, 42); ctx.lineTo(32, -2);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#795548';
+      ctx.beginPath(); ctx.moveTo(-8, -2); ctx.lineTo(-5, 42); ctx.lineTo(5, 42); ctx.lineTo(8, -2); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = '#4E342E'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(-10, -2); ctx.lineTo(-5, 20); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(10, -2); ctx.lineTo(5, 20); ctx.stroke();
+      ctx.strokeStyle = '#5D4037'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(-12, -20); ctx.lineTo(-20, -23); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(12, -20); ctx.lineTo(20, -23); ctx.stroke();
+      ctx.fillStyle = '#8D6E63';
+      ctx.fillRect(34, 10, 12, 14);
+      ctx.fillStyle = '#D7CCC8';
+      ctx.fillRect(35, 11, 10, 5);
+      break;
+  }
+  ctx.restore();
+}
+
+function drawEquippedItems() {
+  if (G.items.includes('ribbon')) {
+    ctx.fillStyle = '#E91E63';
+    ctx.beginPath();
+    ctx.moveTo(15, -42); ctx.lineTo(22, -50); ctx.lineTo(18, -42);
+    ctx.lineTo(25, -38); ctx.lineTo(15, -42); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(15, -42); ctx.lineTo(8, -50); ctx.lineTo(12, -42);
+    ctx.lineTo(5, -38); ctx.lineTo(15, -42); ctx.fill();
+  }
+  if (G.items.includes('scarf')) {
+    ctx.fillStyle = '#E53935';
+    ctx.beginPath(); ctx.ellipse(0, -8, 28, 6, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#C62828';
+    ctx.fillRect(15, -8, 8, 20); ctx.fillRect(13, 8, 12, 5);
+  }
+  if (G.items.includes('tie') && G.costume !== 'investor') {
+    ctx.fillStyle = '#1565C0';
+    ctx.beginPath();
+    ctx.moveTo(-4, -5); ctx.lineTo(4, -5); ctx.lineTo(5, 5); ctx.lineTo(0, 30);
+    ctx.lineTo(-5, 5); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#0D47A1';
+    ctx.beginPath();
+    ctx.moveTo(-5, -8); ctx.lineTo(5, -8); ctx.lineTo(6, -3); ctx.lineTo(-6, -3);
+    ctx.closePath(); ctx.fill();
+  }
+  if (G.items.includes('bowtie') && G.costume !== 'investor') {
+    ctx.fillStyle = '#7B1FA2';
+    ctx.beginPath();
+    ctx.moveTo(0, -6); ctx.lineTo(-12, -12); ctx.lineTo(-12, 0); ctx.lineTo(0, -6); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(0, -6); ctx.lineTo(12, -12); ctx.lineTo(12, 0); ctx.lineTo(0, -6); ctx.fill();
+    ctx.fillStyle = '#9C27B0';
+    ctx.beginPath(); ctx.arc(0, -6, 3, 0, Math.PI * 2); ctx.fill();
+  }
+  if (G.items.includes('sunglasses') && !G.costume) {
+    ctx.fillStyle = '#212121';
+    ctx.fillRect(-16, -33, 12, 8); ctx.fillRect(4, -33, 12, 8);
+    ctx.strokeStyle = '#212121'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(-4, -29); ctx.lineTo(4, -29); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-16, -29); ctx.lineTo(-22, -31); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(16, -29); ctx.lineTo(22, -31); ctx.stroke();
+    ctx.fillStyle = 'rgba(33,33,33,0.3)';
+    ctx.fillRect(-15, -32, 10, 6); ctx.fillRect(5, -32, 10, 6);
+  }
+  if (G.items.includes('cap') && !G.costume) {
+    ctx.fillStyle = '#1976D2';
+    ctx.beginPath(); ctx.ellipse(0, -46, 22, 6, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(0, -48, 16, Math.PI, 0); ctx.fill();
+    ctx.fillStyle = '#1565C0';
+    ctx.beginPath(); ctx.ellipse(-15, -44, 18, 5, -0.2, 0, Math.PI); ctx.fill();
+  }
+  if (G.items.includes('tophat') && !G.costume) {
+    ctx.fillStyle = '#212121';
+    ctx.beginPath(); ctx.ellipse(0, -46, 24, 6, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillRect(-14, -72, 28, 28);
+    ctx.beginPath(); ctx.ellipse(0, -72, 14, 5, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#E53935'; ctx.fillRect(-14, -52, 28, 4);
+  }
+  if (G.items.includes('mic') && !G.costume) {
+    ctx.fillStyle = '#555';
+    ctx.fillRect(-47, 2, 5, 15);
+    ctx.fillStyle = '#444';
+    ctx.beginPath(); ctx.arc(-44.5, 0, 6, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#777'; ctx.lineWidth = 0.7;
+    for (let i = -4; i <= 4; i += 2) {
+      ctx.beginPath(); ctx.moveTo(-49, i); ctx.lineTo(-40, i); ctx.stroke();
+    }
+  }
+  if (G.items.includes('headphones') && !G.costume) {
+    ctx.strokeStyle = '#555'; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.arc(0, -38, 20, Math.PI, 0); ctx.stroke();
+    ctx.fillStyle = '#555';
+    ctx.beginPath(); ctx.ellipse(-20, -35, 5, 8, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(20, -35, 5, 8, 0, 0, Math.PI * 2); ctx.fill();
+  }
+  if (G.items.includes('backpack')) {
+    ctx.fillStyle = '#F44336';
+    ctx.beginPath();
+    ctx.roundRect(18, 5, 20, 28, 4); ctx.fill();
+    ctx.strokeStyle = '#C62828'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.fillStyle = '#EF9A9A';
+    ctx.fillRect(22, 20, 12, 3);
+  }
+  if (G.items.includes('necklace')) {
+    ctx.strokeStyle = '#FFD600'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(0, 0, 15, 0.2, Math.PI - 0.2); ctx.stroke();
+    ctx.fillStyle = '#FF5722';
+    ctx.beginPath(); ctx.arc(0, 14, 4, 0, Math.PI * 2); ctx.fill();
+  }
+  if (G.items.includes('watch')) {
+    ctx.fillStyle = '#90A4AE';
+    ctx.fillRect(-38, 12, 8, 10);
+    ctx.fillStyle = '#B0BEC5';
+    ctx.fillRect(-37, 13, 6, 8);
+    ctx.fillStyle = '#263238';
+    ctx.beginPath(); ctx.arc(-34, 17, 3, 0, Math.PI * 2); ctx.fill();
+  }
+  if (G.items.includes('ring')) {
+    ctx.strokeStyle = '#FFD600'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(38, 35, 4, 0, Math.PI * 2); ctx.stroke();
+    ctx.fillStyle = '#E91E63';
+    ctx.beginPath(); ctx.arc(38, 31, 2.5, 0, Math.PI * 2); ctx.fill();
+  }
+  if (G.items.includes('umbrella')) {
+    ctx.strokeStyle = '#6A1B9A'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(-40, 15); ctx.lineTo(-48, -18); ctx.stroke();
+    ctx.fillStyle = '#9C27B0';
+    ctx.beginPath(); ctx.arc(-48, -18, 14, Math.PI, 0); ctx.fill();
+    ctx.fillStyle = '#CE93D8';
+    ctx.beginPath(); ctx.arc(-48, -18, 14, Math.PI, Math.PI + 0.8); ctx.lineTo(-48, -18); ctx.fill();
+  }
+  if (G.items.includes('medal')) {
+    ctx.fillStyle = '#F44336'; ctx.fillRect(-5, -4, 10, 12);
+    ctx.fillStyle = '#FFD600';
+    ctx.beginPath(); ctx.arc(0, 14, 8, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#FFF176';
+    ctx.font = '8px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('★', 0, 17); ctx.textAlign = 'start';
+  }
+  if (G.items.includes('crown') && !G.costume) {
+    ctx.fillStyle = '#FFD600';
+    ctx.beginPath();
+    ctx.moveTo(-15, -45); ctx.lineTo(-18, -62); ctx.lineTo(-8, -52);
+    ctx.lineTo(0, -67); ctx.lineTo(8, -52); ctx.lineTo(18, -62);
+    ctx.lineTo(15, -45); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#F9A825'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.fillStyle = '#E53935';
+    ctx.beginPath(); ctx.arc(0, -52, 3, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#2196F3';
+    ctx.beginPath(); ctx.arc(-10, -50, 2, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(10, -50, 2, 0, Math.PI * 2); ctx.fill();
+  }
+  if (G.items.includes('diamond')) {
+    ctx.fillStyle = '#B3E5FC';
+    ctx.beginPath();
+    ctx.moveTo(-38, -5); ctx.lineTo(-33, -12); ctx.lineTo(-27, -12);
+    ctx.lineTo(-22, -5); ctx.lineTo(-30, 5); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#4FC3F7'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.beginPath(); ctx.moveTo(-33, -10); ctx.lineTo(-30, -5); ctx.lineTo(-35, -5); ctx.fill();
+  }
+}
+
+// ========== Shop ==========
+let shopActionUsed = false;
+function openShop(type) {
+  shopModal.style.display = 'flex';
+  shopActionUsed = false;
+  let html = '';
+  if (type === 'house') {
+    html = '<h3>🏠 不動産屋</h3>';
+    HOUSES.forEach((h, i) => {
+      if (i <= G.house) {
+        html += `<div class="shop-item"><span>${h.name}</span><span class="owned">${i === G.house ? '現在の家' : '売却済み'}</span></div>`;
+      } else {
+        const canBuy = G.money >= h.price;
+        html += `<div class="shop-item"><span>${h.name} (${h.price}🪙)</span><button onclick="buyHouse(${i})" ${canBuy ? '' : 'disabled'}>購入</button></div>`;
+      }
+    });
+  } else {
+    html = '<h3>🛒 お店</h3>';
+    SHOP_ITEMS.forEach(item => {
+      if (G.items.includes(item.id)) {
+        html += `<div class="shop-item"><span>${item.name}</span><span class="owned">購入済み✓</span></div>`;
+      } else {
+        const canBuy = G.money >= item.price;
+        html += `<div class="shop-item"><span>${item.name} (${item.price}🪙)</span><button onclick="buyItem('${item.id}')" ${canBuy ? '' : 'disabled'}>購入</button></div>`;
+      }
+    });
+  }
+  html += '<div style="text-align:center;margin-top:12px;"><button class="btn" onclick="closeShop()">閉じる</button></div>';
+  shopContent.innerHTML = html;
+}
+
+window.buyItem = function(id) {
+  const item = SHOP_ITEMS.find(i => i.id === id);
+  if (item && G.money >= item.price && !G.items.includes(id)) {
+    if (!shopActionUsed) { G.actionsLeft--; shopActionUsed = true; }
+    G.money -= item.price;
+    G.items.push(id);
+    G.expression = 'happy';
+    setMsg(`${item.name} を買った！`);
+    updateUI();
+    openShop(G.phase === 'childhood' ? 'child' : 'adult');
+  }
+};
+
+window.buyHouse = function(index) {
+  const h = HOUSES[index];
+  if (G.money >= h.price && index > G.house) {
+    if (!shopActionUsed) { G.actionsLeft--; shopActionUsed = true; }
+    G.money -= h.price;
+    G.house = index;
+    G.expression = 'happy';
+    setMsg(`${h.name} に引っ越した！`);
+    updateUI();
+    openShop('house');
+  }
+};
+
+window.closeShop = function() {
+  shopModal.style.display = 'none';
+  if (G.phase === 'childhood' || G.phase === 'adulthood') {
+    showPlaces();
+  }
+};
+
+// ========== Skill Courses ==========
+function openSkillSelect() {
+  shopModal.style.display = 'flex';
+  let html = '<h3>📖 スキル教室</h3>';
+  html += '<p style="text-align:center;font-size:12px;color:#666;margin-bottom:8px;">お金を払ってスキルをしっかり学ぶ！</p>';
+  SKILL_COURSES.forEach(c => {
+    const canPay = G.money >= c.cost;
+    const restLabel = G.rested ? ' +ボーナス✨' : '';
+    html += `<div class="shop-item"><div><span>${c.name}</span><br><span style="font-size:11px;color:#555;">⭐+${c.exp} ${SPEC_NAMES[c.specKey]}+${c.specVal}${restLabel}</span></div><span style="font-size:12px;color:#C62828;font-weight:bold;white-space:nowrap;">-${c.cost}🪙</span><button onclick="doSkillCourse('${c.id}')" ${canPay ? '' : 'disabled'}>受講</button></div>`;
+  });
+  html += '<div style="text-align:center;margin-top:12px;"><button class="btn" onclick="closeShop()">やめる</button></div>';
+  shopContent.innerHTML = html;
+}
+
+window.doSkillCourse = function(id) {
+  const c = SKILL_COURSES.find(s => s.id === id);
+  if (!c || G.money < c.cost) return;
+  G.actionsLeft--;
+  G.money -= c.cost;
+  const restBonus = G.rested;
+  const expBonus = restBonus ? 4 : 0;
+  const specBonus = restBonus ? 4 : 0;
+  G.exp += c.exp + expBonus;
+  G.specialExp[c.specKey] += c.specVal + specBonus;
+  G.rested = false;
+  G.expression = 'happy';
+  setMsg(`📖 ${c.name}を受講！ ⭐+${c.exp + expBonus} ${SPEC_NAMES[c.specKey]}+${c.specVal + specBonus}${restBonus ? ' ✨' : ''}`);
+  shopModal.style.display = 'none';
+  updateUI();
+  clearButtons();
+  actionTitle.textContent = G.actionsLeft > 0 ? `✅ 完了！（残り${G.actionsLeft}回）` : '✅ 今日のぶんは終わり！';
+  if (G.actionsLeft > 0) {
+    addButton('📍 次の場所へ', () => { G.costume = null; showPlaces(); }, 'btn-primary');
+  } else {
+    addButton('🌙 夜になる', () => endDay(), 'btn-primary');
+  }
+};
+
+// ========== Play activities ==========
+const PLAY_ACTIVITIES = [
+  { id: 'pond', name: '🏊 池に泳ぎにいく', desc: 'のんびり泳いでリフレッシュ', cost: 0 },
+  { id: 'dinner', name: '🍽️ 友達とご飯', desc: '友達と美味しいご飯を食べる', cost: 50 },
+  { id: 'festival', name: '🎵 フェスにいく', desc: '音楽フェスで盛り上がる！', cost: 100 },
+];
+
+function openPlaySelect() {
+  shopModal.style.display = 'flex';
+  let html = '<h3>🎉 遊びにいく</h3>';
+  html += '<p style="text-align:center;font-size:12px;color:#666;margin-bottom:8px;">たまには息抜きも大事！</p>';
+  PLAY_ACTIVITIES.forEach(a => {
+    const canPay = G.money >= a.cost;
+    const costLabel = a.cost > 0 ? `<span style="font-size:12px;color:#C62828;font-weight:bold;white-space:nowrap;">-${a.cost}🪙</span>` : '<span style="font-size:12px;color:#4CAF50;font-weight:bold;">無料</span>';
+    html += `<div class="shop-item"><div><span>${a.name}</span><br><span style="font-size:11px;color:#555;">${a.desc}</span></div>${costLabel}<button onclick="doPlayActivity('${a.id}')" ${canPay ? '' : 'disabled'}>いく！</button></div>`;
+  });
+  html += '<div style="text-align:center;margin-top:12px;"><button class="btn" onclick="closeShop()">やめる</button></div>';
+  shopContent.innerHTML = html;
+}
+
+window.doPlayActivity = function(id) {
+  const a = PLAY_ACTIVITIES.find(p => p.id === id);
+  if (!a || G.money < a.cost) return;
+  G.actionsLeft--;
+  G.money -= a.cost;
+  G.expression = 'happy';
+  G.rested = true;
+  shopModal.style.display = 'none';
+
+  if (id === 'pond') {
+    currentScene = 'pond';
+    G.costume = null;
+    setMsg('🏊 池でスイスイ～♪ 気持ちいい！ 次の仕事にボーナス✨');
+  } else if (id === 'dinner') {
+    currentScene = 'dinner';
+    G.costume = null;
+    setMsg('🍽️ 友達と楽しくご飯！ おなかいっぱい♪ 次の仕事にボーナス✨');
+  } else if (id === 'festival') {
+    currentScene = 'festival';
+    G.costume = null;
+    setMsg('🎵 フェス最高～！！ テンション上がる♪ 次の仕事にボーナス✨');
+  }
+
+  updateUI();
+  clearButtons();
+  actionTitle.textContent = G.actionsLeft > 0 ? `✅ 完了！（残り${G.actionsLeft}回）` : '✅ 今日のぶんは終わり！';
+  if (G.actionsLeft > 0) {
+    addButton('📍 次の場所へ', () => { G.costume = null; showPlaces(); }, 'btn-primary');
+  } else {
+    addButton('🌙 夜になる', () => endDay(), 'btn-primary');
+  }
+};
+
+// ========== Part-time jobs ==========
+function openBaitoSelect() {
+  shopModal.style.display = 'flex';
+  let html = '<h3>🏪 アルバイトを選ぶ</h3>';
+  html += '<p style="text-align:center;font-size:12px;color:#666;margin-bottom:8px;">お金もスキルも貯まる！ 転職の足がかりに✨</p>';
+  PART_TIME_JOBS.forEach(b => {
+    const specLabel = b.specKey ? ` ${SPEC_NAMES[b.specKey]}+${b.specVal}` : '';
+    html += `<div class="shop-item"><div><span>${b.name}</span><br><span style="font-size:11px;color:#555;">⭐+${b.exp}${specLabel}</span></div><span style="font-size:12px;color:#2E7D32;font-weight:bold;white-space:nowrap;">${b.pay}🪙</span><button onclick="doBaito('${b.id}')">働く</button></div>`;
+  });
+  html += '<div style="text-align:center;margin-top:12px;"><button class="btn" onclick="closeShop()">やめる</button></div>';
+  shopContent.innerHTML = html;
+}
+
+window.doBaito = function(id) {
+  const b = PART_TIME_JOBS.find(j => j.id === id);
+  if (!b) return;
+  G.actionsLeft--;
+  const restBonus = G.rested;
+  const payBonus = restBonus ? Math.floor(b.pay * 0.3) : 0;
+  const expBonus = restBonus ? 3 : 0;
+  const specBonus = restBonus ? 2 : 0;
+  const totalPay = b.pay + payBonus;
+  const totalExp = b.exp + expBonus;
+  G.money += totalPay;
+  G.exp += totalExp;
+  if (b.specKey) {
+    G.specialExp[b.specKey] += b.specVal + specBonus;
+  }
+  G.rested = false;
+  G.expression = 'happy';
+
+  let msgParts = [`${b.msg} +${totalPay}🪙 ⭐+${totalExp}`];
+  if (b.specKey) msgParts.push(`${SPEC_NAMES[b.specKey]}+${b.specVal + specBonus}`);
+  if (restBonus) msgParts.push('休憩ボーナス✨');
+  setMsg(msgParts.join(' '));
+  shopModal.style.display = 'none';
+  updateUI();
+
+  clearButtons();
+  actionTitle.textContent = G.actionsLeft > 0 ? `✅ 完了！（残り${G.actionsLeft}回）` : '✅ 今日のぶんは終わり！';
+  if (G.actionsLeft > 0) {
+    addButton('📍 次の場所へ', () => { G.costume = null; showPlaces(); }, 'btn-primary');
+  } else {
+    addButton('🌙 夜になる', () => endDay(), 'btn-primary');
+  }
+};
+
+// ========== Job Change ==========
+function openJobChange() {
+  shopModal.style.display = 'flex';
+  let html = '<h3>📋 ハローワーク — 転職</h3>';
+  html += `<p style="text-align:center;font-size:12px;color:#666;margin-bottom:4px;">現在: ${getJobRankName()}（日給${getJobSalary()}🪙）</p>`;
+  html += `<p style="text-align:center;font-size:11px;color:#888;margin-bottom:8px;">💡 持ち物で条件が下がる職業も！ ⚠️転職するとランクはリセット</p>`;
+
+  JOBS.forEach(job => {
+    if (job.id === G.job.id) {
+      html += `<div class="shop-item"><span>${getJobRankName()} (日給${getJobSalary()}🪙)</span><span class="owned">現職</span></div>`;
+    } else {
+      const can = canDoJob(job);
+      const reqText = `<span class="job-req">条件: ${getJobRequirement(job)}</span>`;
+      const bonusText = job.itemBonus ? `<span class="job-req" style="color:#E65100;">🎁 ${getItemBonusText(job)}</span>` : '';
+      html += `<div class="shop-item"><div>${job.name} (日給${job.salary}🪙)${reqText}${bonusText}</div><button onclick="changeJob('${job.id}')" ${can ? '' : 'disabled'}>${can ? '転職' : '×'}</button></div>`;
+    }
+  });
+  html += '<div style="text-align:center;margin-top:12px;"><button class="btn" onclick="closeShop()">閉じる</button></div>';
+  shopContent.innerHTML = html;
+}
+
+window.changeJob = function(jobId) {
+  const job = JOBS.find(j => j.id === jobId);
+  if (!job || !canDoJob(job)) return;
+  G.jobHistory.push(getJobRankName());
+  G.job = job;
+  G.jobWorkCount = 0;
+  G.jobRank = 0;
+  G.expression = 'happy';
+  setMsg(`🎉 ${getJobRankName()} に転職した！ 日給${getJobSalary()}ダック！`);
+  shopModal.style.display = 'none';
+  updateUI();
+  showPlaces();
+};
+
+// ========== Scene Management ==========
+let currentScene = 'egg';
+
+function render() {
+  ctx.clearRect(0, 0, 480, 400);
+  drawBackground(currentScene);
+
+  if (G.phase === 'opening') {
+    if (!G.duckAppear) drawEgg(240, 230, G.eggShake, G.eggCrack);
+    else drawDuck(240, 250);
+  } else {
+    drawDuck(240, 250);
+  }
+}
+
+// ========== Game Loop ==========
+let lastTime = 0;
+function gameLoop(time) {
+  const dt = (time - lastTime) / 1000;
+  lastTime = time;
+  G.animTime += dt;
+  if (G.phase === 'opening') updateOpening(dt);
+  render();
+  requestAnimationFrame(gameLoop);
+}
+
+// ========== Opening ==========
+function startOpening() {
+  G.phase = 'opening';
+  G.openingTimer = 0; G.eggShake = 0; G.eggCrack = 0; G.duckAppear = false;
+  currentScene = 'egg';
+  setMsg('🥚 たまごがある...');
+  actionTitle.textContent = '見守る';
+  clearButtons();
+  addButton('🥚 たまごをつつく', () => {
+    if (G.eggCrack < 3) {
+      G.eggShake = 1; G.eggCrack++;
+      if (G.eggCrack === 1) setMsg('🥚 ピキッ... ひびが入った！');
+      if (G.eggCrack === 2) setMsg('🥚 バキバキ... もうすぐ！');
+      if (G.eggCrack === 3) {
+        setMsg('🥚 バリーン！！');
+        setTimeout(() => {
+          G.duckAppear = true; G.expression = 'happy';
+          setMsg('🐤 ゴムアヒルが生まれた！ グワグワ！');
+          clearButtons();
+          addButton('🌟 人生をはじめる', () => startChildhood(), 'btn-primary');
+        }, 800);
+      }
+    }
+  }, 'btn-primary');
+  updateUI();
+}
+
+function updateOpening(dt) {
+  G.openingTimer += dt;
+  if (!G.duckAppear && G.openingTimer > 2) {
+    G.eggShake = 0.5 + Math.sin(G.animTime * 2) * 0.3;
+  }
+}
+
+// ========== Childhood ==========
+function startChildhood() {
+  G.phase = 'childhood';
+  G.day = 0; G.money = 0; G.exp = 0;
+  G.specialExp = { medical: 0, cooking: 0, art: 0, construction: 0, music: 0, dance: 0, tech: 0, farming: 0, science: 0 };
+  G.maxDays = 7; G.items = []; G.house = 1;
+  G.expression = 'normal'; G.costume = null; G.rested = false;
+  nextDay();
+}
+
+function nextDay() {
+  G.day++; G.costume = null; G.expression = 'normal';
+  currentScene = 'home';
+
+  if (G.phase === 'childhood' && G.day > 7) { startJobSelect(); return; }
+  if (G.phase === 'adulthood' && G.day > 10) { startEnding(); return; }
+
+  if (G.phase === 'childhood') {
+    G.money += 100;
+    setMsg(`☀️ ${G.day}日目の朝！ お小遣い +100ダック`);
+  } else {
+    setMsg(`☀️ ${G.day}日目の朝！ 【${getJobRankName()}】`);
+  }
+
+  G.actionsLeft = 2;
+  updateUI();
+  showPlaces();
+}
+
+function showPlaces() {
+  clearButtons();
+  const places = G.phase === 'childhood' ? CHILD_PLACES : ADULT_PLACES;
+
+  if (G.actionsLeft <= 0) { endDay(); return; }
+
+  actionTitle.textContent = `🗺️ どこに行く？（残り${G.actionsLeft}回）`;
+
+  if (G.phase === 'adulthood') {
+    const jcBtn = addButton('📋 転職する（無料）', () => {
+      openJobChange();
+    }, 'btn-small');
+    jcBtn.style.width = '100%';
+    jcBtn.style.marginBottom = '6px';
+    jcBtn.style.background = 'linear-gradient(180deg, #FFF3E0, #FFE0B2)';
+    jcBtn.style.borderColor = '#FF9800';
+    jcBtn.style.fontSize = '12px';
+  }
+
+  const modalPlaces = ['baito', 'skillschool', 'play', 'shop', 'realtor'];
+  places.forEach(p => {
+    addButton(`${p.name}`, () => {
+      const isModal = modalPlaces.includes(p.id);
+      if (!isModal) G.actionsLeft--;
+      currentScene = p.id === 'home' ? 'home' : p.id;
+      p.effect();
+      updateUI();
+      if (shopModal.style.display === 'flex') return;
+      clearButtons();
+      actionTitle.textContent = G.actionsLeft > 0 ? `✅ 完了！（残り${G.actionsLeft}回）` : '✅ 今日のぶんは終わり！';
+      if (G.actionsLeft > 0) {
+        addButton('📍 次の場所へ', () => { G.costume = null; showPlaces(); }, 'btn-primary');
+      } else {
+        addButton('🌙 夜になる', () => endDay(), 'btn-primary');
+      }
+    });
+  });
+}
+
+function endDay() {
+  G.money -= 30; G.costume = null; currentScene = 'home';
+  if (G.money < 0) {
+    G.expression = 'sad';
+    if (G.house > 0) {
+      G.house = 0;
+      setMsg(`🌙 ごはん代も払えない... 家を失ってダンボール生活に... (残金: ${G.money}ダック)`);
+    } else {
+      setMsg(`🌙 ごはん代 -30ダック... おなかすいた... (残金: ${G.money}ダック)`);
+    }
+  } else {
+    G.expression = 'normal';
+    setMsg(`🌙 ごはんを食べた (-30ダック)　今日もおつかれさま！`);
+  }
+  updateUI(); clearButtons();
+  addButton('💤 おやすみ', () => nextDay(), 'btn-primary');
+}
+
+// ========== Job Select ==========
+function startJobSelect() {
+  G.phase = 'job-select';
+  currentScene = 'egg'; G.expression = 'normal'; G.costume = null;
+  setMsg('🎓 子供時代が終わった！ さあ、就職だ！');
+  updateUI(); clearButtons();
+  actionTitle.textContent = '💼 職業を選ぼう';
+
+  JOBS.forEach(job => {
+    const can = canDoJob(job);
+    const disc = getItemDiscounts(job);
+    const hasDiscount = Object.values(disc).some(v => v > 0);
+    const discLabel = hasDiscount ? ' 🎁' : '';
+    const b = addButtonHTML(
+      `${job.name}${discLabel}<br><span style="font-size:11px">日給${job.salary}🪙</span>`,
+      () => { G.job = job; G.jobHistory = []; G.jobWorkCount = 0; G.jobRank = 0; startAdulthood(); }
+    );
+    if (!can) {
+      b.disabled = true;
+      b.title = getJobRequirement(job) + (hasDiscount ? '\n持ち物ボーナス適用中！' : '');
+    }
+  });
+}
+
+function getItemDiscounts(job) {
+  const discounts = { _exp: 0 };
+  if (!job.itemBonus) return discounts;
+  for (const [itemId, bonuses] of Object.entries(job.itemBonus)) {
+    if (G.items.includes(itemId)) {
+      for (const [key, val] of Object.entries(bonuses)) {
+        discounts[key] = (discounts[key] || 0) + val;
+      }
+    }
+  }
+  return discounts;
+}
+
+function canDoJob(job) {
+  const disc = getItemDiscounts(job);
+  const effectiveExp = job.reqExp - (disc._exp || 0);
+  if (G.exp < effectiveExp) return false;
+  if (job.reqSpecial) {
+    for (const [key, val] of Object.entries(job.reqSpecial)) {
+      const effectiveReq = Math.max(0, val - (disc[key] || 0));
+      if (G.specialExp[key] < effectiveReq) return false;
+    }
+  }
+  return true;
+}
+
+function getJobRequirement(job) {
+  const disc = getItemDiscounts(job);
+  const specNames = { medical: '医療', cooking: '料理', art: '芸術', construction: '建築', music: '音楽', dance: 'ダンス', tech: '技術', farming: '農業', science: '科学' };
+  const baseExp = job.reqExp;
+  const effExp = baseExp - (disc._exp || 0);
+  let req = effExp < baseExp ? `EXP${effExp}(${baseExp})` : `EXP${baseExp}`;
+  if (job.reqSpecial) {
+    for (const [key, val] of Object.entries(job.reqSpecial)) {
+      const effVal = Math.max(0, val - (disc[key] || 0));
+      req += effVal < val ? ` ${specNames[key]}${effVal}(${val})` : ` ${specNames[key]}${val}`;
+    }
+  }
+  return req;
+}
+
+function getItemBonusText(job) {
+  if (!job.itemBonus) return '';
+  const specNames = { medical: '医療', cooking: '料理', art: '芸術', construction: '建築', music: '音楽', dance: 'ダンス', tech: '技術', farming: '農業', science: '科学', _exp: 'EXP' };
+  let parts = [];
+  for (const [itemId, bonuses] of Object.entries(job.itemBonus)) {
+    const item = SHOP_ITEMS.find(i => i.id === itemId);
+    const owned = G.items.includes(itemId);
+    const bText = Object.entries(bonuses).map(([k, v]) => `${specNames[k] || k}-${v}`).join(',');
+    parts.push(`${owned ? '✅' : ''}${item ? item.name : itemId}(${bText})`);
+  }
+  return parts.join(' ');
+}
+
+// ========== Adulthood ==========
+function startAdulthood() {
+  G.phase = 'adulthood'; G.day = 0; G.maxDays = 10;
+  G.expression = 'happy'; G.rested = false;
+  setMsg(`🎉 ${G.job.name} として社会人デビュー！`);
+  updateUI(); clearButtons();
+  addButton('🏢 大人の世界へ！', () => nextDay(), 'btn-primary');
+}
+
+// ========== Ending ==========
+function startEnding() {
+  G.phase = 'ending'; G.costume = 'retired'; currentScene = 'home';
+  G.expression = 'happy';
+
+  const houseScore = G.house * 500;
+  const itemScore = G.items.length * 100;
+  const moneyScore = Math.max(0, G.money);
+  const jobScore = G.job ? getJobSalary() : 0;
+  const rankScore = G.jobRank * 200;
+  const careerScore = G.jobHistory.length * 50;
+  const totalScore = houseScore + itemScore + moneyScore + jobScore + rankScore + careerScore;
+
+  let rank = '🐣 ひよっこアヒル';
+  if (totalScore >= 5000) rank = '🌈 レジェンドアヒル';
+  else if (totalScore >= 3500) rank = '🌟 スーパーアヒル';
+  else if (totalScore >= 2500) rank = '👑 セレブアヒル';
+  else if (totalScore >= 1500) rank = '🎉 幸せアヒル';
+  else if (totalScore >= 800) rank = '🐤 がんばったアヒル';
+
+  setMsg(`🏆 おつかれさま！`);
+  updateUI();
+  actionTitle.textContent = '🏆 人生の振り返り';
+  clearButtons();
+
+  const finalJobName = getJobRankName();
+  const allJobs = G.jobHistory.length > 0
+    ? G.jobHistory.join(' → ') + ' → ' + finalJobName
+    : finalJobName;
+
+  const endInfo = document.createElement('div');
+  endInfo.style.cssText = 'text-align:left; font-size:13px; padding:0 8px; margin-bottom:10px;';
+  endInfo.innerHTML = `
+    <div style="text-align:center; font-size:20px; font-weight:bold; margin-bottom:8px;">${rank}</div>
+    <p>💼 職歴: ${allJobs}</p>
+    <p>🏠 住まい: ${HOUSES[G.house].name}</p>
+    <p>👜 持ち物(${G.items.length}個): ${G.items.length > 0 ? G.items.map(id => SHOP_ITEMS.find(i => i.id === id)?.name || id).join(', ') : 'なし'}</p>
+    <p>🪙 残金: ${G.money} ダック</p>
+    <hr style="margin:6px 0; border-color:#FFD54F;">
+    <p style="text-align:center; font-size:16px; font-weight:bold;">🏆 総合スコア: ${totalScore.toLocaleString()}</p>
+    <p style="text-align:center; font-size:11px; color:#888;">家${houseScore} + アイテム${itemScore} + 貯金${moneyScore} + 職業${jobScore} + ランク${rankScore} + 経歴${careerScore}</p>
+  `;
+  btnContainer.appendChild(endInfo);
+
+  // Leaderboard integration
+  scoreSubmitted = false;
+  fetchLeaderboard().then(() => {
+    if (isHighScore(totalScore)) {
+      const hsDiv = document.createElement('div');
+      hsDiv.id = 'hsEntry';
+      hsDiv.style.cssText = 'text-align:center; margin:8px 0;';
+      hsDiv.innerHTML = `
+        <p style="color:#F57F17; font-weight:bold; margin-bottom:6px;">🎊 ランキング入り！名前を入力してね</p>
+        <input type="text" id="hsName" maxlength="15" placeholder="なまえ（15文字まで）" style="width:80%; padding:8px 12px; border:2px solid #FFB300; border-radius:10px; font-size:14px; text-align:center; font-family:inherit;">
+        <br>
+        <button class="btn btn-primary" id="hsSubmit" style="margin-top:8px;">とうろく</button>
+      `;
+      btnContainer.appendChild(hsDiv);
+
+      document.getElementById('hsSubmit').addEventListener('click', async () => {
+        const name = document.getElementById('hsName').value.trim();
+        if (name.length > 0 && !scoreSubmitted) {
+          await submitScore(name, totalScore, finalJobName, rank);
+          hsDiv.innerHTML = '<p style="color:#F57F17; font-weight:bold;">✅ 登録しました！</p>';
+        }
+      });
+      document.getElementById('hsName').addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); document.getElementById('hsSubmit').click(); }
+      });
+    }
+  });
+
+  addButton('📊 ランキング', () => showLeaderboardOverlay());
+  addButton('🔄 もう一度遊ぶ', () => {
+    G.money = 0; G.exp = 0; G.items = []; G.house = 0; G.job = null;
+    G.specialExp = { medical: 0, cooking: 0, art: 0, construction: 0, music: 0, dance: 0, tech: 0, farming: 0, science: 0 };
+    G.jobHistory = []; G.rested = false; G.jobWorkCount = 0; G.jobRank = 0;
+    startOpening();
+  }, 'btn-primary');
+}
+
+// ========== Init ==========
+requestAnimationFrame(gameLoop);
+startOpening();
+</script>
+</body>
+</html>

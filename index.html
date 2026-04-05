@@ -1406,6 +1406,17 @@
           <button class="game-ranking-btn" data-api="/api/race-scores" data-type="race">ランキングを見る</button>
         </div>
       </div>
+      <div class="game-banner fade-up">
+        <h3>アヒルの人生ゲーム</h3>
+        <p>
+          たまごから生まれて、学んで、働いて、人生を歩もう！<br>
+          16の職業と5段階ランクアップ — 目指せレジェンドアヒル 🐤👑
+        </p>
+        <div class="game-buttons">
+          <a href="/ducklife.html" class="game-play-btn">あそぶ</a>
+          <button class="game-ranking-btn" data-api="/api/ducklife-scores" data-type="ducklife">ランキングを見る</button>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -1598,6 +1609,9 @@
           } else if (type === 'race') {
             const sec = ((e.time||0)/1000).toFixed(2);
             return `<div class="ranking-row ${i < 3 ? 'top3' : ''}"><span class="rank">${medal}</span><span class="name">${e.name}</span><span class="score">${sec}秒</span></div>`;
+          } else if (type === 'ducklife') {
+            const jobText = e.job ? ` ${e.job}` : '';
+            return `<div class="ranking-row ${i < 3 ? 'top3' : ''}"><span class="rank">${medal}</span><span class="name">${e.name}</span><span class="score">${e.score.toLocaleString()}${jobText}</span></div>`;
           } else if (type !== 'osouji') {
             extra = e.eggs ? ` 🥚${e.eggs}` : ' 🥚?';
           }
