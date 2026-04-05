@@ -1,0 +1,1954 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>アヒルRPG 勇者についていく - ahiru-space.com</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐤</text></svg>">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-TXQFE7EYKZ"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-TXQFE7EYKZ');
+</script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&family=Noto+Sans+JP:wght@400;700;900&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  font-family: 'Nunito', 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', sans-serif;
+  display: flex; justify-content: center; align-items: center;
+  min-height: 100vh; overflow-y: auto;
+  touch-action: manipulation; user-select: none; -webkit-user-select: none;
+}
+
+.back-link {
+  position: fixed; top: 10px; left: 10px;
+  color: rgba(255,255,255,0.6); text-decoration: none;
+  font-size: 14px; font-weight: 700; z-index: 100;
+  padding: 4px 12px; background: rgba(0,0,0,0.3); border-radius: 20px;
+}
+.back-link:hover { color: #FFD700; }
+
+#game-container {
+  max-width: 480px; width: 100%; background: #1a1a2e; border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  overflow: hidden; position: relative;
+  border: 2px solid #2a2a4a;
+}
+
+#status-bar {
+  background: linear-gradient(90deg, #2a1a3a, #1a2a4a);
+  padding: 8px 12px; font-size: 12px; color: #ddd;
+  border-bottom: 2px solid #3a3a5a;
+}
+
+#chapter-label {
+  font-size: 13px; font-weight: bold; color: #FFD54F;
+  margin-bottom: 4px;
+}
+
+.gauge-row {
+  display: flex; align-items: center; gap: 6px; margin: 3px 0;
+  font-size: 11px;
+}
+
+.gauge-label { width: 40px; text-align: right; }
+.gauge-bar {
+  flex: 1; height: 14px; background: #111; border-radius: 7px;
+  overflow: hidden; position: relative; border: 1px solid #333;
+}
+.gauge-fill {
+  height: 100%; border-radius: 7px; transition: width 0.5s ease;
+  position: relative;
+}
+.gauge-fill::after {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 50%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.2), transparent);
+  border-radius: 7px 7px 0 0;
+}
+
+#suspicion-fill { background: linear-gradient(90deg, #e74c3c, #ff6b6b); }
+#trust-fill { background: linear-gradient(90deg, #2ecc71, #55efc4); }
+#hp-fill { background: linear-gradient(90deg, #e74c3c, #ff9ff3); }
+
+canvas { display: block; width: 100%; height: auto; }
+
+#message-box {
+  background: linear-gradient(180deg, rgba(10,10,30,0.95), rgba(20,20,50,0.95));
+  padding: 12px 16px; font-size: 13px; color: #eee;
+  min-height: 60px; max-height: 120px; overflow-y: auto;
+  border-top: 2px solid #3a3a5a;
+  line-height: 1.6; white-space: pre-wrap;
+}
+
+#action-panel {
+  padding: 10px; background: linear-gradient(180deg, #1a1a2e, #12122a);
+  border-top: 1px solid #2a2a4a; min-height: 50px;
+}
+
+#buttons {
+  display: flex; flex-wrap: wrap; gap: 6px; justify-content: center;
+}
+
+.btn {
+  padding: 8px 12px; border: 2px solid #FFB300; border-radius: 10px;
+  background: linear-gradient(180deg, #3a2a10, #2a1a00);
+  font-size: 12px; font-weight: bold; cursor: pointer;
+  color: #FFD54F; transition: all 0.15s;
+  min-width: 90px; text-align: center;
+  font-family: inherit;
+}
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255,179,0,0.3);
+  background: linear-gradient(180deg, #4a3a20, #3a2a10);
+}
+.btn:active { transform: translateY(0); }
+.btn:disabled {
+  opacity: 0.35; cursor: not-allowed; transform: none;
+  box-shadow: none; border-color: #555;
+  color: #888;
+}
+
+.btn-special {
+  border-color: #ff6b6b; color: #ff9ff3;
+  background: linear-gradient(180deg, #3a1a2a, #2a0a1a);
+}
+.btn-special:hover {
+  box-shadow: 0 4px 12px rgba(255,107,107,0.3);
+  background: linear-gradient(180deg, #4a2a3a, #3a1a2a);
+}
+
+#battle-info {
+  display: none;
+  padding: 6px 12px; background: rgba(0,0,0,0.5);
+  font-size: 11px; color: #aaa; text-align: center;
+  border-top: 1px solid #2a2a4a;
+}
+
+/* Effects overlay */
+.effect-popup {
+  position: absolute; pointer-events: none;
+  font-size: 24px; font-weight: bold;
+  animation: popUp 1.2s ease-out forwards;
+  z-index: 10;
+}
+@keyframes popUp {
+  0% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-60px) scale(1.3); }
+}
+
+.damage-flash {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(255,0,0,0.3); pointer-events: none;
+  animation: flashOut 0.3s ease-out forwards; z-index: 5;
+}
+@keyframes flashOut {
+  0% { opacity: 1; } 100% { opacity: 0; }
+}
+
+/* Title screen */
+#title-screen {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  background: linear-gradient(180deg, #0a0a20, #1a1a3e, #0a0a20);
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; z-index: 20;
+  cursor: pointer;
+}
+#title-screen h1 {
+  font-size: 22px; color: #FFD54F; text-shadow: 0 2px 8px rgba(255,213,79,0.5);
+  margin-bottom: 8px; text-align: center; line-height: 1.4;
+}
+#title-screen p {
+  font-size: 13px; color: #aaa; margin-top: 20px;
+}
+#title-canvas { margin: 10px 0; }
+
+.btn .hint {
+  display: block; font-size: 9px; font-weight: normal;
+  color: #999; margin-top: 2px;
+}
+.btn .hint .sus { color: #ff6b6b; }
+.btn .hint .tru { color: #55efc4; }
+.btn-locked {
+  border-color: #444; color: #555;
+  background: linear-gradient(180deg, #1a1a1a, #111);
+  font-style: italic;
+}
+
+@media (max-width: 500px) {
+  #status-bar { padding: 6px 8px; font-size: 11px; }
+  #chapter-label { font-size: 12px; }
+  .gauge-row { font-size: 10px; }
+  .gauge-label { width: 35px; }
+  #message-box { font-size: 12px; padding: 10px 12px; min-height: 50px; }
+  .btn { min-width: 80px; padding: 7px 10px; font-size: 11px; }
+  #action-panel { padding: 8px; }
+  #title-screen h1 { font-size: 18px; }
+}
+</style>
+</head>
+<body>
+<a href="/" class="back-link">&larr; Home</a>
+<div id="game-container">
+  <div id="title-screen">
+    <h1>🐤 勇者についていく<br>ゴムアヒルRPG</h1>
+    <canvas id="title-canvas" width="200" height="160"></canvas>
+    <p>— クリックしてスタート —</p>
+  </div>
+  <div id="status-bar">
+    <div id="chapter-label">📖 Chapter 1/10</div>
+    <div class="gauge-row">
+      <span class="gauge-label">😰疑惑</span>
+      <div class="gauge-bar"><div class="gauge-fill" id="suspicion-fill" style="width:0%"></div></div>
+    </div>
+    <div class="gauge-row">
+      <span class="gauge-label">💛信頼</span>
+      <div class="gauge-bar"><div class="gauge-fill" id="trust-fill" style="width:30%"></div></div>
+    </div>
+    <div class="gauge-row">
+      <span class="gauge-label">♥️ HP</span>
+      <div class="gauge-bar"><div class="gauge-fill" id="hp-fill" style="width:100%"></div></div>
+    </div>
+  </div>
+  <div style="position:relative; width:100%; aspect-ratio:480/400; overflow:hidden;">
+    <canvas id="canvas" width="480" height="400"></canvas>
+    <div id="battle-info"></div>
+  </div>
+  <div id="message-box">🐤 ある日、黄色いゴム製アヒルは勇者パーティの荷物に紛れ込んだ…</div>
+  <div id="action-panel">
+    <div id="buttons"></div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const msgBox = document.getElementById('message-box');
+const btnContainer = document.getElementById('buttons');
+const chapterLabel = document.getElementById('chapter-label');
+const battleInfo = document.getElementById('battle-info');
+const titleScreen = document.getElementById('title-screen');
+const titleCanvas = document.getElementById('title-canvas');
+const titleCtx = titleCanvas.getContext('2d');
+
+// ========== Game State ==========
+const G = {
+  chapter: 0,
+  suspicion: 0,
+  trust: 30,
+  hp: 30, maxHp: 30,
+  expression: 'normal',
+  animTime: 0,
+  battleState: null,
+  deflated: false,
+  deflatedTurn: false,
+  specialUnlocked: false,
+  scene: 'grassland',
+  effects: [],
+  shake: 0,
+  battleTurn: 0,
+  gameOver: false,
+  started: false,
+  buffActive: false,
+  evadeUp: false,
+  memory: {},  // track key decisions for callbacks
+};
+
+// ========== Chapters ==========
+// Balance: no auto-suspicion. All suspicion from player choices/battle actions only.
+// Battle victories: +5 trust × 3 = 15 base trust. Baseline: s=0, t=45.
+// TRUE END (s≤20,t≥80): careful play + trust-building
+// GOOD END (s≤50,t≥60): moderate play
+// NORMAL END (s>50,t≥50): risky play
+// SAD END (t 30-49): passive/disengaged play
+// BAD END (t<30): hostile play
+const CHAPTERS = [
+  // === Ch1: 旅の始まり ===
+  {
+    id: 1, title: '🌅 旅の始まり', type: 'event', scene: 'grassland',
+    text: '勇者パーティの荷物袋からこっそり出てきたあなた。\n勇者アレスが振り返る。「おっ、新しい仲間か？名前は？」',
+    choices: [
+      { text: '💪「伝説の戦士ダッキー参上！」', suspicion: 2, trust: 8,
+        result: 'アレス「ハハハ！気に入った！一緒に戦おうぜ！」\nメルル「…伝説？聞いたことないけど」\nリリア「よろしくお願いしますね♪」',
+        mem: { bold_intro: true } },
+      { text: '🗡️「ダッキー…戦士だ」（クールに）', suspicion: 5, trust: 5,
+        result: 'アレス「おぉ、頼もしいな！」\nメルル「…なんか黄色くない？」\nリリア「素敵なお名前ですね♪」' },
+      { text: '🐤「グワッ…ゴホン、ダッキーです」', suspicion: 10, trust: 2,
+        result: 'メルル「今、鳴いた？確実に鳴いた」\nリリア「かわいいお名前ですね♪」\nアレス「元気がいいな！」' },
+      { text: '😶 黙ってうなずく', suspicion: 0, trust: -3,
+        result: 'アレス「…無口なタイプか。まぁいい、歓迎するぜ」\nメルル「名前も言えないの…？」\nリリア「恥ずかしがり屋さんですね」' },
+    ]
+  },
+  // === Ch2: 森の道 ===
+  {
+    id: 2, title: '🌲 森の道', type: 'choice', scene: 'forest',
+    text: '森で道に迷ってしまった。\nアレス「誰か道わかるやつは？」',
+    choices: [
+      { text: '🧭 アレスに任せる', suspicion: 0, trust: -1,
+        result: 'アレス「よし、俺についてこい！」\n…30分後、元の場所に戻ってきた。\nメルル「ほら、やっぱり」\nダッキーは何もしなかったが疑われもしなかった。' },
+      { text: '🗺️ 地図を見るフリをする', suspicion: 3, trust: 5,
+        result: '地図を逆さに持っていたが、偶然正しい方向だった！\nアレス「さすがダッキー！」\nメルル「…偶然じゃないの？」' },
+      { text: '👃 匂いで道を探す', suspicion: 8, trust: 7,
+        result: 'クンクンと地面を嗅ぎ回り、川の方向を発見！\nアレス「すげぇ鼻だな！」\nメルル「…犬でもなく人でもなく…何なの？」\nリリア「ワイルドですね♪」' },
+      { text: '🦆 水辺の方角を本能で感じる', suspicion: 15, trust: 10,
+        result: '驚異的な精度で川を発見！パーティの危機を救った！\nアレス「天才だな！」リリア「すごーい！」\nメルル「水への嗅覚が鋭すぎない…？絶対普通じゃない」' },
+    ]
+  },
+  // === Ch3: ゴブリン襲来！ ===
+  {
+    id: 3, title: '👹 ゴブリン襲来！', type: 'battle', scene: 'forest',
+    text: 'ガサガサッ！茂みからゴブリンが飛び出してきた！\n初めての戦闘だ！',
+    enemies: [
+      { name: 'ゴブリンA', hp: 25, maxHp: 25, atk: 4, sprite: 'goblin' },
+      { name: 'ゴブリンB', hp: 25, maxHp: 25, atk: 4, sprite: 'goblin' },
+      { name: 'ゴブリンC', hp: 25, maxHp: 25, atk: 3, sprite: 'goblin' },
+    ],
+  },
+  // === Ch4: 焚き火キャンプ ===
+  {
+    id: 4, title: '🔥 焚き火キャンプ', type: 'event', scene: 'camp',
+    text: '夜のキャンプ。焚き火を囲んで語り合う。\nメルル「ねぇダッキー…あなた、本当に戦士なの？」',
+    choices: [
+      { text: '⚔️「当然だ。数々の戦場を…」（嘘の武勇伝）', suspicion: 3, trust: 3,
+        result: 'アレス「おぉ、語ってくれよ！」\nダッキーは適当な武勇伝を語った（全部嘘）。\nメルル「…矛盾してない？まぁいいけど」' },
+      { text: '🌙「星がきれいだなぁ…」（話をそらす）', suspicion: 2, trust: 5,
+        result: 'リリア「本当ですね…きれい♪」\nアレス「ダッキーは詩人だな！」\nメルル「…はぐらかしたわね。でも、まぁ…きれいだけど」' },
+      { text: '💛「仲間と焚き火を囲めて幸せだ」', suspicion: 0, trust: 12,
+        result: 'リリア「ダッキーちゃん…！私もです♪」\nアレス「…お前、いいやつだな」\nメルル「…（少し表情がゆるむ）…まぁ、悪くない夜ね」',
+        condition: () => G.trust >= 38 },
+      { text: '😅「えっと…グワ…いや、まぁね」', suspicion: 10, trust: -2,
+        result: 'メルル「今、グワって言おうとした？何なの？」\nアレス「方言じゃないか？」\nリリア「疲れてるんですよ、きっと♪」' },
+    ]
+  },
+  // === Ch5: 川渡り ===
+  {
+    id: 5, title: '🌊 川渡り', type: 'choice', scene: 'river',
+    text: '目の前に大きな川が！渡り方を決めないと。\nアレス「泳ぐか？橋を探すか？」',
+    choices: [
+      { text: '🌉 橋を探す（安全策）', suspicion: 0, trust: 0,
+        result: '30分歩いて橋を発見。安全に渡れた。\nメルル「堅実ね。少し見直した」\nアレス「時間かかったけど安全第一だな」' },
+      { text: '🪵 丸太でいかだを作る', suspicion: 2, trust: 8,
+        result: 'みんなで協力していかだを作成！チームワーク抜群！\nアレス「お前がリーダーシップ取ってくれて助かった！」\nリリア「楽しかったです♪」\nメルル「…まぁ、悪くなかったわ」',
+        mem: { teamwork: true } },
+      { text: '🏊 泳いで渡る', suspicion: 18, trust: 3,
+        result: '完璧なフォームで泳ぐダッキー！速すぎる！\nしかも全然沈まない…！\nメルル「なんで浮いてるの…？沈まないの…？あり得ない！」\nリリア「お魚みたい！」\nアレス「さすがだな！」',
+        mem: { swam: true } },
+      { text: '🙏 リリアに浮遊魔法を頼む', suspicion: 0, trust: 5,
+        result: 'リリア「お任せください♪」\n全員ふわりと浮いて川を渡った。\nアレス「魔法って便利だな〜」\nメルル「最初から私に頼めばいいのに」' },
+    ]
+  },
+  // === Ch6: 洞窟のコウモリ ===
+  {
+    id: 6, title: '🦇 洞窟のコウモリ', type: 'battle', scene: 'cave',
+    text: '暗い洞窟の奥から巨大なコウモリが現れた！\nアレス「デカい！気をつけろ！」',
+    enemies: [
+      { name: '巨大コウモリ', hp: 80, maxHp: 80, atk: 7, sprite: 'bat' },
+    ],
+  },
+  // === Ch7: 町で休憩 ===
+  {
+    id: 7, title: '🏘️ 町で休憩', type: 'choice', scene: 'town',
+    text: 'ようやく町に到着！宿屋で休憩。\nリリア「みんなでお風呂に入りましょう♪」\n（ゴム製アヒルがお湯に浮く危機！！）',
+    choices: [
+      { text: '💪「足湯だけで十分だ！戦士だからな！」', suspicion: 3, trust: 5,
+        result: 'アレス「わかる！俺も足湯派だ！」\n足湯を楽しむダッキー。足だけならセーフ…！\nリリア「かわいい足ですね♪」\nメルル「…ゴムっぽくない？その足」' },
+      { text: '🛁 覚悟を決めてみんなで入る', suspicion: 12, trust: 12,
+        result: '必死に体を沈めるダッキー！\nアレス「お、背中流してやるよ」（ゴムの感触…！）\nアレス「お前…肌スベスベだな！」\nリリア「つやつやですね♪」\nメルル「…この弾力…絶対おかしい」',
+        mem: { bathed: true } },
+      { text: '😷「風邪気味で…遠慮します」', suspicion: 0, trust: -2,
+        result: 'リリア「大丈夫ですか？回復魔法かけますね！」\n（回復魔法でゴムの体がピカピカに光る）\nメルル「なんか光り方おかしくない…？」\nアレス「ゆっくり休め」' },
+      { text: '🚿「先に一人で入る！」', suspicion: 7, trust: -4,
+        result: '一人で素早く入浴。浮かないように必死に沈む。\nメルル「なんで一人で入るのよ。隠してることあるでしょ」\nアレス「恥ずかしがり屋だな」\nリリア「ダッキーちゃん…？」' },
+    ]
+  },
+  // === Ch8: 正体バレ危機！ ===
+  {
+    id: 8, title: '😰 正体バレ危機！', type: 'event', scene: 'town',
+    text: 'メルルがダッキーの前に立ちはだかる。\nメルル「もう黙ってられない。あなた…人間じゃないでしょ？」\nアレス「えっ？」　リリア「えっ…？」',
+    choices: [
+      { text: '😤「何を言ってるんだ！失礼な！」（逆ギレ）', suspicion: 0, trust: -5,
+        result: 'ダッキー「俺を疑うのか！？仲間だろ！？」\nアレス「そうだぞメルル、仲間を疑うな」\nメルルは不満そうだが引き下がった。\nメルル「…いつか絶対ボロが出る」\nリリア「ケンカはやめましょう…」' },
+      { text: '😢「…実は秘密があるんだ」（悲しい過去捏造）', suspicion: 5, trust: 10,
+        result: 'ダッキー「故郷を追われた過去があって…話したくなかったんだ」\nリリア「ダッキーちゃん…」（涙）\nアレス「そうだったのか…辛かったな」\nメルル「…嘘くさいけど…泣いてる…？」' },
+      { text: '🤡 突然踊り出してごまかす', suspicion: 8, trust: 5,
+        result: 'ダッキーが突然グワグワ踊り出す！\nリリア「あはは！かわいい〜♪」\nアレス「ハハハ！面白いやつだ！」\nメルル「…ごまかされた気がする…はぁ」' },
+      { text: '🐤「…実はアヒルなんだ」（正体を打ち明ける）',
+        condition: () => G.trust >= 55,
+        customAction: true },
+    ]
+  },
+  // === Ch9: 魔王戦 ===
+  {
+    id: 9, title: '🐉 魔王戦', type: 'battle', scene: 'castle',
+    text: 'ついに魔王城の玉座の間！\nドラゴン魔王「フハハ！来たか、勇者ども！\n…ん？一匹、黄色いのが混ざってないか？」',
+    enemies: [
+      { name: 'ドラゴン魔王', hp: 160, maxHp: 160, atk: 10, sprite: 'dragon' },
+    ],
+  },
+  // === Ch10: エンディング ===
+  {
+    id: 10, title: '🏆 エンディング', type: 'ending', scene: 'grassland',
+    text: '',
+    choices: []
+  },
+];
+
+// ========== Drawing Functions ==========
+
+function drawBackground() {
+  const sc = G.scene;
+  if (sc === 'grassland') {
+    // Sky
+    const sky = ctx.createLinearGradient(0, 0, 0, 250);
+    sky.addColorStop(0, '#87CEEB'); sky.addColorStop(1, '#E0F7FA');
+    ctx.fillStyle = sky; ctx.fillRect(0, 0, 480, 250);
+    // Sun
+    ctx.fillStyle = '#FFD54F';
+    ctx.beginPath(); ctx.arc(400, 60, 35, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(255,213,79,0.3)';
+    ctx.beginPath(); ctx.arc(400, 60, 50, 0, Math.PI * 2); ctx.fill();
+    // Ground
+    const ground = ctx.createLinearGradient(0, 250, 0, 400);
+    ground.addColorStop(0, '#66BB6A'); ground.addColorStop(1, '#388E3C');
+    ctx.fillStyle = ground; ctx.fillRect(0, 250, 480, 150);
+    // Grass blades
+    ctx.strokeStyle = '#43A047';
+    for (let i = 0; i < 30; i++) {
+      const gx = (i * 17 + G.animTime * 5) % 480;
+      ctx.beginPath(); ctx.moveTo(gx, 260 + (i % 3) * 10);
+      ctx.quadraticCurveTo(gx + 3, 248 + (i % 3) * 10, gx + 6, 255 + (i % 3) * 10);
+      ctx.stroke();
+    }
+    // Clouds
+    drawCloud(80, 40); drawCloud(280, 70);
+  } else if (sc === 'forest') {
+    // Dark sky through trees
+    const sky = ctx.createLinearGradient(0, 0, 0, 200);
+    sky.addColorStop(0, '#2E7D32'); sky.addColorStop(1, '#1B5E20');
+    ctx.fillStyle = sky; ctx.fillRect(0, 0, 480, 250);
+    // Tree trunks
+    ctx.fillStyle = '#5D4037';
+    ctx.fillRect(30, 50, 25, 200); ctx.fillRect(150, 30, 20, 220);
+    ctx.fillRect(350, 60, 22, 190); ctx.fillRect(440, 40, 18, 210);
+    // Canopy
+    ctx.fillStyle = '#1B5E20';
+    [[42, 50], [160, 30], [361, 60], [449, 40]].forEach(([x, y]) => {
+      ctx.beginPath(); ctx.arc(x, y, 45, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(x - 20, y + 15, 35, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(x + 20, y + 15, 35, 0, Math.PI * 2); ctx.fill();
+    });
+    // Ground
+    ctx.fillStyle = '#33691E'; ctx.fillRect(0, 250, 480, 150);
+    // Leaves on ground
+    ctx.fillStyle = '#2E7D32';
+    for (let i = 0; i < 15; i++) {
+      ctx.beginPath(); ctx.ellipse(30 + i * 32, 270 + (i % 4) * 8, 10, 4, i * 0.5, 0, Math.PI * 2); ctx.fill();
+    }
+    // Light rays
+    ctx.fillStyle = 'rgba(255,255,200,0.05)';
+    ctx.beginPath(); ctx.moveTo(200, 0); ctx.lineTo(220, 0); ctx.lineTo(260, 400); ctx.lineTo(180, 400); ctx.fill();
+  } else if (sc === 'cave') {
+    ctx.fillStyle = '#1a1a1a'; ctx.fillRect(0, 0, 480, 400);
+    // Cave walls
+    const wallGrad = ctx.createRadialGradient(240, 200, 50, 240, 200, 250);
+    wallGrad.addColorStop(0, '#2a2a2a'); wallGrad.addColorStop(1, '#0a0a0a');
+    ctx.fillStyle = wallGrad; ctx.fillRect(0, 0, 480, 400);
+    // Stalactites
+    ctx.fillStyle = '#333';
+    for (let i = 0; i < 8; i++) {
+      ctx.beginPath(); ctx.moveTo(i * 65, 0); ctx.lineTo(i * 65 + 15, 40 + (i % 3) * 20); ctx.lineTo(i * 65 + 30, 0); ctx.fill();
+    }
+    // Stalagmites
+    for (let i = 0; i < 6; i++) {
+      ctx.beginPath(); ctx.moveTo(20 + i * 80, 400); ctx.lineTo(35 + i * 80, 360 - (i % 3) * 15); ctx.lineTo(50 + i * 80, 400); ctx.fill();
+    }
+    // Dim light
+    ctx.fillStyle = 'rgba(100,100,150,0.1)';
+    ctx.beginPath(); ctx.arc(240, 300, 120, 0, Math.PI * 2); ctx.fill();
+    // Ground
+    ctx.fillStyle = '#222'; ctx.fillRect(0, 340, 480, 60);
+  } else if (sc === 'camp') {
+    // Night sky
+    ctx.fillStyle = '#0a0a2a'; ctx.fillRect(0, 0, 480, 250);
+    // Stars
+    ctx.fillStyle = '#fff';
+    const starPositions = [[50,30],[120,60],[200,20],[300,45],[380,25],[420,70],[80,90],[260,80],[450,50]];
+    starPositions.forEach(([sx, sy]) => {
+      const twinkle = 1 + Math.sin(G.animTime * 2 + sx) * 0.5;
+      ctx.beginPath(); ctx.arc(sx, sy, 1.5 * twinkle, 0, Math.PI * 2); ctx.fill();
+    });
+    // Moon
+    ctx.fillStyle = '#FFF9C4';
+    ctx.beginPath(); ctx.arc(380, 50, 25, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#0a0a2a';
+    ctx.beginPath(); ctx.arc(370, 45, 22, 0, Math.PI * 2); ctx.fill();
+    // Ground
+    ctx.fillStyle = '#1a3a1a'; ctx.fillRect(0, 250, 480, 150);
+    // Campfire
+    drawCampfire(240, 310);
+    // Dark trees in background
+    ctx.fillStyle = '#0a1a0a';
+    [[60, 200], [160, 180], [380, 190], [450, 200]].forEach(([x, y]) => {
+      ctx.beginPath(); ctx.moveTo(x, 250); ctx.lineTo(x + 15, y); ctx.lineTo(x + 30, 250); ctx.fill();
+      ctx.beginPath(); ctx.arc(x + 15, y + 5, 25, 0, Math.PI * 2); ctx.fill();
+    });
+  } else if (sc === 'river') {
+    // Sky
+    const sky = ctx.createLinearGradient(0, 0, 0, 200);
+    sky.addColorStop(0, '#81D4FA'); sky.addColorStop(1, '#B3E5FC');
+    ctx.fillStyle = sky; ctx.fillRect(0, 0, 480, 200);
+    drawCloud(100, 50); drawCloud(350, 30);
+    // Far bank
+    ctx.fillStyle = '#66BB6A'; ctx.fillRect(0, 200, 480, 30);
+    // River
+    const riverGrad = ctx.createLinearGradient(0, 230, 0, 320);
+    riverGrad.addColorStop(0, '#1565C0'); riverGrad.addColorStop(0.5, '#1E88E5'); riverGrad.addColorStop(1, '#1565C0');
+    ctx.fillStyle = riverGrad; ctx.fillRect(0, 230, 480, 90);
+    // River ripples
+    ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.lineWidth = 1;
+    for (let i = 0; i < 6; i++) {
+      const rx = (i * 90 + G.animTime * 30) % 520 - 20;
+      ctx.beginPath(); ctx.moveTo(rx, 260 + (i % 3) * 15); ctx.quadraticCurveTo(rx + 20, 255 + (i % 3) * 15, rx + 40, 260 + (i % 3) * 15); ctx.stroke();
+    }
+    // Near bank
+    ctx.fillStyle = '#558B2F'; ctx.fillRect(0, 320, 480, 80);
+  } else if (sc === 'town') {
+    // Sky
+    const sky = ctx.createLinearGradient(0, 0, 0, 200);
+    sky.addColorStop(0, '#FFE0B2'); sky.addColorStop(1, '#FFCC80');
+    ctx.fillStyle = sky; ctx.fillRect(0, 0, 480, 200);
+    // Sun setting
+    ctx.fillStyle = '#FF8A65';
+    ctx.beginPath(); ctx.arc(380, 120, 40, 0, Math.PI * 2); ctx.fill();
+    // Buildings
+    ctx.fillStyle = '#8D6E63'; ctx.fillRect(20, 150, 60, 100);
+    ctx.fillStyle = '#A1887F'; ctx.fillRect(100, 130, 70, 120);
+    ctx.fillStyle = '#795548'; ctx.fillRect(300, 140, 80, 110);
+    ctx.fillStyle = '#6D4C41'; ctx.fillRect(400, 160, 60, 90);
+    // Roofs
+    ctx.fillStyle = '#D84315';
+    ctx.beginPath(); ctx.moveTo(15, 150); ctx.lineTo(50, 120); ctx.lineTo(85, 150); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(95, 130); ctx.lineTo(135, 95); ctx.lineTo(175, 130); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(295, 140); ctx.lineTo(340, 105); ctx.lineTo(385, 140); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(395, 160); ctx.lineTo(430, 130); ctx.lineTo(465, 160); ctx.fill();
+    // Windows
+    ctx.fillStyle = '#FFF9C4';
+    [[35,170],[55,170],[115,150],[145,150],[320,165],[350,165],[415,180],[440,180]].forEach(([wx,wy]) => {
+      ctx.fillRect(wx, wy, 12, 15);
+    });
+    // Road
+    ctx.fillStyle = '#5D4037'; ctx.fillRect(0, 250, 480, 150);
+    ctx.fillStyle = '#4E342E'; ctx.fillRect(0, 310, 480, 5);
+    // cobblestones
+    ctx.fillStyle = '#6D4C41';
+    for (let i = 0; i < 12; i++) {
+      ctx.beginPath(); ctx.arc(20 + i * 40, 330 + (i % 2) * 20, 8, 0, Math.PI * 2); ctx.fill();
+    }
+  } else if (sc === 'castle') {
+    // Dark ominous sky
+    const sky = ctx.createLinearGradient(0, 0, 0, 200);
+    sky.addColorStop(0, '#1a0a2e'); sky.addColorStop(1, '#4a148c');
+    ctx.fillStyle = sky; ctx.fillRect(0, 0, 480, 200);
+    // Lightning flash occasionally
+    if (Math.sin(G.animTime * 5) > 0.95) {
+      ctx.fillStyle = 'rgba(255,255,200,0.1)'; ctx.fillRect(0, 0, 480, 400);
+    }
+    // Castle walls
+    ctx.fillStyle = '#2a2a2a'; ctx.fillRect(0, 150, 480, 250);
+    // Pillars
+    ctx.fillStyle = '#333';
+    ctx.fillRect(50, 100, 30, 200); ctx.fillRect(400, 100, 30, 200);
+    // Battlements
+    for (let i = 0; i < 10; i++) {
+      ctx.fillRect(i * 50, 140, 30, 20);
+    }
+    // Lava floor
+    const lavaGrad = ctx.createLinearGradient(0, 340, 0, 400);
+    lavaGrad.addColorStop(0, '#BF360C'); lavaGrad.addColorStop(0.5, '#FF5722'); lavaGrad.addColorStop(1, '#BF360C');
+    ctx.fillStyle = lavaGrad; ctx.fillRect(0, 340, 480, 60);
+    // Lava bubbles
+    ctx.fillStyle = '#FF9800';
+    for (let i = 0; i < 5; i++) {
+      const bx = (i * 100 + Math.sin(G.animTime + i) * 20);
+      const by = 360 + Math.sin(G.animTime * 2 + i * 2) * 10;
+      ctx.beginPath(); ctx.arc(bx, by, 4 + Math.sin(G.animTime * 3 + i) * 2, 0, Math.PI * 2); ctx.fill();
+    }
+    // Throne
+    ctx.fillStyle = '#4a0a4a'; ctx.fillRect(200, 160, 80, 60);
+    ctx.fillStyle = '#6a1a6a'; ctx.fillRect(210, 130, 60, 40);
+    ctx.fillStyle = '#FFD600';
+    ctx.beginPath(); ctx.arc(240, 140, 8, 0, Math.PI * 2); ctx.fill();
+    // Dark stone floor
+    ctx.fillStyle = '#1a1a1a'; ctx.fillRect(0, 320, 480, 30);
+  }
+}
+
+function drawCloud(x, y) {
+  ctx.fillStyle = 'rgba(255,255,255,0.8)';
+  ctx.beginPath(); ctx.arc(x, y, 20, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(x + 25, y - 5, 25, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(x + 50, y, 18, 0, Math.PI * 2); ctx.fill();
+}
+
+function drawCampfire(x, y) {
+  // Glow
+  ctx.fillStyle = 'rgba(255,150,0,0.15)';
+  ctx.beginPath(); ctx.arc(x, y, 80, 0, Math.PI * 2); ctx.fill();
+  // Logs
+  ctx.fillStyle = '#5D4037';
+  ctx.save(); ctx.translate(x, y);
+  ctx.rotate(0.3); ctx.fillRect(-20, 0, 40, 8);
+  ctx.rotate(-0.6); ctx.fillRect(-20, 0, 40, 8);
+  ctx.restore();
+  // Fire
+  const flicker = Math.sin(G.animTime * 8) * 3;
+  ctx.fillStyle = '#FF6F00';
+  ctx.beginPath(); ctx.moveTo(x - 12, y); ctx.quadraticCurveTo(x - 5, y - 30 + flicker, x, y - 40 + flicker); ctx.quadraticCurveTo(x + 5, y - 30 + flicker, x + 12, y); ctx.fill();
+  ctx.fillStyle = '#FFAB00';
+  ctx.beginPath(); ctx.moveTo(x - 7, y); ctx.quadraticCurveTo(x - 2, y - 22 - flicker, x + 2, y - 28 - flicker); ctx.quadraticCurveTo(x + 4, y - 18 - flicker, x + 7, y); ctx.fill();
+  ctx.fillStyle = '#FFF176';
+  ctx.beginPath(); ctx.moveTo(x - 3, y); ctx.quadraticCurveTo(x, y - 15 + flicker, x + 3, y); ctx.fill();
+  // Sparks
+  ctx.fillStyle = '#FFAB00';
+  for (let i = 0; i < 3; i++) {
+    const sx = x + Math.sin(G.animTime * 3 + i * 2) * 15;
+    const sy = y - 30 - (G.animTime * 20 + i * 15) % 30;
+    ctx.beginPath(); ctx.arc(sx, sy, 1.5, 0, Math.PI * 2); ctx.fill();
+  }
+}
+
+// ========== Character Drawing ==========
+
+function drawDuck(x, y, scale) {
+  scale = scale || 1;
+  ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale);
+  const bounce = Math.sin(G.animTime * 3) * 3;
+  const squish = 1 + Math.sin(G.animTime * 3) * 0.02;
+
+  if (G.deflated) {
+    // Deflated duck - flat!
+    ctx.scale(1.3, 0.3); ctx.translate(0, 60);
+  }
+
+  ctx.translate(0, bounce); ctx.scale(squish, 1 / squish);
+
+  // Shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.15)';
+  ctx.beginPath(); ctx.ellipse(0, 55 - bounce, 35, 8, 0, 0, Math.PI * 2); ctx.fill();
+
+  // Body
+  const bodyGrad = ctx.createRadialGradient(-10, 10, 5, 0, 10, 50);
+  bodyGrad.addColorStop(0, '#FFEE58'); bodyGrad.addColorStop(0.5, '#FFD600'); bodyGrad.addColorStop(1, '#F9A825');
+  ctx.fillStyle = bodyGrad;
+  ctx.beginPath(); ctx.ellipse(0, 20, 34, 30, 0, 0, Math.PI * 2); ctx.fill();
+  // Shine
+  ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  ctx.beginPath(); ctx.ellipse(-10, 8, 12, 16, -0.2, 0, Math.PI * 2); ctx.fill();
+
+  // Tail
+  ctx.fillStyle = '#FFD600';
+  ctx.beginPath(); ctx.moveTo(26, 15); ctx.quadraticCurveTo(48, 0, 42, -8);
+  ctx.quadraticCurveTo(40, -3, 28, 5); ctx.fill();
+
+  // Head
+  const headGrad = ctx.createRadialGradient(-5, -25, 3, 0, -20, 25);
+  headGrad.addColorStop(0, '#FFEE58'); headGrad.addColorStop(0.7, '#FFD600'); headGrad.addColorStop(1, '#F9A825');
+  ctx.fillStyle = headGrad;
+  ctx.beginPath(); ctx.arc(0, -20, 22, 0, Math.PI * 2); ctx.fill();
+  // Head shine
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.beginPath(); ctx.ellipse(-7, -30, 7, 10, -0.2, 0, Math.PI * 2); ctx.fill();
+
+  // Beak
+  ctx.fillStyle = '#FF6F00';
+  ctx.beginPath(); ctx.moveTo(-8, -18); ctx.quadraticCurveTo(-22, -14, -8, -10); ctx.closePath(); ctx.fill();
+
+  // Eyes
+  drawDuckEyes(0, -24);
+
+  // Blush
+  ctx.fillStyle = 'rgba(255,138,128,0.3)';
+  ctx.beginPath(); ctx.ellipse(-13, -14, 5, 3, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(10, -14, 5, 3, 0, 0, Math.PI * 2); ctx.fill();
+
+  // Wings
+  const wingFlap = Math.sin(G.animTime * 4) * 0.1;
+  ctx.fillStyle = '#FBC02D';
+  ctx.save(); ctx.rotate(wingFlap);
+  ctx.beginPath(); ctx.ellipse(-28, 14, 10, 18, 0.2, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+  ctx.save(); ctx.rotate(-wingFlap);
+  ctx.beginPath(); ctx.ellipse(28, 14, 10, 18, -0.2, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+
+  // Feet
+  ctx.fillStyle = '#E65100';
+  ctx.beginPath(); ctx.ellipse(-12, 48, 12, 4, 0.15, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(12, 48, 12, 4, -0.15, 0, Math.PI * 2); ctx.fill();
+
+  // Warrior helmet!
+  drawHelmet();
+
+  ctx.restore();
+}
+
+function drawDuckEyes(cx, cy) {
+  const expr = G.expression;
+  if (expr === 'happy') {
+    ctx.strokeStyle = '#333'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(cx - 7, cy + 2, 4, Math.PI, 0); ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx + 7, cy + 2, 4, Math.PI, 0); ctx.stroke();
+  } else if (expr === 'worried') {
+    ctx.fillStyle = '#333';
+    ctx.beginPath(); ctx.arc(cx - 7, cy, 3, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx + 7, cy, 3, 0, Math.PI * 2); ctx.fill();
+    // Sweat drop
+    ctx.fillStyle = 'rgba(100,181,246,0.7)';
+    ctx.beginPath(); ctx.moveTo(cx + 16, cy - 5); ctx.quadraticCurveTo(cx + 18, cy + 2, cx + 14, cy + 2); ctx.closePath(); ctx.fill();
+    // Worried brows
+    ctx.strokeStyle = '#333'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(cx - 12, cy - 7); ctx.lineTo(cx - 3, cy - 5); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx + 12, cy - 7); ctx.lineTo(cx + 3, cy - 5); ctx.stroke();
+  } else if (expr === 'surprised') {
+    ctx.fillStyle = '#333';
+    ctx.beginPath(); ctx.arc(cx - 7, cy, 4, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx + 7, cy, 4, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(cx - 5, cy - 2, 2, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx + 9, cy - 2, 2, 0, Math.PI * 2); ctx.fill();
+  } else if (expr === 'determined') {
+    ctx.fillStyle = '#333';
+    ctx.beginPath(); ctx.arc(cx - 7, cy, 3.5, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx + 7, cy, 3.5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(cx - 5, cy - 1, 1.5, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx + 9, cy - 1, 1.5, 0, Math.PI * 2); ctx.fill();
+    // Determined brows
+    ctx.strokeStyle = '#333'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(cx - 12, cy - 8); ctx.lineTo(cx - 2, cy - 6); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx + 12, cy - 8); ctx.lineTo(cx + 2, cy - 6); ctx.stroke();
+  } else {
+    // Normal
+    ctx.fillStyle = '#333';
+    ctx.beginPath(); ctx.arc(cx - 7, cy, 3, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx + 7, cy, 3, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(cx - 5, cy - 1, 1.5, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx + 9, cy - 1, 1.5, 0, Math.PI * 2); ctx.fill();
+  }
+}
+
+function drawHelmet() {
+  // Warrior helmet on duck
+  ctx.fillStyle = '#78909C';
+  ctx.beginPath();
+  ctx.arc(0, -28, 23, Math.PI, 0); ctx.fill();
+  // Visor ridge
+  ctx.fillStyle = '#546E7A';
+  ctx.fillRect(-20, -28, 40, 4);
+  // Nose guard
+  ctx.fillStyle = '#607D8B';
+  ctx.fillRect(-2, -28, 4, 10);
+  // Plume (red feather)
+  ctx.fillStyle = '#E53935';
+  ctx.beginPath();
+  ctx.moveTo(0, -50); ctx.quadraticCurveTo(15, -55, 20, -48);
+  ctx.quadraticCurveTo(15, -42, 0, -44);
+  ctx.fill();
+  ctx.fillStyle = '#C62828';
+  ctx.beginPath();
+  ctx.moveTo(0, -50); ctx.quadraticCurveTo(-5, -58, 5, -60);
+  ctx.quadraticCurveTo(12, -55, 0, -50);
+  ctx.fill();
+}
+
+function drawHero(x, y) {
+  ctx.save(); ctx.translate(x, y);
+  const bounce = Math.sin(G.animTime * 2.5 + 1) * 2;
+  ctx.translate(0, bounce);
+
+  // Shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.15)';
+  ctx.beginPath(); ctx.ellipse(0, 55, 25, 8, 0, 0, Math.PI * 2); ctx.fill();
+
+  // Red cape
+  ctx.fillStyle = '#C62828';
+  ctx.beginPath();
+  ctx.moveTo(-15, -5); ctx.lineTo(-22, 50); ctx.lineTo(22, 50); ctx.lineTo(15, -5);
+  ctx.fill();
+  ctx.fillStyle = '#B71C1C';
+  ctx.beginPath();
+  ctx.moveTo(-18, 30); ctx.quadraticCurveTo(-25, 55, -20, 55);
+  ctx.lineTo(20, 55); ctx.quadraticCurveTo(25, 55, 18, 30);
+  ctx.fill();
+
+  // Body (armor)
+  ctx.fillStyle = '#455A64';
+  ctx.beginPath(); ctx.ellipse(0, 20, 18, 25, 0, 0, Math.PI * 2); ctx.fill();
+  // Chest plate
+  ctx.fillStyle = '#607D8B';
+  ctx.beginPath(); ctx.ellipse(0, 15, 14, 18, 0, 0, Math.PI * 2); ctx.fill();
+
+  // Head
+  ctx.fillStyle = '#FFCCBC';
+  ctx.beginPath(); ctx.arc(0, -15, 16, 0, Math.PI * 2); ctx.fill();
+
+  // Hair (brown spiky)
+  ctx.fillStyle = '#6D4C41';
+  ctx.beginPath();
+  ctx.moveTo(-14, -20); ctx.lineTo(-10, -35); ctx.lineTo(-5, -22);
+  ctx.lineTo(0, -38); ctx.lineTo(5, -22);
+  ctx.lineTo(10, -33); ctx.lineTo(14, -20);
+  ctx.closePath(); ctx.fill();
+
+  // Eyes
+  ctx.fillStyle = '#333';
+  ctx.beginPath(); ctx.arc(-5, -16, 2, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(5, -16, 2, 0, Math.PI * 2); ctx.fill();
+  // Confident smile
+  ctx.strokeStyle = '#333'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.arc(0, -10, 6, 0.2, Math.PI - 0.2); ctx.stroke();
+
+  // Sword
+  ctx.fillStyle = '#B0BEC5';
+  ctx.fillRect(22, -10, 4, 40);
+  ctx.fillStyle = '#FFD600';
+  ctx.fillRect(18, -10, 12, 5);
+  ctx.fillStyle = '#90A4AE';
+  ctx.beginPath(); ctx.moveTo(22, -10); ctx.lineTo(24, -25); ctx.lineTo(26, -10); ctx.fill();
+
+  // Legs
+  ctx.fillStyle = '#37474F';
+  ctx.fillRect(-10, 42, 8, 14);
+  ctx.fillRect(2, 42, 8, 14);
+  // Boots
+  ctx.fillStyle = '#5D4037';
+  ctx.fillRect(-12, 52, 12, 6);
+  ctx.fillRect(0, 52, 12, 6);
+
+  ctx.restore();
+}
+
+function drawMage(x, y) {
+  ctx.save(); ctx.translate(x, y);
+  const bounce = Math.sin(G.animTime * 2.5 + 2) * 2;
+  ctx.translate(0, bounce);
+
+  // Shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.15)';
+  ctx.beginPath(); ctx.ellipse(0, 55, 22, 7, 0, 0, Math.PI * 2); ctx.fill();
+
+  // Robe
+  ctx.fillStyle = '#4A148C';
+  ctx.beginPath();
+  ctx.moveTo(-16, 0); ctx.lineTo(-22, 55); ctx.lineTo(22, 55); ctx.lineTo(16, 0);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#6A1B9A';
+  ctx.beginPath(); ctx.ellipse(0, 15, 16, 22, 0, 0, Math.PI * 2); ctx.fill();
+
+  // Stars on robe
+  ctx.fillStyle = '#FFD600';
+  ctx.font = '8px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('★', -5, 25); ctx.fillText('★', 8, 35);
+  ctx.textAlign = 'start';
+
+  // Head
+  ctx.fillStyle = '#FFCCBC';
+  ctx.beginPath(); ctx.arc(0, -10, 14, 0, Math.PI * 2); ctx.fill();
+
+  // Purple hair
+  ctx.fillStyle = '#7B1FA2';
+  ctx.beginPath(); ctx.arc(0, -15, 14, Math.PI, 0); ctx.fill();
+  ctx.fillRect(-14, -15, 28, 5);
+
+  // Witch hat
+  ctx.fillStyle = '#4A148C';
+  ctx.beginPath(); ctx.ellipse(0, -22, 20, 5, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(-14, -22); ctx.lineTo(0, -55); ctx.lineTo(14, -22); ctx.fill();
+  // Hat band
+  ctx.fillStyle = '#FFD600';
+  ctx.fillRect(-14, -24, 28, 3);
+
+  // Eyes (sharp, suspicious)
+  ctx.fillStyle = '#333';
+  ctx.beginPath(); ctx.arc(-5, -10, 2, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(5, -10, 2, 0, Math.PI * 2); ctx.fill();
+  // Skeptical expression
+  ctx.strokeStyle = '#333'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(-3, -5); ctx.lineTo(3, -5); ctx.stroke();
+
+  // Staff
+  ctx.fillStyle = '#6D4C41'; ctx.fillRect(-25, -20, 3, 75);
+  // Orb
+  ctx.fillStyle = '#AA00FF';
+  ctx.beginPath(); ctx.arc(-23, -22, 6, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  ctx.beginPath(); ctx.arc(-21, -24, 2, 0, Math.PI * 2); ctx.fill();
+
+  ctx.restore();
+}
+
+function drawPriest(x, y) {
+  ctx.save(); ctx.translate(x, y);
+  const bounce = Math.sin(G.animTime * 2.5 + 3) * 2;
+  ctx.translate(0, bounce);
+
+  // Shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.15)';
+  ctx.beginPath(); ctx.ellipse(0, 55, 22, 7, 0, 0, Math.PI * 2); ctx.fill();
+
+  // White robe
+  ctx.fillStyle = '#ECEFF1';
+  ctx.beginPath();
+  ctx.moveTo(-14, 0); ctx.lineTo(-20, 55); ctx.lineTo(20, 55); ctx.lineTo(14, 0);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#F5F5F5';
+  ctx.beginPath(); ctx.ellipse(0, 15, 14, 20, 0, 0, Math.PI * 2); ctx.fill();
+  // Green cross
+  ctx.fillStyle = '#4CAF50';
+  ctx.fillRect(-2, 8, 4, 16); ctx.fillRect(-6, 13, 12, 4);
+
+  // Head
+  ctx.fillStyle = '#FFCCBC';
+  ctx.beginPath(); ctx.arc(0, -10, 14, 0, Math.PI * 2); ctx.fill();
+
+  // Green hair
+  ctx.fillStyle = '#66BB6A';
+  ctx.beginPath();
+  ctx.moveTo(-14, -10); ctx.quadraticCurveTo(-16, -30, -5, -25);
+  ctx.quadraticCurveTo(0, -30, 5, -25);
+  ctx.quadraticCurveTo(16, -30, 14, -10);
+  ctx.closePath(); ctx.fill();
+
+  // Eyes (soft, kind)
+  ctx.fillStyle = '#333';
+  ctx.beginPath(); ctx.arc(-5, -10, 2.5, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(5, -10, 2.5, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(-4, -11, 1, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(6, -11, 1, 0, Math.PI * 2); ctx.fill();
+  // Smile
+  ctx.strokeStyle = '#333'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.arc(0, -6, 4, 0.3, Math.PI - 0.3); ctx.stroke();
+
+  // Staff
+  ctx.fillStyle = '#A1887F'; ctx.fillRect(20, -15, 3, 70);
+  // Staff top (cross)
+  ctx.fillStyle = '#4CAF50';
+  ctx.fillRect(18, -22, 7, 3); ctx.fillRect(20, -27, 3, 15);
+
+  ctx.restore();
+}
+
+// ========== Monster Drawing ==========
+
+function drawGoblin(x, y, hp, maxHp) {
+  ctx.save(); ctx.translate(x, y);
+  const hpRatio = hp / maxHp;
+
+  // Shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.15)';
+  ctx.beginPath(); ctx.ellipse(0, 35, 18, 6, 0, 0, Math.PI * 2); ctx.fill();
+
+  // Body
+  ctx.fillStyle = '#4CAF50';
+  ctx.beginPath(); ctx.ellipse(0, 10, 15, 20, 0, 0, Math.PI * 2); ctx.fill();
+
+  // Head
+  ctx.fillStyle = '#66BB6A';
+  ctx.beginPath(); ctx.arc(0, -12, 14, 0, Math.PI * 2); ctx.fill();
+
+  // Ears
+  ctx.fillStyle = '#4CAF50';
+  ctx.beginPath(); ctx.ellipse(-16, -14, 8, 4, -0.5, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(16, -14, 8, 4, 0.5, 0, Math.PI * 2); ctx.fill();
+
+  // Eyes (angry)
+  ctx.fillStyle = '#ff0';
+  ctx.beginPath(); ctx.arc(-5, -14, 3, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(5, -14, 3, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#000';
+  ctx.beginPath(); ctx.arc(-5, -14, 1.5, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(5, -14, 1.5, 0, Math.PI * 2); ctx.fill();
+
+  // Mouth
+  ctx.strokeStyle = '#333'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.arc(0, -6, 5, 0.5, Math.PI - 0.5); ctx.stroke();
+
+  // Weapon (stick)
+  ctx.fillStyle = '#6D4C41'; ctx.fillRect(16, -5, 3, 35);
+
+  // HP bar
+  ctx.fillStyle = '#333'; ctx.fillRect(-15, -32, 30, 4);
+  ctx.fillStyle = hpRatio > 0.5 ? '#4CAF50' : hpRatio > 0.2 ? '#FF9800' : '#F44336';
+  ctx.fillRect(-15, -32, 30 * hpRatio, 4);
+
+  // Feet
+  ctx.fillStyle = '#388E3C';
+  ctx.beginPath(); ctx.ellipse(-8, 30, 7, 4, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(8, 30, 7, 4, 0, 0, Math.PI * 2); ctx.fill();
+
+  ctx.restore();
+}
+
+function drawBat(x, y, hp, maxHp) {
+  ctx.save(); ctx.translate(x, y);
+  const hpRatio = hp / maxHp;
+  const wingFlap = Math.sin(G.animTime * 6) * 0.4;
+
+  // Body
+  ctx.fillStyle = '#4A148C';
+  ctx.beginPath(); ctx.ellipse(0, 0, 18, 22, 0, 0, Math.PI * 2); ctx.fill();
+
+  // Wings
+  ctx.fillStyle = '#6A1B9A';
+  ctx.save(); ctx.rotate(wingFlap);
+  ctx.beginPath(); ctx.moveTo(-15, -5); ctx.quadraticCurveTo(-55, -30, -50, 5);
+  ctx.quadraticCurveTo(-40, 15, -15, 10); ctx.fill();
+  ctx.restore();
+  ctx.save(); ctx.rotate(-wingFlap);
+  ctx.beginPath(); ctx.moveTo(15, -5); ctx.quadraticCurveTo(55, -30, 50, 5);
+  ctx.quadraticCurveTo(40, 15, 15, 10); ctx.fill();
+  ctx.restore();
+
+  // Eyes (red glowing)
+  ctx.fillStyle = '#FF1744';
+  ctx.beginPath(); ctx.arc(-6, -5, 4, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(6, -5, 4, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(-5, -6, 1.5, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(7, -6, 1.5, 0, Math.PI * 2); ctx.fill();
+
+  // Fangs
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.moveTo(-4, 5); ctx.lineTo(-2, 12); ctx.lineTo(0, 5); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(0, 5); ctx.lineTo(2, 12); ctx.lineTo(4, 5); ctx.fill();
+
+  // Ears
+  ctx.fillStyle = '#4A148C';
+  ctx.beginPath(); ctx.moveTo(-10, -18); ctx.lineTo(-16, -35); ctx.lineTo(-4, -20); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(10, -18); ctx.lineTo(16, -35); ctx.lineTo(4, -20); ctx.fill();
+
+  // HP bar
+  ctx.fillStyle = '#333'; ctx.fillRect(-25, -42, 50, 5);
+  ctx.fillStyle = hpRatio > 0.5 ? '#4CAF50' : hpRatio > 0.2 ? '#FF9800' : '#F44336';
+  ctx.fillRect(-25, -42, 50 * hpRatio, 5);
+
+  ctx.restore();
+}
+
+function drawDragon(x, y, hp, maxHp) {
+  ctx.save(); ctx.translate(x, y);
+  const hpRatio = hp / maxHp;
+  const breathe = Math.sin(G.animTime * 1.5) * 3;
+
+  // Body
+  ctx.fillStyle = '#B71C1C';
+  ctx.beginPath(); ctx.ellipse(0, 20 + breathe, 45, 40, 0, 0, Math.PI * 2); ctx.fill();
+  // Belly
+  ctx.fillStyle = '#FF8A65';
+  ctx.beginPath(); ctx.ellipse(0, 25 + breathe, 30, 28, 0, 0, Math.PI * 2); ctx.fill();
+
+  // Neck
+  ctx.fillStyle = '#C62828';
+  ctx.beginPath(); ctx.moveTo(-15, -5); ctx.quadraticCurveTo(-10, -40, 0, -50);
+  ctx.quadraticCurveTo(10, -40, 15, -5); ctx.fill();
+
+  // Head
+  ctx.fillStyle = '#D32F2F';
+  ctx.beginPath(); ctx.ellipse(0, -55, 22, 18, 0, 0, Math.PI * 2); ctx.fill();
+  // Snout
+  ctx.fillStyle = '#C62828';
+  ctx.beginPath(); ctx.ellipse(-5, -48, 15, 10, 0, 0, Math.PI * 2); ctx.fill();
+
+  // Horns
+  ctx.fillStyle = '#5D4037';
+  ctx.beginPath(); ctx.moveTo(-12, -68); ctx.lineTo(-18, -88); ctx.lineTo(-6, -70); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(12, -68); ctx.lineTo(18, -88); ctx.lineTo(6, -70); ctx.fill();
+
+  // Eyes
+  ctx.fillStyle = '#FFEB3B';
+  ctx.beginPath(); ctx.ellipse(-9, -58, 5, 4, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(9, -58, 5, 4, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#000';
+  ctx.beginPath(); ctx.ellipse(-9, -58, 2, 3, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(9, -58, 2, 3, 0, 0, Math.PI * 2); ctx.fill();
+
+  // Nostrils
+  ctx.fillStyle = '#000';
+  ctx.beginPath(); ctx.arc(-10, -48, 2, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(-2, -48, 2, 0, Math.PI * 2); ctx.fill();
+
+  // Fire breathing (intermittent)
+  if (Math.sin(G.animTime * 3) > 0.5) {
+    ctx.fillStyle = 'rgba(255,100,0,0.6)';
+    ctx.beginPath(); ctx.moveTo(-15, -45); ctx.quadraticCurveTo(-40, -50, -55, -40);
+    ctx.quadraticCurveTo(-40, -35, -15, -42); ctx.fill();
+    ctx.fillStyle = 'rgba(255,200,0,0.4)';
+    ctx.beginPath(); ctx.moveTo(-15, -45); ctx.quadraticCurveTo(-35, -48, -45, -42);
+    ctx.quadraticCurveTo(-35, -38, -15, -42); ctx.fill();
+  }
+
+  // Wings
+  ctx.fillStyle = '#B71C1C';
+  const wingAng = Math.sin(G.animTime * 2) * 0.15;
+  ctx.save(); ctx.rotate(wingAng);
+  ctx.beginPath(); ctx.moveTo(-35, 0); ctx.quadraticCurveTo(-80, -40, -70, 0);
+  ctx.quadraticCurveTo(-60, 20, -35, 15); ctx.fill();
+  ctx.restore();
+  ctx.save(); ctx.rotate(-wingAng);
+  ctx.beginPath(); ctx.moveTo(35, 0); ctx.quadraticCurveTo(80, -40, 70, 0);
+  ctx.quadraticCurveTo(60, 20, 35, 15); ctx.fill();
+  ctx.restore();
+
+  // Legs
+  ctx.fillStyle = '#C62828';
+  ctx.fillRect(-25, 50, 12, 20); ctx.fillRect(13, 50, 12, 20);
+  // Claws
+  ctx.fillStyle = '#5D4037';
+  ctx.beginPath(); ctx.moveTo(-28, 70); ctx.lineTo(-25, 75); ctx.lineTo(-22, 70); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(-19, 70); ctx.lineTo(-16, 75); ctx.lineTo(-13, 70); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(10, 70); ctx.lineTo(13, 75); ctx.lineTo(16, 70); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(19, 70); ctx.lineTo(22, 75); ctx.lineTo(25, 70); ctx.fill();
+
+  // Tail
+  ctx.fillStyle = '#B71C1C';
+  ctx.beginPath(); ctx.moveTo(30, 35); ctx.quadraticCurveTo(65, 50, 70, 30);
+  ctx.quadraticCurveTo(65, 25, 35, 30); ctx.fill();
+  // Tail spike
+  ctx.fillStyle = '#D32F2F';
+  ctx.beginPath(); ctx.moveTo(68, 30); ctx.lineTo(80, 25); ctx.lineTo(75, 35); ctx.fill();
+
+  // HP bar
+  ctx.fillStyle = '#333'; ctx.fillRect(-35, -98, 70, 6);
+  ctx.fillStyle = hpRatio > 0.5 ? '#4CAF50' : hpRatio > 0.2 ? '#FF9800' : '#F44336';
+  ctx.fillRect(-35, -98, 70 * hpRatio, 6);
+
+  // Crown
+  ctx.fillStyle = '#FFD600';
+  ctx.beginPath();
+  ctx.moveTo(-15, -72); ctx.lineTo(-18, -82); ctx.lineTo(-10, -76);
+  ctx.lineTo(0, -85); ctx.lineTo(10, -76); ctx.lineTo(18, -82);
+  ctx.lineTo(15, -72); ctx.closePath(); ctx.fill();
+
+  ctx.restore();
+}
+
+// ========== Scene Rendering ==========
+
+function getPartyPositions() {
+  const ch = CHAPTERS[G.chapter];
+  if (ch && ch.type === 'battle') {
+    // Battle formation - party on left
+    return { hero: [70, 280], mage: [50, 330], priest: [90, 340], duck: [120, 300] };
+  }
+  // Normal formation - walking together
+  return { hero: [100, 300], mage: [190, 310], priest: [310, 310], duck: [400, 300] };
+}
+
+function getEnemyPositions(enemies) {
+  if (!enemies) return [];
+  if (enemies.length === 1) return [[340, 240]];
+  if (enemies.length === 2) return [[300, 230], [380, 260]];
+  return [[280, 220], [340, 260], [400, 230]];
+}
+
+function render() {
+  ctx.clearRect(0, 0, 480, 400);
+
+  // Shake effect
+  if (G.shake > 0) {
+    ctx.save();
+    ctx.translate(Math.random() * G.shake * 2 - G.shake, Math.random() * G.shake * 2 - G.shake);
+  }
+
+  drawBackground();
+
+  const pos = getPartyPositions();
+  const ch = CHAPTERS[G.chapter];
+
+  if (ch && ch.type === 'battle' && G.battleState) {
+    // Draw enemies
+    const ePos = getEnemyPositions(G.battleState.enemies);
+    G.battleState.enemies.forEach((e, i) => {
+      if (e.hp > 0) {
+        if (e.sprite === 'goblin') drawGoblin(ePos[i][0], ePos[i][1], e.hp, e.maxHp);
+        else if (e.sprite === 'bat') drawBat(ePos[i][0], ePos[i][1], e.hp, e.maxHp);
+        else if (e.sprite === 'dragon') drawDragon(ePos[i][0], ePos[i][1], e.hp, e.maxHp);
+      }
+    });
+    // Draw party
+    drawHero(pos.hero[0], pos.hero[1]);
+    drawMage(pos.mage[0], pos.mage[1]);
+    drawPriest(pos.priest[0], pos.priest[1]);
+    drawDuck(pos.duck[0], pos.duck[1], 0.7);
+  } else {
+    // Event/choice scene - draw all party members
+    drawHero(pos.hero[0], pos.hero[1]);
+    drawMage(pos.mage[0], pos.mage[1]);
+    drawPriest(pos.priest[0], pos.priest[1]);
+    drawDuck(pos.duck[0], pos.duck[1], 0.8);
+  }
+
+  // Draw effects
+  G.effects = G.effects.filter(e => e.life > 0);
+  G.effects.forEach(e => {
+    ctx.font = `bold ${e.size || 20}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = e.color || '#fff';
+    ctx.globalAlpha = Math.min(1, e.life / 20);
+    ctx.fillText(e.text, e.x, e.y);
+    e.y -= 1.2;
+    e.life--;
+    ctx.globalAlpha = 1;
+    ctx.textAlign = 'start';
+  });
+
+  if (G.shake > 0) {
+    ctx.restore();
+    G.shake *= 0.85;
+    if (G.shake < 0.3) G.shake = 0;
+  }
+}
+
+// ========== UI Update ==========
+
+function updateUI() {
+  chapterLabel.textContent = `📖 Chapter ${G.chapter + 1}/10 — ${CHAPTERS[G.chapter]?.title || ''}`;
+
+  document.getElementById('suspicion-fill').style.width = G.suspicion + '%';
+  document.getElementById('trust-fill').style.width = G.trust + '%';
+  document.getElementById('hp-fill').style.width = (G.hp / G.maxHp * 100) + '%';
+
+  // Color changes
+  document.getElementById('suspicion-fill').style.background =
+    G.suspicion > 70 ? 'linear-gradient(90deg, #ff0000, #ff4444)' :
+    G.suspicion > 40 ? 'linear-gradient(90deg, #e74c3c, #ff6b6b)' :
+    'linear-gradient(90deg, #e67e22, #f39c12)';
+
+  // Check special unlock
+  if (G.trust >= 60 && !G.specialUnlocked) {
+    G.specialUnlocked = true;
+    addEffect(240, 200, '⭐ 必殺技解禁！', '#FFD600', 28);
+  }
+}
+
+let msgInterval = null;
+let msgFullText = '';
+function setMessage(text) {
+  if (msgInterval) clearInterval(msgInterval);
+  msgFullText = text;
+  msgBox.textContent = '';
+  let i = 0;
+  msgInterval = setInterval(() => {
+    if (i < text.length) {
+      msgBox.textContent += text[i];
+      i++;
+    } else {
+      clearInterval(msgInterval);
+      msgInterval = null;
+    }
+  }, 25);
+}
+
+// Click message box to instantly show full text
+msgBox.style.cursor = 'pointer';
+msgBox.addEventListener('click', () => {
+  if (msgInterval) {
+    clearInterval(msgInterval);
+    msgInterval = null;
+    msgBox.textContent = msgFullText;
+  }
+});
+
+function setMessageInstant(text) {
+  if (msgInterval) clearInterval(msgInterval);
+  msgBox.textContent = text;
+  msgFullText = text;
+}
+
+function showButtons(buttons) {
+  btnContainer.innerHTML = '';
+  buttons.forEach(b => {
+    const btn = document.createElement('button');
+    btn.className = 'btn' + (b.special ? ' btn-special' : '');
+    btn.textContent = b.text;
+    btn.disabled = !!b.disabled;
+    btn.onclick = () => {
+      if (!b.disabled && b.action) b.action();
+    };
+    btnContainer.appendChild(btn);
+  });
+}
+
+function showButtonsWithHints(buttons) {
+  btnContainer.innerHTML = '';
+  buttons.forEach(b => {
+    const btn = document.createElement('button');
+    btn.className = 'btn' + (b.special ? ' btn-special' : '') + (b.locked ? ' btn-locked' : '');
+    btn.disabled = !!b.disabled;
+    btn.onclick = () => {
+      if (!b.disabled && b.action) b.action();
+    };
+    // Main text
+    const mainSpan = document.createElement('span');
+    mainSpan.textContent = b.text;
+    btn.appendChild(mainSpan);
+    // Hint line showing effects
+    if (b.hint) {
+      const hintSpan = document.createElement('span');
+      hintSpan.className = 'hint';
+      hintSpan.textContent = b.hint;
+      btn.appendChild(hintSpan);
+    }
+    btnContainer.appendChild(btn);
+  });
+}
+
+function clearButtons() {
+  btnContainer.innerHTML = '';
+}
+
+function addEffect(x, y, text, color, size) {
+  G.effects.push({ x, y, text, color: color || '#fff', size: size || 20, life: 50 });
+}
+
+// ========== Game Logic ==========
+
+function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+
+function modSuspicion(delta) {
+  if (delta === 0) return;
+  if (G.memory.revealed) return; // 正体バレ済みなら疑惑は変動しない
+  G.suspicion = clamp(G.suspicion + delta, 0, 100);
+  updateUI();
+  if (G.suspicion >= 100) {
+    setTimeout(() => badEndSuspicion(), 500);
+  }
+}
+
+function modTrust(delta) {
+  if (delta === 0) return;
+  G.trust = clamp(G.trust + delta, 0, 100);
+  updateUI();
+}
+
+function modHp(delta) {
+  G.hp = clamp(G.hp + delta, 0, G.maxHp);
+  updateUI();
+  if (G.hp <= 0 && !G.deflated) {
+    G.deflated = true;
+    G.deflatedTurn = true;
+    addEffect(400, 280, 'ぺしゃんこ！', '#FFD600', 20);
+    modSuspicion(10);
+  }
+}
+
+function badEndSuspicion() {
+  if (G.gameOver) return;
+  G.gameOver = true;
+  G.expression = 'worried';
+  setMessage('メルル「やっぱり！あなた…ゴム製のアヒルでしょ！！」\nアレス「え…？マジで？」\nリリア「えっ…ダッキーちゃん？」\n\n疑惑が限界に達した！正体がバレてしまった…');
+  showButtons([{ text: '🔄 最初からやり直す', action: () => location.reload() }]);
+}
+
+// ========== Chapter Flow ==========
+
+function startChapter(idx) {
+  if (G.gameOver) return;
+  G.chapter = idx;
+  const ch = CHAPTERS[idx];
+  if (!ch) return;
+  G.scene = ch.scene;
+  G.expression = 'normal';
+  G.buffActive = false;
+  G.evadeUp = false;
+  updateUI();
+
+  if (ch.type === 'ending') {
+    showEnding();
+    return;
+  }
+
+  if (ch.type === 'battle') {
+    startBattle(ch);
+    return;
+  }
+
+  // Event or Choice - show available choices, grey out locked ones
+  setMessage(ch.text);
+  const btns = ch.choices.map(c => {
+    const available = !c.condition || c.condition();
+    if (!available) {
+      return {
+        text: '🔒 ???（信頼が足りない）',
+        disabled: true,
+        locked: true,
+      };
+    }
+    return {
+      text: c.text,
+      action: () => c.customAction ? resolveConfession() : resolveChoice(c)
+    };
+  });
+  showButtonsWithHints(btns);
+}
+
+function resolveChoice(choice) {
+  clearButtons();
+  G.expression = choice.suspicion > 5 ? 'worried' : choice.trust > 5 ? 'happy' : 'normal';
+  setMessage(choice.result);
+
+  // Save memory flags
+  if (choice.mem) Object.assign(G.memory, choice.mem);
+
+  modSuspicion(choice.suspicion);
+  modTrust(choice.trust);
+
+  if (G.gameOver) return;
+
+  showButtons([{
+    text: '➡️ 次の章へ進む',
+    action: () => startChapter(G.chapter + 1)
+  }]);
+}
+
+function resolveConfession() {
+  clearButtons();
+
+  // エンド判定用に告白時点の信頼値を記録
+  G.memory.confessedTrust = G.trust;
+
+  if (G.trust > 50) {
+    // === 成功: 信頼が半分以上 → みんな受け入れてくれる ===
+    G.expression = 'happy';
+    setMessage('ダッキー「グワ。…本当はゴム製のアヒルなんだ」\n\n一瞬の沈黙——\n\nアレス「…え、マジで？」\nアレス「…ま、いいか！仲間は仲間だ！」\nリリア「知ってました！だってかわいいですもの♪」\nメルル「やっぱり…！…でも、ここまで一緒に戦ってきたし…」\nメルル「…認める。あんたは仲間よ」');
+    G.suspicion = 0;
+    modTrust(25);
+    G.memory.confessed = true;
+    G.memory.revealed = true; // 正体バレ済み → 以降の疑惑変動を無効化
+    updateUI();
+  } else {
+    // === 失敗: 疑惑が高い → 信じてもらえない/許してもらえない ===
+    G.expression = 'worried';
+    setMessage('ダッキー「グワ。…本当はゴム製のアヒルなんだ」\n\n一瞬の沈黙——\n\nメルル「…知ってたわよ。ずっと怪しいと思ってた」\nメルル「今さら正直に言われても…遅いのよ」\nアレス「…お前、ずっと俺たちを騙してたのか？」\nリリア「ダッキーちゃん…なんでもっと早く言ってくれなかったの…」\n\n正直に打ち明けたが、積み重ねた疑惑が大きすぎた。\n信頼を取り戻すのは難しそうだ…');
+    modSuspicion(5);
+    modTrust(-10);
+    G.memory.confess_failed = true;
+    G.memory.revealed = true; // 正体バレ済み → 以降の疑惑変動を無効化
+  }
+
+  if (G.gameOver) return;
+
+  showButtons([{
+    text: '➡️ 次の章へ進む',
+    action: () => startChapter(G.chapter + 1)
+  }]);
+}
+
+// ========== Battle System ==========
+
+function startBattle(ch) {
+  G.battleState = {
+    enemies: ch.enemies.map(e => ({ ...e })),
+    turn: 0,
+    heroHp: 100,
+    mageHp: 80,
+    priestHp: 70,
+    log: [],
+    usedPeck: false,
+  };
+  setMessage(ch.text);
+  showButtons([{ text: '⚔️ 戦闘開始！', action: () => showBattleActions() }]);
+}
+
+function checkBattleEvent() {
+  const bs = G.battleState;
+  if (!bs) return false;
+  const ch = CHAPTERS[G.chapter];
+
+  // Dragon 50% HP event
+  if (ch.id === 9 && !bs.eventDragonHalf) {
+    const dragon = bs.enemies[0];
+    if (dragon.hp <= dragon.maxHp * 0.5 && dragon.hp > 0) {
+      bs.eventDragonHalf = true;
+      setMessage('ドラゴン魔王「ぐぬぬ…やるな。だが本気を出すぞ！」\nドラゴンの目が赤く輝き、攻撃力が上がった！\nアレス「気をつけろ！」');
+      bs.enemies[0].atk += 4;
+      G.shake = 5;
+      showButtons([{
+        text: '▶ 続ける',
+        action: () => showBattleActions()
+      }]);
+      return true;
+    }
+  }
+
+  // Goblin last one standing event
+  if (ch.id === 3 && !bs.eventGoblinLast) {
+    const alive = bs.enemies.filter(e => e.hp > 0);
+    if (alive.length === 1) {
+      bs.eventGoblinLast = true;
+      setMessage('最後のゴブリンが震えている…！\nリリア「あの子、怖がってますよ…」');
+      showButtons([
+        { text: '🗡️ 容赦なくつつく', action: () => {
+          modSuspicion(1); modTrust(0);
+          alive[0].hp = Math.max(0, alive[0].hp - 5);
+          setMessage('ダッキーのつつき！トドメだ！\nアレス「容赦ないな！」');
+          bs.usedPeck = true;
+          showButtons([{ text: '▶ 次へ', action: () => {
+            if (bs.enemies.every(e => e.hp <= 0)) battleVictory();
+            else showBattleActions();
+          }}]);
+        }},
+        { text: '💛 見逃してあげる', action: () => {
+          modSuspicion(-3); modTrust(8);
+          alive[0].hp = 0;
+          setMessage('ダッキーがゴブリンの頭をポンポンと撫でた。\nゴブリンは泣きながら逃げていった。\nリリア「優しい…♪」\nアレス「お前…いいやつだな」\nメルル「…戦士がそんな優しくていいの？」');
+          showButtons([{ text: '▶ 次へ', action: () => battleVictory() }]);
+        }},
+      ]);
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function showBattleActions() {
+  if (!G.battleState) return;
+  if (G.gameOver) return;
+
+  // Check if all enemies dead
+  if (G.battleState.enemies.every(e => e.hp <= 0)) {
+    battleVictory();
+    return;
+  }
+
+  // Check for mid-battle events
+  if (checkBattleEvent()) return;
+
+  if (G.deflated && G.deflatedTurn) {
+    G.deflatedTurn = false;
+    setMessage('ダッキーはぺしゃんこで動けない…！\n（プシュ〜〜〜）');
+    G.expression = 'worried';
+    showButtons([{
+      text: '▶ 復活する…',
+      action: () => {
+        G.deflated = false;
+        G.hp = 10;
+        updateUI();
+        addEffect(400, 280, 'ぷくっ！復活！', '#FFD600', 16);
+        setMessage('ダッキーがぷくっと膨らんで復活した！');
+        showButtons([{ text: '▶ 敵の攻撃を見る', action: () => enemyTurn() }]);
+      }
+    }]);
+    return;
+  }
+
+  // Battle status line
+  const bs = G.battleState;
+  const aliveNames = bs.enemies.filter(e => e.hp > 0).map(e => `${e.name}(HP:${e.hp}/${e.maxHp})`).join(' ');
+  const actions = [
+    { text: '🗡️ つつく', action: () => doBattleAction('peck') },
+    { text: '🛡️ かばう', action: () => doBattleAction('protect') },
+    { text: '🎵 グワグワ応援', action: () => doBattleAction('cheer') },
+    { text: '💨 身をひそめる', action: () => doBattleAction('hide') },
+  ];
+  if (G.specialUnlocked) {
+    actions.push({ text: '⭐ 必殺ゴムアタック', action: () => doBattleAction('special'), special: true });
+  }
+  showButtons(actions);
+  setMessage(`ターン ${bs.turn + 1} — ダッキーの行動を選べ！\n${aliveNames}`);
+}
+
+function doBattleAction(action) {
+  clearButtons();
+  G.battleState.turn++;
+  const bs = G.battleState;
+  const alive = bs.enemies.filter(e => e.hp > 0);
+  if (alive.length === 0) { battleVictory(); return; }
+  const target = alive[0];
+  const buffMult = G.buffActive ? 1.5 : 1;
+
+  switch (action) {
+    case 'peck': {
+      const dmg = Math.floor(5 * buffMult);
+      target.hp = Math.max(0, target.hp - dmg);
+      G.expression = 'determined';
+      setMessage(`ダッキーのつつき攻撃！${target.name}に${dmg}ダメージ！\n（くちばしが思ったより痛い！）`);
+      addEffect(340, 230, '-' + dmg, '#ff6b6b', 22);
+      G.shake = 3;
+      modSuspicion(2);
+      modTrust(2);
+      bs.usedPeck = true;
+      break;
+    }
+    case 'protect': {
+      G.expression = 'determined';
+      setMessage('ダッキーは仲間の前に飛び出した！\nアレス「ダッキー！」リリア「かっこいい…！」');
+      modSuspicion(0);
+      modTrust(8);
+      bs._protecting = true;
+      break;
+    }
+    case 'cheer': {
+      G.expression = 'happy';
+      G.buffActive = true;
+      setMessage('ダッキー「グワッグワッグワ〜♪」\n味方全員の攻撃力が上がった！\nメルル「…なんでアヒルの鳴き声…？」');
+      addEffect(120, 270, '♪ ATK UP！', '#FFD600', 18);
+      modSuspicion(5);
+      modTrust(5);
+      break;
+    }
+    case 'hide': {
+      G.expression = 'worried';
+      G.evadeUp = true;
+      setMessage('ダッキーはそっと身をひそめた…\n（ゴムの体を小さく縮めている）');
+      modSuspicion(0);
+      modTrust(-2);
+      break;
+    }
+    case 'special': {
+      const dmg = Math.floor(20 * buffMult);
+      target.hp = Math.max(0, target.hp - dmg);
+      G.expression = 'determined';
+      G.shake = 8;
+      setMessage(`ダッキーの必殺ゴムアタック！！\nゴムの弾力で超高速体当たり！${target.name}に${dmg}ダメージ！\nアレス「すげぇ！」メルル「…ゴム？」`);
+      addEffect(340, 200, '💥 -' + dmg, '#FFD600', 28);
+      modSuspicion(8);
+      modTrust(10);
+      break;
+    }
+  }
+
+  if (G.gameOver) return;
+
+  // Check if enemies all dead after player action
+  if (bs.enemies.every(e => e.hp <= 0)) {
+    showButtons([{ text: '▶ 次へ', action: () => battleVictory() }]);
+  } else {
+    showButtons([{ text: '▶ 仲間の行動を見る', action: () => npcActions() }]);
+  }
+}
+
+function npcActions() {
+  const bs = G.battleState;
+  const alive = bs.enemies.filter(e => e.hp > 0);
+  if (alive.length === 0) { battleVictory(); return; }
+
+  let npcLog = '';
+  const buffMult = G.buffActive ? 1.5 : 1;
+
+  // Hero attacks
+  const heroTarget = alive[Math.floor(Math.random() * alive.length)];
+  const heroDmg = Math.floor(15 * (G.buffActive ? 1.5 : 1));
+  heroTarget.hp = Math.max(0, heroTarget.hp - heroDmg);
+  npcLog += `アレスの剣撃！${heroTarget.name}に${heroDmg}ダメージ！\n`;
+  addEffect(heroTarget === alive[0] ? 340 : 380, 220, '-' + heroDmg, '#E53935', 20);
+
+  // Mage attacks
+  const aliveNow = bs.enemies.filter(e => e.hp > 0);
+  if (aliveNow.length > 0) {
+    const mageTarget = aliveNow[Math.floor(Math.random() * aliveNow.length)];
+    const mageDmg = Math.floor(20 * (G.buffActive ? 1.5 : 1));
+    mageTarget.hp = Math.max(0, mageTarget.hp - mageDmg);
+    npcLog += `メルルの魔法！${mageTarget.name}に${mageDmg}ダメージ！\n`;
+    addEffect(mageTarget === aliveNow[0] ? 340 : 380, 250, '-' + mageDmg, '#AA00FF', 20);
+  }
+
+  // Priest heals
+  const healAmt = 10;
+  G.hp = clamp(G.hp + healAmt, 0, G.maxHp);
+  npcLog += `リリアの回復魔法！ダッキーのHPが${healAmt}回復！`;
+  addEffect(400, 280, '+' + healAmt, '#55efc4', 18);
+  updateUI();
+
+  G.buffActive = false;
+  setMessage(npcLog);
+
+  if (bs.enemies.every(e => e.hp <= 0)) {
+    showButtons([{ text: '▶ 次へ', action: () => battleVictory() }]);
+  } else {
+    showButtons([{ text: '▶ 敵の攻撃を見る', action: () => enemyTurn() }]);
+  }
+}
+
+function enemyTurn() {
+  const bs = G.battleState;
+  const alive = bs.enemies.filter(e => e.hp > 0);
+  if (alive.length === 0) { battleVictory(); return; }
+
+  let dmgLog = '';
+  alive.forEach(e => {
+    // Enemy attacks random target
+    const targets = ['duck', 'hero', 'mage', 'priest'];
+    const t = targets[Math.floor(Math.random() * targets.length)];
+
+    if (t === 'duck') {
+      if (bs._protecting) {
+        // protecting - already taking hit
+      }
+      if (G.evadeUp && Math.random() < 0.6) {
+        dmgLog += `${e.name}の攻撃！ダッキーはヒラリとかわした！\n`;
+        addEffect(400, 270, 'MISS!', '#aaa', 18);
+      } else {
+        const dmg = bs._protecting ? Math.floor(e.atk * 1.5) : e.atk;
+        modHp(-dmg);
+        dmgLog += `${e.name}の攻撃！ダッキーに${dmg}ダメージ！\n`;
+        addEffect(400, 280, '-' + dmg, '#ff6b6b', 20);
+        G.shake = 4;
+      }
+    } else {
+      const nameMap = { hero: 'アレス', mage: 'メルル', priest: 'リリア' };
+      dmgLog += `${e.name}の攻撃！${nameMap[t]}に${e.atk}ダメージ！\n`;
+    }
+  });
+
+  bs._protecting = false;
+  G.evadeUp = false;
+  G.expression = 'normal';
+  setMessage(dmgLog);
+
+  if (G.gameOver) return;
+  showButtons([{ text: '▶ 次のターンへ', action: () => showBattleActions() }]);
+}
+
+function battleVictory() {
+  const usedPeck = G.battleState?.usedPeck;
+  G.battleState = null;
+  G.expression = 'happy';
+  G.deflated = false;
+
+  const ch = CHAPTERS[G.chapter];
+  let victoryText = '🎉 戦闘に勝利した！\n';
+  if (ch.id === 3) {
+    victoryText += 'アレス「初陣にしちゃ上出来だ！」\nリリア「ダッキーちゃん、がんばりましたね♪」';
+    if (usedPeck) victoryText += '\nメルル「…つつき攻撃って戦士の技？」';
+    else victoryText += '\nメルル「…まぁ、役には立ったわね」';
+  } else if (ch.id === 6) {
+    victoryText += 'アレス「でっかいコウモリだったな！」\nリリア「みんな無事でよかった♪」';
+    if (G.trust >= 50) victoryText += '\nメルル「…ダッキーのおかげ…かもね」';
+    else victoryText += '\nメルル「洞窟はもう勘弁…」';
+  } else if (ch.id === 9) {
+    victoryText += 'ドラゴン魔王「バカな…このワシが…黄色い奴に…」\nアレス「やったぞ！魔王を倒した！！」\nリリア「やったー！！」';
+    if (G.memory.confessed) victoryText += '\nメルル「…アヒルが魔王を倒すなんてね」';
+    else victoryText += '\nメルル「…本当に勝った」';
+  }
+  setMessage(victoryText);
+  modTrust(5);
+
+  showButtons([{
+    text: '➡️ 次の章へ進む',
+    action: () => startChapter(G.chapter + 1)
+  }]);
+}
+
+// ========== Ending ==========
+
+function showEnding() {
+  G.scene = 'grassland';
+  const s = G.suspicion;
+  const t = G.trust;
+  const m = G.memory;
+
+  let ending;
+
+  // === 告白成功ルート → TRUE END ===
+  if (m.confessed) {
+    ending = {
+      title: '🌈 伝説のアヒル勇者',
+      text: '魔王を倒した後——\n\nアレス「ダッキー。お前がアヒルだって聞いた時、正直驚いた」\nアレス「でも…一番大事なことを教えてくれた。仲間を信じる勇気だ」\nリリア「ダッキーちゃんは最初からダッキーちゃんです♪」\nメルル「…最初から気づいてたけど。認めたくなかっただけよ」\nメルル「…ありがと。楽しかった」\n\nゴム製アヒルは正体を明かしたまま魔王を倒し、\n伝説の勇者として歴史に名を刻んだ。\n国中の子供たちがゴムアヒルのおもちゃを欲しがったという。\n\n🎉 TRUE END — 伝説のアヒル勇者',
+      scene: 'grassland'
+    };
+    G.expression = 'happy';
+
+  // === 告白失敗ルート → 専用エンド（打ち明けた時点の信頼で判定）===
+  } else if (m.confess_failed) {
+    if ((m.confessedTrust || t) >= 50) {
+      ending = {
+        title: '🔁 もう一度やり直そう',
+        text: '魔王を倒した後——\n\nダッキーはあの日、正体を打ち明けた。受け入れてはもらえなかった。\nでも、一緒に魔王を倒した事実は消えない。\n\nアレス「…なぁダッキー。正直、まだよくわからねぇ」\nアレス「でも、お前が仲間を守ろうとしてたのは本当だろ？」\nリリア「…もう少し、一緒にいてもいいですか？」\nメルル「…次は最初から正直にしなさいよ」\n\n信頼は壊れた。でも、ゼロじゃない。\nここから、もう一度はじめよう。\n\n🔁 ANOTHER END — もう一度やり直そう',
+        scene: 'grassland'
+      };
+      G.expression = 'worried';
+    } else {
+      ending = {
+        title: '💔 裏切りの代償',
+        text: '魔王を倒した後——\n\nダッキーはあの日、正体を打ち明けた。\nしかし積み重ねた嘘が多すぎた。\n\nメルル「言ったでしょ。遅すぎるのよ」\nアレス「…悪いがダッキー。しばらく距離を置こう」\nリリア「…ダッキーちゃん…」（泣いている）\n\nダッキーは一人、旅立った。\n正直に言うことは正しかった。\nでも、もっと早く言うべきだった。\n\n💔 BAD END — 裏切りの代償',
+        scene: 'camp'
+      };
+      G.expression = 'worried';
+    }
+
+  // === バレずに高信頼 → GOOD END ===
+  } else if (s <= 20 && t >= 80) {
+    ending = {
+      title: '🌈 伝説のアヒル勇者',
+      text: '魔王を倒した後、ダッキーの正体が明かされた。\nしかし誰も驚かなかった。\n\nアレス「知ってたよ。でもお前は最高の仲間だ」\nメルル「…最初から気づいてたけど、認めたくなかっただけよ」\nリリア「ダッキーちゃんはダッキーちゃんです♪」\n\nゴム製アヒルは、伝説の勇者として歴史に名を刻んだ。\n\n🎉 TRUE END — 伝説のアヒル勇者',
+      scene: 'grassland'
+    };
+    G.expression = 'happy';
+  } else if (s <= 50 && t >= 60) {
+    let extra = '';
+    if (m.teamwork) extra = '\nアレス「いかだ作った時、お前が頼りになるってわかったよ」';
+    else if (m.bathed) extra = '\nアレス「風呂で背中流した時から…薄々な」';
+    ending = {
+      title: '💛 真の仲間',
+      text: 'エピローグ——\n\nメルル「…ねぇ、みんな気づいてた？ダッキーがアヒルだって」\nアレス「うん」\nリリア「はい♪」\nメルル「なんで言わなかったのよ！」\nアレス「だって楽しかったし」' + extra + '\n\nダッキーは涙を流した（ゴムだけど）。\n仲間って、いいな。\n\n💛 GOOD END — 真の仲間',
+      scene: 'grassland'
+    };
+    G.expression = 'happy';
+  } else if (s > 50 && t >= 50) {
+    let extra = '';
+    if (m.swam) extra = '\nメルル「川で浮いてた時点で確信してたのよ！」';
+    ending = {
+      title: '😅 バレたけど許された',
+      text: 'メルル「もういい加減白状しなさい！あなたアヒルでしょ！」' + extra + '\nダッキー「………グワ」\n\nアレス「ま、いいんじゃね？楽しかったし」\nリリア「私、最初からかわいいと思ってました♪」\nメルル「…はぁ。まぁいいけど」\n\nバレちゃったけど、まぁいっか。\n\n😅 NORMAL END — バレたけど許された',
+      scene: 'grassland'
+    };
+    G.expression = 'worried';
+  } else if (t >= 30 && t < 50) {
+    ending = {
+      title: '👋 ひっそり旅立ち',
+      text: '夜中——\nダッキーはそっと荷物をまとめて旅立った。\n\n（これ以上一緒にいたら、迷惑をかけてしまう）\n\n翌朝、リリアが気づいた。\nリリア「ダッキーちゃんがいない…」\nアレス「…あいつ、行っちまったのか」\nメルル「…（少しさみしそう）」\n\n一枚の黄色い羽根だけが残されていた。' +
+        (m.bold_intro ? '\nアレス「…伝説の戦士、か。嘘だったけど…寂しいな」' : '') +
+        '\n\n👋 SAD END — ひっそり旅立ち',
+      scene: 'camp'
+    };
+    G.expression = 'worried';
+  } else {
+    ending = {
+      title: '💀 追放エンド',
+      text: 'メルル「もう我慢できない！こいつはアヒルよ！ゴム製の！」\nアレス「…確かに、怪しいとは思ってた」\nリリア「えっ…そうなの…？」\n\nダッキーは追放された。\nトボトボと一人、来た道を戻る。\n\n…でも、少しだけ楽しかったな。\n\n💀 BAD END — 追放',
+      scene: 'grassland'
+    };
+    G.expression = 'worried';
+  }
+
+  G.scene = ending.scene;
+  msgBox.style.maxHeight = '250px';
+  setMessage(`${ending.title}\n\n${ending.text}`);
+
+  setTimeout(() => {
+    showButtons([
+      { text: '🔄 もう一度遊ぶ', action: () => location.reload() },
+    ]);
+  }, 3000);
+}
+
+// ========== Title Screen ==========
+
+function drawTitleDuck() {
+  const tc = titleCtx;
+  tc.clearRect(0, 0, 200, 160);
+  const t = G.animTime;
+  const bounce = Math.sin(t * 3) * 5;
+
+  tc.save(); tc.translate(100, 80 + bounce);
+
+  // Shadow
+  tc.fillStyle = 'rgba(0,0,0,0.2)';
+  tc.beginPath(); tc.ellipse(0, 55, 35, 10, 0, 0, Math.PI * 2); tc.fill();
+
+  // Body
+  const bodyGrad = tc.createRadialGradient(-10, 10, 5, 0, 10, 50);
+  bodyGrad.addColorStop(0, '#FFEE58'); bodyGrad.addColorStop(0.5, '#FFD600'); bodyGrad.addColorStop(1, '#F9A825');
+  tc.fillStyle = bodyGrad;
+  tc.beginPath(); tc.ellipse(0, 20, 34, 30, 0, 0, Math.PI * 2); tc.fill();
+  tc.fillStyle = 'rgba(255,255,255,0.3)';
+  tc.beginPath(); tc.ellipse(-10, 8, 12, 16, -0.2, 0, Math.PI * 2); tc.fill();
+
+  // Tail
+  tc.fillStyle = '#FFD600';
+  tc.beginPath(); tc.moveTo(26, 15); tc.quadraticCurveTo(48, 0, 42, -8);
+  tc.quadraticCurveTo(40, -3, 28, 5); tc.fill();
+
+  // Head
+  tc.fillStyle = '#FFD600';
+  tc.beginPath(); tc.arc(0, -20, 22, 0, Math.PI * 2); tc.fill();
+  tc.fillStyle = 'rgba(255,255,255,0.35)';
+  tc.beginPath(); tc.ellipse(-7, -30, 7, 10, -0.2, 0, Math.PI * 2); tc.fill();
+
+  // Beak
+  tc.fillStyle = '#FF6F00';
+  tc.beginPath(); tc.moveTo(-8, -18); tc.quadraticCurveTo(-22, -14, -8, -10); tc.closePath(); tc.fill();
+
+  // Eyes
+  tc.fillStyle = '#333';
+  tc.beginPath(); tc.arc(-7, -24, 3, 0, Math.PI * 2); tc.fill();
+  tc.beginPath(); tc.arc(7, -24, 3, 0, Math.PI * 2); tc.fill();
+  tc.fillStyle = '#fff';
+  tc.beginPath(); tc.arc(-5, -25, 1.5, 0, Math.PI * 2); tc.fill();
+  tc.beginPath(); tc.arc(9, -25, 1.5, 0, Math.PI * 2); tc.fill();
+
+  // Blush
+  tc.fillStyle = 'rgba(255,138,128,0.3)';
+  tc.beginPath(); tc.ellipse(-13, -14, 5, 3, 0, 0, Math.PI * 2); tc.fill();
+  tc.beginPath(); tc.ellipse(10, -14, 5, 3, 0, 0, Math.PI * 2); tc.fill();
+
+  // Wings
+  tc.fillStyle = '#FBC02D';
+  tc.beginPath(); tc.ellipse(-28, 14, 10, 18, 0.2, 0, Math.PI * 2); tc.fill();
+  tc.beginPath(); tc.ellipse(28, 14, 10, 18, -0.2, 0, Math.PI * 2); tc.fill();
+
+  // Feet
+  tc.fillStyle = '#E65100';
+  tc.beginPath(); tc.ellipse(-12, 48, 12, 4, 0.15, 0, Math.PI * 2); tc.fill();
+  tc.beginPath(); tc.ellipse(12, 48, 12, 4, -0.15, 0, Math.PI * 2); tc.fill();
+
+  // Warrior helmet
+  tc.fillStyle = '#78909C';
+  tc.beginPath(); tc.arc(0, -28, 23, Math.PI, 0); tc.fill();
+  tc.fillStyle = '#546E7A';
+  tc.fillRect(-20, -28, 40, 4);
+  tc.fillStyle = '#607D8B';
+  tc.fillRect(-2, -28, 4, 10);
+  // Plume
+  tc.fillStyle = '#E53935';
+  tc.beginPath();
+  tc.moveTo(0, -50); tc.quadraticCurveTo(15, -55, 20, -48);
+  tc.quadraticCurveTo(15, -42, 0, -44); tc.fill();
+
+  // Sword (tiny, held in wing)
+  tc.fillStyle = '#B0BEC5';
+  tc.fillRect(32, 0, 3, 25);
+  tc.fillStyle = '#FFD600';
+  tc.fillRect(28, 0, 10, 4);
+
+  tc.restore();
+}
+
+titleScreen.addEventListener('click', () => {
+  titleScreen.style.transition = 'opacity 0.5s';
+  titleScreen.style.opacity = '0';
+  setTimeout(() => {
+    titleScreen.style.display = 'none';
+    G.started = true;
+    startChapter(0);
+  }, 500);
+});
+
+// ========== Animation Loop ==========
+
+function gameLoop() {
+  G.animTime += 0.016;
+
+  if (!G.started) {
+    drawTitleDuck();
+  } else {
+    render();
+  }
+
+  requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
+updateUI();
+</script>
+</body>
+</html>
