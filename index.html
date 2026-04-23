@@ -1384,6 +1384,18 @@
         </div>
       </div>
       <div class="game-banner fade-up">
+        <h3>アヒルビート</h3>
+        <p>
+          リズムに乗ってノーツをタップ！<br>
+          6曲の楽曲で腕試し — 目指せオールパーフェクト！<br>
+          キーボードでもスマホでも遊べるリズムゲーム 🐤🎵
+        </p>
+        <div class="game-buttons">
+          <a href="/rhythm.html" class="game-play-btn">あそぶ</a>
+          <button class="game-ranking-btn" data-api="/api/rhythm-scores" data-type="rhythm">ランキングを見る</button>
+        </div>
+      </div>
+      <div class="game-banner fade-up">
         <h3>アヒルソリティア</h3>
         <p>
           おなじみのカードゲームがアヒル仕様に！<br>
@@ -1612,6 +1624,8 @@
             extra = e.chains ? ` ${e.chains}連鎖` : '';
           } else if (type === 'bento') {
             extra = e.reputation ? ` ${e.reputation}` : '';
+          } else if (type === 'rhythm') {
+            extra = e.maxCombo ? ` ${e.maxCombo}combo` : '';
           } else if (type === 'solitaire') {
             const m = Math.floor((e.time||0)/60);
             const ss = String((e.time||0)%60).padStart(2,'0');
@@ -1643,7 +1657,8 @@
 
     const RANKING_TABS_DEF = {
       osouji: { tabs: ['かんたん', 'ふつう', 'むずかしい'], default: 'ふつう' },
-      solitaire: { tabs: ['1枚めくり', '3枚めくり'], default: '1枚めくり' }
+      solitaire: { tabs: ['1枚めくり', '3枚めくり'], default: '1枚めくり' },
+      rhythm: { tabs: ['おさんぽクワック', 'はじめてのクワック', 'クワッくんのおでかけ', 'ポンドパーティー', 'ミッドナイトスワン', 'サンダークワック'], default: 'ポンドパーティー' }
     };
 
     function showRankingFor(apiUrl, type) {
