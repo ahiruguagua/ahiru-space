@@ -1,0 +1,897 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>アヒルと落合塾10周年フェスへの道</title>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-TXQFE7EYKZ"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-TXQFE7EYKZ');
+    </script>
+    <style>
+:root {
+  --ink: #16202a;
+  --paper: #fffdf3;
+  --line: #d9d0b7;
+  --yellow: #ffd326;
+  --orange: #ff8a28;
+  --teal: #28b8bd;
+  --blue: #3867d6;
+  --pink: #ef6a91;
+  --green: #48a868;
+  --shadow: 0 18px 46px rgba(22, 32, 42, 0.18);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  color: var(--ink);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
+  background:
+    linear-gradient(90deg, rgba(22, 32, 42, 0.04) 1px, transparent 1px),
+    linear-gradient(rgba(22, 32, 42, 0.04) 1px, transparent 1px),
+    linear-gradient(180deg, #c6ece6 0%, #fff2ba 52%, #f5dbc0 100%);
+  background-size: 36px 36px, 36px 36px, auto;
+}
+
+button {
+  min-height: 42px;
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  color: var(--ink);
+  background: var(--yellow);
+  box-shadow: 4px 4px 0 rgba(22, 32, 42, 0.18);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 900;
+}
+
+button:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 rgba(22, 32, 42, 0.18);
+}
+
+.app {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 18px;
+  min-height: 100vh;
+  padding: 18px;
+}
+
+.game,
+.side {
+  min-width: 0;
+  border: 1px solid rgba(22, 32, 42, 0.16);
+  border-radius: 8px;
+  background: rgba(255, 253, 243, 0.9);
+  box-shadow: var(--shadow);
+}
+
+.game {
+  overflow: hidden;
+}
+
+.hud {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.eyebrow {
+  margin: 0 0 6px;
+  color: #5e665f;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+h1,
+h2,
+p {
+  margin-top: 0;
+}
+
+h1 {
+  margin-bottom: 0;
+  font-size: clamp(24px, 4vw, 42px);
+  line-height: 1.05;
+}
+
+h2 {
+  line-height: 1.2;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 0 0 auto;
+  font-weight: 900;
+}
+
+#soundButton {
+  min-width: 88px;
+  background: #fff;
+}
+
+.canvas-wrap {
+  position: relative;
+  background: #111923;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 10;
+  cursor: crosshair;
+  outline: none;
+  touch-action: none;
+}
+
+.start-layer {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(17, 25, 35, 0.58);
+}
+
+.start-layer.hidden {
+  display: none;
+}
+
+.start-box {
+  width: min(520px, 100%);
+  padding: 24px;
+  border: 3px solid var(--ink);
+  border-radius: 8px;
+  background: var(--paper);
+  box-shadow: 8px 8px 0 rgba(22, 32, 42, 0.22);
+}
+
+.start-box p {
+  line-height: 1.7;
+}
+
+.mobile-pad {
+  display: grid;
+  grid-template-columns: repeat(3, 56px);
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.mobile-pad button {
+  width: 56px;
+  min-height: 48px;
+  background: #fff;
+}
+
+.mobile-pad [data-dir="up"] {
+  grid-column: 2;
+}
+
+.mobile-pad [data-dir="left"] {
+  grid-column: 1;
+}
+
+.mobile-pad [data-dir="down"] {
+  grid-column: 2;
+}
+
+.mobile-pad [data-dir="right"] {
+  grid-column: 3;
+}
+
+.side {
+  align-self: start;
+  position: sticky;
+  top: 18px;
+  padding: 22px;
+}
+
+.side p {
+  line-height: 1.75;
+}
+
+.carry {
+  display: grid;
+  gap: 6px;
+  margin: 18px 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.carry span {
+  color: #5e665f;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.carry strong {
+  font-size: 20px;
+}
+
+.message {
+  min-height: 90px;
+  padding: 14px;
+  border: 2px solid rgba(22, 32, 42, 0.14);
+  border-radius: 8px;
+  background: #f8f3df;
+  font-weight: 800;
+}
+
+.controls-note {
+  margin-bottom: 0;
+  color: #5e665f;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+@media (max-width: 920px) {
+  .app {
+    grid-template-columns: 1fr;
+    padding: 10px;
+  }
+
+  .side {
+    position: static;
+  }
+
+  .hud {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .status {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+    </style>
+  </head>
+  <body>
+    <main class="app">
+      <section class="game">
+        <header class="hud">
+          <div>
+            <p class="eyebrow">OCHIAI JUKU 10TH FEST QUEST</p>
+            <h1>アヒルと10周年フェスへの道</h1>
+          </div>
+          <div class="status">
+            <span id="areaText">AREA 1 / 3</span>
+            <button id="soundButton" type="button" aria-pressed="false">音 ON</button>
+          </div>
+        </header>
+
+        <div class="canvas-wrap">
+          <canvas id="gameCanvas" width="960" height="600" tabindex="0" aria-label="アヒルを動かして正解の素材をゴールへ運ぶゲーム"></canvas>
+          <div class="start-layer" id="startLayer">
+            <div class="start-box">
+              <p class="eyebrow">READY?</p>
+              <h2>動く素材をつかまえて、出口へ。</h2>
+              <p>矢印キー / WASD、下の矢印ボタン、または画面クリックで黄色いゴム製アヒルを動かします。素材に触れると持てます。</p>
+              <button id="startButton" type="button">冒険を始める</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="mobile-pad" aria-label="移動ボタン">
+          <button data-dir="up" type="button">↑</button>
+          <button data-dir="left" type="button">←</button>
+          <button data-dir="down" type="button">↓</button>
+          <button data-dir="right" type="button">→</button>
+        </div>
+      </section>
+
+      <aside class="side">
+        <p class="eyebrow">CURRENT MISSION</p>
+        <h2 id="questionTitle">1問め</h2>
+        <p id="questionText"></p>
+        <div class="carry">
+          <span>持っている素材</span>
+          <strong id="carryText">なし</strong>
+        </div>
+        <p id="messageText" class="message"></p>
+        <p class="controls-note">操作: 矢印キー / WASD / 下の矢印ボタン / 画面クリック</p>
+      </aside>
+    </main>
+
+    <script>
+const canvas = document.querySelector("#gameCanvas");
+const ctx = canvas.getContext("2d");
+const startLayer = document.querySelector("#startLayer");
+const startButton = document.querySelector("#startButton");
+const soundButton = document.querySelector("#soundButton");
+const areaText = document.querySelector("#areaText");
+const questionTitle = document.querySelector("#questionTitle");
+const questionText = document.querySelector("#questionText");
+const carryText = document.querySelector("#carryText");
+const messageText = document.querySelector("#messageText");
+
+const W = canvas.width;
+const H = canvas.height;
+
+const levels = [
+  {
+    title: "1問め",
+    question:
+      "2016年に始まった落合陽一塾は、メディアアート、テクノロジー、社会変革をつなぎながら「計算機自然」を探ってきました。これはカタカナで言うと、、？",
+    correct: "デジタルネイチャー",
+    options: ["デジタルネイチャー", "デジタルナチュール", "サイバー自然園"],
+    colors: ["#28b8bd", "#ef6a91", "#6f71d9"],
+    zone: "川面の実験場"
+  },
+  {
+    title: "2問め",
+    question: "落合陽一の言っていた言葉にあるものは？",
+    correct: "みんなちがってみんなどうでもいい",
+    options: ["みんなちがってみんなどうでもいい", "みんなちがってみんないい", "みんな一緒"],
+    colors: ["#ffb129", "#48a868", "#3867d6"],
+    zone: "問いの交差点"
+  },
+  {
+    title: "3問め",
+    question: "落合陽一塾にある部活は？",
+    correct: "美術部",
+    options: ["美術部", "バスケ部", "カルタ部"],
+    colors: ["#ef6a91", "#28b8bd", "#ffb129"],
+    zone: "部活ストリート"
+  }
+];
+
+const keys = new Set();
+const pointerTarget = { active: false, x: 0, y: 0 };
+let started = false;
+let levelIndex = 0;
+let mode = "play";
+let transitionTimer = 0;
+let festivalTimer = 0;
+let carried = null;
+let messageTimer = 0;
+let audioEnabled = false;
+let audioCtx = null;
+let musicTimer = null;
+
+const duck = {
+  x: 112,
+  y: 300,
+  r: 30,
+  speed: 4.1,
+  bob: 0
+};
+
+const exit = {
+  x: 842,
+  y: 300,
+  w: 86,
+  h: 160
+};
+
+let items = [];
+
+function initLevel(index) {
+  const level = levels[index];
+  levelIndex = index;
+  mode = "play";
+  carried = null;
+  duck.x = 112;
+  duck.y = 300;
+  duck.bob = 0;
+  messageTimer = 160;
+  messageText.textContent = "動く素材に触れて拾い、右の出口へ運んでください。違う素材だと同じエリアをもう一度回ります。";
+  questionTitle.textContent = level.title;
+  questionText.textContent = level.question;
+  areaText.textContent = `AREA ${index + 1} / ${levels.length}`;
+  carryText.textContent = "なし";
+
+  items = level.options.map((label, optionIndex) => ({
+    label,
+    correct: label === level.correct,
+    color: level.colors[optionIndex],
+    w: label.length > 12 ? 228 : 128,
+    h: label.length > 12 ? 82 : 68,
+    x: 340 + optionIndex * 138,
+    y: 176 + optionIndex * 96,
+    baseX: 340 + optionIndex * 138,
+    baseY: 176 + optionIndex * 96,
+    vx: optionIndex === 1 ? -1.2 : 1.1 + optionIndex * 0.25,
+    vy: optionIndex === 2 ? -1.0 : 1.0 + optionIndex * 0.2,
+    t: optionIndex * 2,
+    r: label.length > 12 ? 58 : 42
+  }));
+}
+
+function resetGame() {
+  keys.clear();
+  pointerTarget.active = false;
+  started = false;
+  mode = "play";
+  transitionTimer = 0;
+  festivalTimer = 0;
+  carried = null;
+  startLayer.classList.remove("hidden");
+  messageText.textContent = "動く素材に触れて拾い、右の出口へ運んでください。違う素材だと同じエリアをもう一度回ります。";
+  initLevel(0);
+}
+
+function normalizeDirection() {
+  let dx = 0;
+  let dy = 0;
+  if (keys.has("ArrowLeft") || keys.has("a")) dx -= 1;
+  if (keys.has("ArrowRight") || keys.has("d")) dx += 1;
+  if (keys.has("ArrowUp") || keys.has("w")) dy -= 1;
+  if (keys.has("ArrowDown") || keys.has("s")) dy += 1;
+  if (pointerTarget.active) {
+    const tx = pointerTarget.x - duck.x;
+    const ty = pointerTarget.y - duck.y;
+    const dist = Math.hypot(tx, ty);
+    if (dist > 8) {
+      dx += tx / dist;
+      dy += ty / dist;
+    } else {
+      pointerTarget.active = false;
+    }
+  }
+  const mag = Math.hypot(dx, dy);
+  if (mag > 1) {
+    dx /= mag;
+    dy /= mag;
+  }
+  if (dx && dy) {
+    const diagonal = Math.hypot(dx, dy);
+    dx /= diagonal;
+    dy /= diagonal;
+  }
+  return { dx, dy };
+}
+
+function update() {
+  if (!started) return;
+  if (mode === "festival") {
+    festivalTimer += 1;
+    return;
+  }
+  if (mode === "transition") {
+    transitionTimer -= 1;
+    if (transitionTimer <= 0) {
+      if (levelIndex + 1 >= levels.length) {
+        mode = "festival";
+        festivalTimer = 0;
+        messageText.textContent = "10周年フェス会場に到着。四角いボックスの子が待っていました。";
+        areaText.textContent = "FESTIVAL";
+        carryText.textContent = "祝福";
+        playChord([392, 494, 587], 0.18);
+      } else {
+        initLevel(levelIndex + 1);
+      }
+    }
+    return;
+  }
+
+  const { dx, dy } = normalizeDirection();
+  duck.x = clamp(duck.x + dx * duck.speed, duck.r + 10, W - duck.r - 10);
+  duck.y = clamp(duck.y + dy * duck.speed, duck.r + 10, H - duck.r - 10);
+  duck.bob += 0.09;
+
+  items.forEach((item) => {
+    item.t += 0.035;
+    item.x += item.vx;
+    item.y += item.vy;
+    item.y += Math.sin(item.t) * 0.55;
+    if (item.x < 220 || item.x > 725) item.vx *= -1;
+    if (item.y < 108 || item.y > 492) item.vy *= -1;
+  });
+
+  if (!carried) {
+    const touched = items.find((item) => distance(duck.x, duck.y, item.x, item.y) < duck.r + item.r - 6);
+    if (touched) {
+      carried = touched;
+      carryText.textContent = touched.label;
+      messageText.textContent = `「${touched.label}」を拾いました。右の出口へ運ぼう。`;
+      playBlip(touched.correct ? 660 : 360, 0.08);
+    }
+  }
+
+  if (carried) {
+    carried.x = duck.x;
+    carried.y = duck.y - 58;
+    if (duck.x > exit.x && duck.y > exit.y - exit.h / 2 && duck.y < exit.y + exit.h / 2) {
+      judgeCarried();
+    }
+  }
+
+  if (messageTimer > 0) messageTimer -= 1;
+}
+
+function judgeCarried() {
+  const label = carried.label;
+  if (carried.correct) {
+    messageText.textContent = `正解。「${label}」をフェスへの荷物に入れました。次のエリアへ進みます。`;
+    playChord([523, 659, 784], 0.16);
+    mode = "transition";
+    transitionTimer = 80;
+    carried = null;
+    carryText.textContent = "正解の素材";
+    return;
+  }
+
+  messageText.textContent = `「${label}」ではなかったみたい。同じエリアをもう一度ぷかぷか回ります。`;
+  playBlip(180, 0.18);
+  setTimeout(() => {
+    if (mode === "play") initLevel(levelIndex);
+  }, 780);
+  carried = null;
+}
+
+function drawFrame() {
+  const level = levels[levelIndex] || levels[levels.length - 1];
+  drawBackground(level);
+  if (mode === "festival") {
+    drawFestival();
+    return;
+  }
+  drawExit();
+  items.forEach(drawItem);
+  drawDuck();
+  if (mode === "transition") drawTransition();
+}
+
+function drawLoop() {
+  update();
+  drawFrame();
+  requestAnimationFrame(drawLoop);
+}
+
+function drawBackground(level) {
+  const grd = ctx.createLinearGradient(0, 0, 0, H);
+  grd.addColorStop(0, "#97ddd8");
+  grd.addColorStop(0.52, "#fff0a8");
+  grd.addColorStop(1, "#35a6b4");
+  ctx.fillStyle = grd;
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.globalAlpha = 0.28;
+  ctx.strokeStyle = "#ffffff";
+  ctx.lineWidth = 1;
+  for (let x = 0; x < W; x += 38) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, H);
+    ctx.stroke();
+  }
+  for (let y = 0; y < H; y += 38) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(W, y);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+
+  ctx.fillStyle = "rgba(255,255,255,0.65)";
+  for (let i = 0; i < 8; i += 1) {
+    const x = (i * 145 + performance.now() * 0.018) % (W + 120) - 60;
+    const y = 72 + (i % 3) * 42;
+    oval(x, y, 62, 16);
+  }
+
+  drawText(level.zone, 34, 54, 26, "#16202a", "900");
+  drawText("正解の素材を拾って EXIT へ", 34, 88, 18, "#35424b", "800");
+}
+
+function drawExit() {
+  ctx.save();
+  ctx.translate(exit.x, exit.y);
+  const pulse = 1 + Math.sin(performance.now() * 0.006) * 0.05;
+  ctx.scale(pulse, pulse);
+  roundRect(-exit.w / 2, -exit.h / 2, exit.w, exit.h, 14, "#fffdf3", "#16202a", 4);
+  ctx.fillStyle = "#ff8a28";
+  ctx.fillRect(-exit.w / 2 + 13, -exit.h / 2 + 13, exit.w - 26, exit.h - 26);
+  drawText("EXIT", -31, 9, 22, "#16202a", "900");
+  ctx.restore();
+}
+
+function drawItem(item) {
+  if (carried === item) return;
+  ctx.save();
+  ctx.translate(item.x, item.y);
+  const wobble = Math.sin(item.t * 2.2) * 0.08;
+  ctx.rotate(wobble);
+  roundRect(-item.w / 2, -item.h / 2, item.w, item.h, 16, item.color, "#16202a", 3);
+  ctx.fillStyle = "rgba(255,255,255,0.35)";
+  ctx.fillRect(-item.w / 2 + 16, -item.h / 2 + 12, 42, 12);
+  drawWrappedText(item.label, 0, -2, item.w > 160 ? 15 : 16, "#16202a", "900", item.w - 24, "center");
+  ctx.restore();
+}
+
+function drawDuck() {
+  ctx.save();
+  const bob = Math.sin(duck.bob) * 5;
+  ctx.translate(duck.x, duck.y + bob);
+  if (carried) {
+    roundRect(-70, -103, 140, 48, 14, carried.color, "#16202a", 3);
+    drawWrappedText(carried.label, 0, -78, 14, "#16202a", "900", 118, "center");
+  }
+  ctx.fillStyle = "rgba(22,32,42,0.18)";
+  oval(0, 35, 58, 13);
+  roundRect(-34, -5, 78, 45, 24, "#ffd326", "#16202a", 3);
+  circle(31, -25, 30, "#ffd326", "#16202a", 3);
+  roundRect(53, -20, 36, 18, 8, "#ff8a28", "#16202a", 3);
+  circle(40, -31, 4, "#16202a");
+  ctx.fillStyle = "rgba(255,255,255,0.48)";
+  oval(-12, 6, 22, 8);
+  ctx.restore();
+}
+
+function drawTransition() {
+  ctx.fillStyle = `rgba(255, 253, 243, ${0.25 + (80 - transitionTimer) / 140})`;
+  ctx.fillRect(0, 0, W, H);
+  drawText("正解。次のエリアへ", W / 2 - 132, H / 2, 34, "#16202a", "900");
+}
+
+function drawFestival() {
+  const t = festivalTimer;
+  const hue = (t * 2) % 360;
+  ctx.fillStyle = `hsl(${hue}, 80%, 15%)`;
+  ctx.fillRect(0, 0, W, H);
+
+  for (let i = 0; i < 18; i += 1) {
+    ctx.fillStyle = `hsl(${(hue + i * 24) % 360}, 85%, 58%)`;
+    const x = (i * 73 + t * (1.3 + (i % 4) * 0.2)) % W;
+    const h = 70 + Math.sin(t * 0.08 + i) * 42;
+    ctx.fillRect(x, H - h, 34, h);
+  }
+
+  ctx.fillStyle = "#fffdf3";
+  ctx.fillRect(130, 82, 700, 86);
+  drawText("OCHIAI JUKU 10TH FEST", 205, 137, 36, "#16202a", "900");
+
+  drawNullBox(W / 2, 330, t);
+  drawDuckAt(255, 442, t);
+  drawText("ありがとう、次の十年もよろしくね", 275, 468, 30, "#fffdf3", "900");
+  drawText("DJ PARTY STARTS... クリックで最初から", 286, 516, 24, "#ffd326", "900");
+}
+
+function drawNullBox(x, y, t) {
+  ctx.save();
+  ctx.translate(x, y + Math.sin(t * 0.08) * 8);
+  ctx.rotate(Math.sin(t * 0.035) * 0.04);
+  roundRect(-98, -86, 196, 172, 28, "#e9eff2", "#16202a", 5);
+  ctx.fillStyle = "rgba(40,184,189,0.32)";
+  for (let i = -72; i <= 72; i += 36) {
+    oval(i + Math.sin(t * 0.06 + i) * 6, -50 + Math.cos(t * 0.05 + i) * 5, 18, 8);
+  }
+  circle(-38, -18, 26, "#fffdf3", "#16202a", 4);
+  circle(38, -18, 26, "#fffdf3", "#16202a", 4);
+  circle(-32 + Math.sin(t * 0.08) * 8, -15, 8, "#16202a");
+  circle(44 + Math.sin(t * 0.08) * 8, -15, 8, "#16202a");
+  ctx.strokeStyle = "#16202a";
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.arc(0, 34, 34, 0.08 * Math.PI, 0.92 * Math.PI);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawDuckAt(x, y, t) {
+  ctx.save();
+  ctx.translate(x, y + Math.sin(t * 0.09) * 6);
+  roundRect(-36, -4, 80, 45, 24, "#ffd326", "#16202a", 3);
+  circle(30, -26, 30, "#ffd326", "#16202a", 3);
+  roundRect(52, -20, 36, 18, 8, "#ff8a28", "#16202a", 3);
+  circle(39, -32, 4, "#16202a");
+  ctx.restore();
+}
+
+function roundRect(x, y, w, h, r, fill, stroke, lineWidth = 2) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+  ctx.fillStyle = fill;
+  ctx.fill();
+  if (stroke) {
+    ctx.strokeStyle = stroke;
+    ctx.lineWidth = lineWidth;
+    ctx.stroke();
+  }
+}
+
+function circle(x, y, r, fill, stroke, lineWidth = 2) {
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fillStyle = fill;
+  ctx.fill();
+  if (stroke) {
+    ctx.strokeStyle = stroke;
+    ctx.lineWidth = lineWidth;
+    ctx.stroke();
+  }
+}
+
+function oval(x, y, rx, ry) {
+  ctx.beginPath();
+  ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawText(text, x, y, size, color, weight = "700") {
+  ctx.fillStyle = color;
+  ctx.font = `${weight} ${size}px system-ui, -apple-system, BlinkMacSystemFont, sans-serif`;
+  ctx.fillText(text, x, y);
+}
+
+function drawWrappedText(text, x, y, size, color, weight, maxWidth, align) {
+  ctx.fillStyle = color;
+  ctx.textAlign = align;
+  ctx.textBaseline = "middle";
+  ctx.font = `${weight} ${size}px system-ui, -apple-system, BlinkMacSystemFont, sans-serif`;
+  const chars = [...text];
+  let line = "";
+  const lines = [];
+  chars.forEach((char) => {
+    const next = line + char;
+    if (ctx.measureText(next).width > maxWidth && line) {
+      lines.push(line);
+      line = char;
+    } else {
+      line = next;
+    }
+  });
+  lines.push(line);
+  lines.forEach((part, index) => {
+    ctx.fillText(part, x, y + (index - (lines.length - 1) / 2) * (size + 2));
+  });
+  ctx.textAlign = "start";
+  ctx.textBaseline = "alphabetic";
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function distance(ax, ay, bx, by) {
+  return Math.hypot(ax - bx, ay - by);
+}
+
+function ensureAudio() {
+  if (!audioCtx) audioCtx = new AudioContext();
+  if (audioCtx.state === "suspended") audioCtx.resume();
+}
+
+function playBlip(freq, duration) {
+  if (!audioEnabled) return;
+  ensureAudio();
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = "square";
+  osc.frequency.value = freq;
+  gain.gain.setValueAtTime(0.001, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.08, audioCtx.currentTime + 0.01);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start();
+  osc.stop(audioCtx.currentTime + duration + 0.02);
+}
+
+function playChord(freqs, duration) {
+  freqs.forEach((freq, index) => setTimeout(() => playBlip(freq, duration), index * 55));
+}
+
+function startMusic() {
+  if (musicTimer) return;
+  const notes = [262, 330, 392, 494, 392, 330, 294, 392];
+  let step = 0;
+  musicTimer = setInterval(() => {
+    if (audioEnabled && started) {
+      const base = mode === "festival" ? notes[(step + 3) % notes.length] * 1.5 : notes[step % notes.length];
+      playBlip(base, 0.07);
+      if (mode === "festival" && step % 2 === 0) playBlip(98, 0.05);
+      step += 1;
+    }
+  }, 280);
+}
+
+function toggleSound(forceOn = false) {
+  audioEnabled = forceOn ? true : !audioEnabled;
+  if (audioEnabled) {
+    ensureAudio();
+    startMusic();
+  }
+  soundButton.textContent = audioEnabled ? "音 OFF" : "音 ON";
+  soundButton.setAttribute("aria-pressed", String(audioEnabled));
+}
+
+startButton.addEventListener("click", () => {
+  started = true;
+  startLayer.classList.add("hidden");
+  canvas.focus();
+  toggleSound(true);
+});
+
+soundButton.addEventListener("click", () => toggleSound(false));
+
+window.addEventListener("keydown", (event) => {
+  if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "w", "a", "s", "d"].includes(event.key)) {
+    event.preventDefault();
+    pointerTarget.active = false;
+    keys.add(event.key);
+  }
+});
+
+window.addEventListener("keyup", (event) => {
+  keys.delete(event.key);
+});
+
+document.querySelectorAll(".mobile-pad button").forEach((button) => {
+  const keyByDir = { up: "ArrowUp", down: "ArrowDown", left: "ArrowLeft", right: "ArrowRight" };
+  const key = keyByDir[button.dataset.dir];
+  button.addEventListener("pointerdown", (event) => {
+    event.preventDefault();
+    pointerTarget.active = false;
+    keys.add(key);
+    button.setPointerCapture(event.pointerId);
+  });
+  button.addEventListener("pointerup", () => keys.delete(key));
+  button.addEventListener("pointercancel", () => keys.delete(key));
+  button.addEventListener("pointerleave", () => keys.delete(key));
+});
+
+function setPointerTarget(event) {
+  const rect = canvas.getBoundingClientRect();
+  pointerTarget.x = ((event.clientX - rect.left) / rect.width) * W;
+  pointerTarget.y = ((event.clientY - rect.top) / rect.height) * H;
+}
+
+canvas.addEventListener("pointerdown", (event) => {
+  if (!started) return;
+  event.preventDefault();
+  if (mode === "festival") {
+    resetGame();
+    return;
+  }
+  pointerTarget.active = true;
+  setPointerTarget(event);
+  canvas.setPointerCapture(event.pointerId);
+  canvas.focus();
+});
+
+canvas.addEventListener("pointermove", (event) => {
+  if (!pointerTarget.active) return;
+  setPointerTarget(event);
+});
+
+canvas.addEventListener("pointerup", () => {
+  canvas.focus();
+});
+
+canvas.addEventListener("pointercancel", () => {
+  pointerTarget.active = false;
+});
+
+initLevel(0);
+drawLoop();
+    </script>
+  </body>
+</html>
