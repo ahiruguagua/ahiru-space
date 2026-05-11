@@ -823,6 +823,43 @@
       text-decoration: none;
     }
 
+    /* ===== POND ===== */
+    .pond-section {
+      background: linear-gradient(135deg, #E1F5FE, #B3E5FC);
+      text-align: center;
+    }
+
+    .pond-wrap {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .pond-svg {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .pond-count {
+      margin-top: 1.2rem;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--water-dark);
+    }
+
+    .pond-count span {
+      font-size: 1.4rem;
+    }
+
+    @keyframes pond-bob {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-3px); }
+    }
+
+    .pond-duck {
+      animation: pond-bob 3.5s ease-in-out infinite;
+    }
+
     /* ===== RESPONSIVE ===== */
     @media (max-width: 768px) {
       .about-grid {
@@ -954,6 +991,36 @@
       <path fill="white" fill-opacity="0.5" d="M0,80 C360,40 720,100 1080,60 C1260,40 1380,80 1440,70 L1440,120 L0,120 Z"/>
       <path fill="white" d="M0,90 C360,70 720,110 1080,80 C1260,70 1380,95 1440,85 L1440,120 L0,120 Z"/>
     </svg>
+  </section>
+
+  <!-- Pond -->
+  <section class="pond-section" id="pond">
+    <div class="container">
+      <div class="section-header fade-up">
+        <h2>アヒル池</h2>
+        <div class="accent-line"></div>
+        <p>だれかが来ると、池にアヒルが1羽。しばらくすると、静かに帰っていきます。</p>
+      </div>
+      <div class="pond-wrap fade-up">
+        <svg class="pond-svg" id="pondSvg" viewBox="0 0 800 400" xmlns="http://www.w3.org/2000/svg">
+          <!-- Pond water -->
+          <defs>
+            <radialGradient id="pondGrad" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#4FC3F7"/>
+              <stop offset="100%" stop-color="#0288D1"/>
+            </radialGradient>
+          </defs>
+          <ellipse cx="400" cy="240" rx="370" ry="140" fill="url(#pondGrad)" opacity="0.85"/>
+          <ellipse cx="400" cy="230" rx="340" ry="120" fill="#4FC3F7" opacity="0.3"/>
+          <!-- Ripples -->
+          <ellipse cx="300" cy="260" rx="60" ry="12" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
+          <ellipse cx="520" cy="230" rx="45" ry="9" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="1"/>
+          <ellipse cx="400" cy="280" rx="80" ry="14" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+          <!-- Ducks are added dynamically by JS -->
+        </svg>
+        <p class="pond-count">いま <span id="pondCount">0</span> 羽</p>
+      </div>
+    </div>
   </section>
 
   <!-- About -->
@@ -1703,6 +1770,104 @@
     rankingOverlay.addEventListener('click', (e) => {
       if (e.target === rankingOverlay) rankingOverlay.classList.remove('active');
     });
+
+    // === Duck Pond ===
+    (function() {
+      const POND_API = '/api/pond';
+      const THROTTLE_MS = 20 * 60 * 60 * 1000; // 20 hours
+      const POLL_MS = 30 * 1000; // 30 seconds
+      const pondSvg = document.getElementById('pondSvg');
+      const pondCountEl = document.getElementById('pondCount');
+
+      // Simple hash from id string to a number 0-1
+      function hashId(id) {
+        let h = 0;
+        for (let i = 0; i < id.length; i++) {
+          h = ((h << 5) - h + id.charCodeAt(i)) | 0;
+        }
+        return (Math.abs(h) % 10000) / 10000;
+      }
+
+      function makeDuckSvg(id, index, total) {
+        const h = hashId(id);
+        // Distribute ducks across the pond ellipse area
+        // Pond ellipse: cx=400, cy=240, rx=370, ry=140
+        // Place ducks within ~80% of the ellipse for margin
+        const angle = h * Math.PI * 2;
+        const radius = 0.3 + h * 0.45; // 30%-75% of ellipse radius
+        const x = 400 + Math.cos(angle + index) * 280 * radius;
+        const y = 220 + Math.sin(angle + index * 0.7) * 90 * radius;
+        const delay = (h * 3.5).toFixed(2);
+        const scale = 0.9 + h * 0.2; // 0.9 to 1.1 for variety
+
+        return `<g class="pond-duck" style="animation-delay:${delay}s" transform="translate(${x.toFixed(1)},${y.toFixed(1)}) scale(${scale.toFixed(2)})">
+          <!-- body -->
+          <ellipse cx="0" cy="4" rx="16" ry="11" fill="#FFD700"/>
+          <ellipse cx="0" cy="6" rx="13" ry="8" fill="#FFC107" opacity="0.5"/>
+          <!-- wing -->
+          <ellipse cx="-6" cy="2" rx="7" ry="10" fill="#FFC107" transform="rotate(-10 -6 2)"/>
+          <!-- tail -->
+          <path d="M14 -2 Q18 -6 17 -1 Q20 -4 18 1" fill="#FFC107"/>
+          <!-- head -->
+          <circle cx="0" cy="-12" r="9" fill="#FFD700"/>
+          <!-- eye -->
+          <circle cx="-3" cy="-14" r="2" fill="#2C3E50"/>
+          <circle cx="-2.5" cy="-14.8" r="0.7" fill="white"/>
+          <!-- beak -->
+          <ellipse cx="2" cy="-10" rx="5" ry="2.2" fill="#FF8C00"/>
+          <!-- water ring -->
+          <ellipse cx="0" cy="14" rx="18" ry="4" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="0.8"/>
+        </g>`;
+      }
+
+      function renderPond(ducks) {
+        // Remove old ducks
+        pondSvg.querySelectorAll('.pond-duck').forEach(el => el.remove());
+        // Add new ducks
+        const fragment = document.createDocumentFragment();
+        const tmp = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        tmp.innerHTML = ducks.map((d, i) => makeDuckSvg(d.id, i, ducks.length)).join('');
+        while (tmp.firstChild) fragment.appendChild(tmp.firstChild);
+        pondSvg.appendChild(fragment);
+        pondCountEl.textContent = ducks.length;
+      }
+
+      function fetchPond() {
+        return fetch(POND_API)
+          .then(r => r.json())
+          .then(data => {
+            renderPond(data.ducks || []);
+            return data.ducks || [];
+          })
+          .catch(() => []);
+      }
+
+      function addDuck() {
+        return fetch(POND_API, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        })
+          .then(r => r.json())
+          .then(data => {
+            renderPond(data.ducks || []);
+          })
+          .catch(() => {});
+      }
+
+      // Init
+      fetchPond().then(() => {
+        const lastVisit = parseInt(localStorage.getItem('pond-last-visit') || '0', 10);
+        const now = Date.now();
+        if (now - lastVisit >= THROTTLE_MS) {
+          addDuck().then(() => {
+            localStorage.setItem('pond-last-visit', String(now));
+          });
+        }
+      });
+
+      // Poll every 30s
+      setInterval(fetchPond, POLL_MS);
+    })();
   </script>
 </body>
 </html>
