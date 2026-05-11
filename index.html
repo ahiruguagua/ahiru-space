@@ -1800,29 +1800,31 @@
         const delay = (h * 3.5).toFixed(2);
         const scale = 0.9 + h * 0.2; // 0.9 to 1.1 for variety
 
-        return `<g class="pond-duck" style="animation-delay:${delay}s" transform="translate(${x.toFixed(1)},${y.toFixed(1)}) scale(${scale.toFixed(2)})">
-          <!-- body -->
-          <ellipse cx="0" cy="4" rx="16" ry="11" fill="#FFD700"/>
-          <ellipse cx="0" cy="6" rx="13" ry="8" fill="#FFC107" opacity="0.5"/>
-          <!-- wing -->
-          <ellipse cx="-6" cy="2" rx="7" ry="10" fill="#FFC107" transform="rotate(-10 -6 2)"/>
-          <!-- tail -->
-          <path d="M14 -2 Q18 -6 17 -1 Q20 -4 18 1" fill="#FFC107"/>
-          <!-- head -->
-          <circle cx="0" cy="-12" r="9" fill="#FFD700"/>
-          <!-- eye -->
-          <circle cx="-3" cy="-14" r="2" fill="#2C3E50"/>
-          <circle cx="-2.5" cy="-14.8" r="0.7" fill="white"/>
-          <!-- beak -->
-          <ellipse cx="2" cy="-10" rx="5" ry="2.2" fill="#FF8C00"/>
-          <!-- water ring -->
-          <ellipse cx="0" cy="14" rx="18" ry="4" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="0.8"/>
+        return `<g class="pond-duck-wrap" transform="translate(${x.toFixed(1)},${y.toFixed(1)}) scale(${scale.toFixed(2)})">
+          <g class="pond-duck" style="animation-delay:${delay}s">
+            <!-- body -->
+            <ellipse cx="0" cy="4" rx="16" ry="11" fill="#FFD700"/>
+            <ellipse cx="0" cy="6" rx="13" ry="8" fill="#FFC107" opacity="0.5"/>
+            <!-- wing -->
+            <ellipse cx="-6" cy="2" rx="7" ry="10" fill="#FFC107" transform="rotate(-10 -6 2)"/>
+            <!-- tail -->
+            <path d="M14 -2 Q18 -6 17 -1 Q20 -4 18 1" fill="#FFC107"/>
+            <!-- head -->
+            <circle cx="0" cy="-12" r="9" fill="#FFD700"/>
+            <!-- eye -->
+            <circle cx="-3" cy="-14" r="2" fill="#2C3E50"/>
+            <circle cx="-2.5" cy="-14.8" r="0.7" fill="white"/>
+            <!-- beak -->
+            <ellipse cx="2" cy="-10" rx="5" ry="2.2" fill="#FF8C00"/>
+            <!-- water ring -->
+            <ellipse cx="0" cy="14" rx="18" ry="4" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="0.8"/>
+          </g>
         </g>`;
       }
 
       function renderPond(ducks) {
         // Remove old ducks
-        pondSvg.querySelectorAll('.pond-duck').forEach(el => el.remove());
+        pondSvg.querySelectorAll('.pond-duck-wrap').forEach(el => el.remove());
         // Add new ducks
         const fragment = document.createDocumentFragment();
         const tmp = document.createElementNS('http://www.w3.org/2000/svg', 'g');
