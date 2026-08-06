@@ -1506,6 +1506,18 @@
           <a href="/duckrpg.html" class="game-play-btn">あそぶ</a>
         </div>
       </div>
+      <div class="game-banner fade-up">
+        <h3>ネオンアヒル</h3>
+        <p>
+          光るあひるをマウスや指で操って敵をかわせ！<br>
+          ★スターを連続で集めてコンボでスコア倍増。<br>
+          ネオン輝く夜空を泳ぐ回避アクション 🐤✨
+        </p>
+        <div class="game-buttons">
+          <a href="/dodge.html" class="game-play-btn">あそぶ</a>
+          <button class="game-ranking-btn" data-api="/api/dodge-scores" data-type="dodge">ランキングを見る</button>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -1693,6 +1705,8 @@
             extra = e.reputation ? ` ${e.reputation}` : '';
           } else if (type === 'rhythm') {
             extra = e.maxCombo ? ` ${e.maxCombo}combo` : '';
+          } else if (type === 'dodge') {
+            extra = (e.stars ? ` ★${e.stars}` : '') + (e.maxCombo ? ` x${e.maxCombo}` : '');
           } else if (type === 'solitaire') {
             const m = Math.floor((e.time||0)/60);
             const ss = String((e.time||0)%60).padStart(2,'0');
