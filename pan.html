@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>アヒルのパンキャッチ | あひるスペース</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    width: 100%; height: 100%;
+    background: #7ec8ff;
+    overflow: hidden;
+    font-family: 'Hiragino Kaku Gothic ProN', 'Yu Gothic', sans-serif;
+    user-select: none; -webkit-user-select: none;
+    touch-action: none;
+  }
+  #game { display: block; width: 100%; height: 100%; }
+  .back-link {
+    position: fixed; top: 10px; left: 50%; transform: translateX(-50%);
+    z-index: 50; color: #1c5372; text-decoration: none; font-size: 13px;
+    font-weight: bold; padding: 4px 12px; background: rgba(255,255,255,0.55);
+    border-radius: 14px; border: 1px solid rgba(28,83,114,0.2);
+  }
+  .back-link:hover { color: #ff8a3c; }
+
+  #ui {
+    position: fixed; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column;
+    pointer-events: none;
+    color: #1c4c6e; text-align: center; z-index: 10;
+  }
+  .panel {
+    background: rgba(255,255,255,0.9);
+    border: 1px solid rgba(120,200,255,0.7);
+    border-radius: 20px;
+    padding: 40px 52px;
+    box-shadow: 0 12px 40px rgba(0,70,120,0.25);
+    backdrop-filter: blur(4px);
+  }
+  @media (max-width: 500px) {
+    .panel { padding: 30px 24px; margin: 0 14px; }
+    h1 { font-size: 34px !important; }
+  }
+  h1 {
+    font-size: 46px; letter-spacing: 2px;
+    color: #ff9d1c; margin-bottom: 12px; font-weight: 800;
+    text-shadow: 0 2px 0 #fff;
+  }
+  .sub { font-size: 15px; color: #2a6a92; line-height: 1.9; }
+  .hint {
+    margin-top: 20px; font-size: 14px; color: #ff7a3c; font-weight: bold;
+    animation: blink 1.4s ease-in-out infinite;
+  }
+  @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+  .hidden { display: none !important; }
+
+  /* ===== overlays ===== */
+  .go-overlay, .lb-overlay {
+    position: fixed; inset: 0; display: none;
+    align-items: center; justify-content: center;
+    background: rgba(10,40,70,0.45); z-index: 20;
+  }
+  .lb-overlay { z-index: 30; }
+  .go-overlay.active, .lb-overlay.active { display: flex; }
+  .go-panel, .lb-panel {
+    background: rgba(255,255,255,0.96);
+    border: 1px solid rgba(120,200,255,0.7);
+    border-radius: 20px; padding: 28px 34px;
+    box-shadow: 0 12px 40px rgba(0,70,120,0.3);
+    color: #1c4c6e; text-align: center; max-width: 92vw;
+  }
+  .go-panel h2, .lb-panel h2 {
+    font-size: 26px; margin-bottom: 14px; color: #ff7a3c; letter-spacing: 2px;
+  }
+  .lb-panel h2 { color: #ff9d1c; }
+  .go-stats { font-size: 17px; line-height: 1.9; margin-bottom: 14px; }
+  .go-stats .num { color: #ff9d1c; font-weight: bold; }
+  .highscore-entry p { font-size: 14px; color: #2a6a92; margin-bottom: 8px; }
+  .highscore-entry input {
+    font-size: 16px; padding: 8px 12px; border-radius: 10px;
+    border: 1px solid rgba(120,200,255,0.8);
+    background: #f2fbff; color: #1c4c6e; text-align: center; outline: none;
+    width: 200px; margin-bottom: 8px;
+  }
+  .submitted-msg { color: #22a06b; font-size: 15px; margin: 10px 0; }
+  .go-btn {
+    font-size: 15px; font-weight: bold; padding: 10px 22px; margin: 6px 4px 0;
+    border-radius: 22px; border: none; cursor: pointer; font-family: inherit;
+  }
+  .go-btn.primary { background: linear-gradient(135deg, #ffd75d, #ff9d2e); color: #5a3a00; }
+  .go-btn.secondary { background: transparent; color: #2a6a92; border: 2px solid rgba(120,200,255,0.9); }
+  .go-btn:hover { filter: brightness(1.08); }
+  #lbList { max-height: 50vh; overflow-y: auto; min-width: 260px; margin-bottom: 12px; text-align: left; }
+  .lb-row { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 8px; font-size: 14px; }
+  .lb-row.top3 { background: rgba(255, 215, 93, 0.22); }
+  .lb-row .rank { width: 34px; text-align: center; }
+  .lb-row .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lb-row .score { color: #ff9d1c; font-weight: bold; font-variant-numeric: tabular-nums; }
+  .lb-empty { color: rgba(28,76,110,0.5); padding: 18px 0; text-align: center; font-size: 14px; }
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<a href="/" class="back-link">&larr; Home</a>
+
+<div id="ui">
+  <div id="title-panel" class="panel">
+    <h1>アヒルのパンキャッチ</h1>
+    <div class="sub">
+      <span style="color:#ff9d1c">← → キー / マウス / 指</span>でアヒルを動かして<br>
+      🍞パンや🥐クロワッサンをキャッチ！<br>
+      ⭐スターで5秒むてき・💗ハートで回復・💣ばくだんに注意
+    </div>
+    <div class="hint">クリック / タップでスタート</div>
+  </div>
+</div>
+
+<div class="go-overlay" id="gameoverOverlay">
+  <div class="go-panel">
+    <h2>ゲームオーバー</h2>
+    <div class="go-stats">
+      スコア: <span class="num" id="goScore">0</span><br>
+      <span style="font-size:14px; color:#2a6a92;">⭐ あつめたスター <span id="goStars">0</span></span>
+    </div>
+    <div class="highscore-entry" id="hsEntry" style="display:none;">
+      <p>ランキング入り！ なまえを入力:</p>
+      <input type="text" id="hsName" maxlength="15" placeholder="なまえ" autocomplete="off">
+      <br>
+      <button class="go-btn primary" id="hsSubmit">とうろく</button>
+    </div>
+    <div class="submitted-msg" id="hsSubmitted" style="display:none;">とうろくしました！</div>
+    <div>
+      <button class="go-btn primary" id="goRestart">もういちど</button>
+      <button class="go-btn secondary" id="goLeaderboard">ランキング</button>
+    </div>
+  </div>
+</div>
+
+<div class="lb-overlay" id="lbOverlay">
+  <div class="lb-panel">
+    <h2>ランキング TOP 20</h2>
+    <div id="lbList"></div>
+    <button class="go-btn secondary" id="lbClose">とじる</button>
+  </div>
+</div>
+
+<script>
+(() => {
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const titlePanel = document.getElementById('title-panel');
+
+  let W = 0, H = 0, DPR = 1;
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth; H = window.innerHeight;
+    canvas.width = W * DPR; canvas.height = H * DPR;
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    duck.y = H - 90;
+    duck.x = Math.max(duck.w/2, Math.min(W - duck.w/2, duck.x));
+  }
+
+  // ---------- Audio ----------
+  let audioCtx = null;
+  function ensureAudio() {
+    if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+  }
+  function beep(freq, dur, type = 'sine', vol = 0.15, slide = 0) {
+    if (!audioCtx) return;
+    const t = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, t);
+    if (slide) osc.frequency.exponentialRampToValueAtTime(Math.max(30, freq + slide), t + dur);
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    osc.connect(g); g.connect(audioCtx.destination);
+    osc.start(t); osc.stop(t + dur);
+  }
+  const sfx = {
+    catch(pts) { beep(500 + pts * 60, 0.1, 'triangle', 0.16, 160); },
+    star() { beep(880, 0.18, 'sine', 0.16, 300); },
+    heal() { beep(660, 0.16, 'triangle', 0.16, 200); },
+    hit() { beep(160, 0.35, 'sawtooth', 0.22, -100); },
+    over() { beep(300, 0.5, 'sawtooth', 0.2, -220); },
+    start() { beep(440, 0.1, 'triangle', 0.15, 220); setTimeout(() => beep(660, 0.15, 'triangle', 0.15, 220), 90); },
+  };
+
+  // ---------- State ----------
+  const STATE = { TITLE: 0, PLAY: 1, OVER: 2 };
+  let state = STATE.TITLE;
+
+  const MAX_LIVES = 5;
+  const DUCK_SPEED = 480; // px/s (keyboard)
+  const duck = { x: 200, y: 400, w: 64, h: 52 };
+  let items = [], particles = [];
+  let score = 0, lives = 3, invinc = 0, elapsed = 0;
+  let starsCollected = 0;
+  let spawnTimer = 0;
+  let best = 0;
+  try { best = +localStorage.getItem('pan-duck-best') || 0; } catch (e) {}
+
+  const KINDS = [
+    { type:'bread',  emoji:'🍞', r:20, points:1, bad:false, w:5 },
+    { type:'bread2', emoji:'🥐', r:20, points:2, bad:false, w:3 },
+    { type:'star',   emoji:'⭐', r:18, points:5, bad:false, w:1 },
+    { type:'heart',  emoji:'💗', r:18, points:0, bad:false, heal:true, w:0.4 },
+    { type:'bomb',   emoji:'💣', r:20, points:0, bad:true,  w:3 },
+  ];
+  function pickKind() {
+    const total = KINDS.reduce((s,k)=>s+k.w,0);
+    let r = Math.random()*total;
+    for (const k of KINDS) { if ((r-=k.w) < 0) return k; }
+    return KINDS[0];
+  }
+  function spawn() {
+    const k = pickKind();
+    items.push({
+      x: 30 + Math.random()*(W-60),
+      y: -30,
+      vy: 150 + Math.random()*100 + elapsed*4, // px/s、時間で加速
+      spin: (Math.random()-0.5)*3,
+      rot: 0,
+      kind: k,
+    });
+  }
+  function addParticles(x, y, color) {
+    for (let i=0;i<10;i++){
+      particles.push({ x, y, vx:(Math.random()-0.5)*240, vy:-Math.random()*240-60, life:0.5, color });
+    }
+  }
+
+  function reset() {
+    items = []; particles = [];
+    score = 0; lives = 3; invinc = 0; elapsed = 0; starsCollected = 0;
+    spawnTimer = 0;
+    duck.x = W/2;
+  }
+
+  // ---------- Leaderboard ----------
+  const API = '/api/scores?game=pan';
+  let leaderboard = [];
+  let scoreSubmitted = false;
+
+  async function fetchLeaderboard() {
+    try { const res = await fetch(API); if (res.ok) leaderboard = await res.json(); } catch (e) {}
+  }
+  async function submitScore(name, sc) {
+    try {
+      const res = await fetch(API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, score: sc, stars: starsCollected })
+      });
+      if (res.ok) { leaderboard = await res.json(); scoreSubmitted = true; }
+    } catch (e) {}
+  }
+  function isHighScore(sc) {
+    if (leaderboard.length < 20) return sc > 0;
+    return sc > leaderboard[leaderboard.length - 1].score;
+  }
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+  }
+  function showLeaderboard() {
+    const list = document.getElementById('lbList');
+    if (leaderboard.length === 0) {
+      list.innerHTML = '<div class="lb-empty">まだスコアがありません</div>';
+    } else {
+      list.innerHTML = leaderboard.slice(0, 20).map((e, i) => {
+        const medal = i === 0 ? '👑' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`;
+        const extra = e.stars ? ` ★${e.stars}` : '';
+        return `<div class="lb-row ${i < 3 ? 'top3' : ''}"><span class="rank">${medal}</span><span class="name">${escapeHtml(e.name)}</span><span class="score">${e.score.toLocaleString()}${extra}</span></div>`;
+      }).join('');
+    }
+    document.getElementById('lbOverlay').classList.add('active');
+  }
+  fetchLeaderboard();
+
+  // ---------- Input ----------
+  let pointerX = null, usePointer = false;
+  const keys = { left: false, right: false };
+  function canvasX(clientX) { return clientX; } // full-window canvas: client=world
+
+  window.addEventListener('mousemove', e => { pointerX = canvasX(e.clientX); usePointer = true; });
+  window.addEventListener('touchmove', e => { e.preventDefault(); pointerX = canvasX(e.touches[0].clientX); usePointer = true; }, { passive:false });
+  window.addEventListener('touchstart', e => { pointerX = canvasX(e.touches[0].clientX); usePointer = true; }, { passive:true });
+
+  window.addEventListener('keydown', e => {
+    if (e.key === 'ArrowLeft')  { keys.left = true;  usePointer = false; e.preventDefault(); }
+    if (e.key === 'ArrowRight') { keys.right = true; usePointer = false; e.preventDefault(); }
+    if (e.key === ' ' || e.key === 'Enter') { if (state !== STATE.PLAY && document.activeElement !== document.getElementById('hsName')) startGame(); }
+  });
+  window.addEventListener('keyup', e => {
+    if (e.key === 'ArrowLeft')  keys.left = false;
+    if (e.key === 'ArrowRight') keys.right = false;
+  });
+
+  function startGame() {
+    ensureAudio();
+    reset();
+    state = STATE.PLAY;
+    scoreSubmitted = false;
+    titlePanel.classList.add('hidden');
+    document.getElementById('gameoverOverlay').classList.remove('active');
+    document.getElementById('lbOverlay').classList.remove('active');
+    sfx.start();
+  }
+  window.addEventListener('mousedown', () => { if (state === STATE.TITLE) startGame(); });
+  window.addEventListener('touchend', () => { if (state === STATE.TITLE) startGame(); });
+
+  document.getElementById('goRestart').addEventListener('click', startGame);
+  document.getElementById('goLeaderboard').addEventListener('click', showLeaderboard);
+  document.getElementById('lbClose').addEventListener('click', () => {
+    document.getElementById('lbOverlay').classList.remove('active');
+  });
+  document.getElementById('hsSubmit').addEventListener('click', doSubmit);
+  document.getElementById('hsName').addEventListener('keydown', (e) => { if (e.key === 'Enter') doSubmit(); });
+
+  async function doSubmit() {
+    if (scoreSubmitted) return;
+    const name = document.getElementById('hsName').value.trim();
+    if (!name) return;
+    document.getElementById('hsSubmit').disabled = true;
+    await submitScore(name, Math.floor(score));
+    document.getElementById('hsSubmit').disabled = false;
+    if (scoreSubmitted) {
+      document.getElementById('hsEntry').style.display = 'none';
+      document.getElementById('hsSubmitted').style.display = 'block';
+      try { localStorage.setItem('pan-duck-name', name); } catch (e) {}
+    }
+  }
+
+  // ---------- Update ----------
+  function update(dt) {
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 600 * dt; p.life -= dt;
+      if (p.life <= 0) particles.splice(i, 1);
+    }
+    if (state !== STATE.PLAY) return;
+
+    elapsed += dt;
+    if (invinc > 0) invinc -= dt;
+
+    // アヒル移動
+    if (!usePointer) {
+      if (keys.left)  duck.x -= DUCK_SPEED * dt;
+      if (keys.right) duck.x += DUCK_SPEED * dt;
+    } else if (pointerX !== null) {
+      duck.x += (pointerX - duck.x) * Math.min(1, dt * 14);
+    }
+    duck.x = Math.max(duck.w/2, Math.min(W - duck.w/2, duck.x));
+
+    // 生成
+    spawnTimer -= dt;
+    if (spawnTimer <= 0) {
+      spawn();
+      const interval = Math.max(0.34, 0.8 - elapsed * 0.012);
+      spawnTimer = interval + Math.random() * 0.15;
+    }
+
+    // アイテム更新 + 当たり判定
+    for (const it of items) {
+      it.y += it.vy * dt;
+      it.rot += it.spin * dt;
+      const dx = it.x - duck.x;
+      const dy = it.y - (duck.y - 6);
+      if (Math.abs(dx) < duck.w/2 + it.kind.r*0.5 && Math.abs(dy) < duck.h/2 + it.kind.r*0.5) {
+        it.dead = true;
+        if (it.kind.bad) {
+          if (invinc > 0) { addParticles(it.x, it.y, '#7fdfff'); }
+          else {
+            lives--;
+            addParticles(it.x, it.y, '#ff5a5a');
+            sfx.hit();
+            if (lives <= 0) gameOver();
+          }
+        } else if (it.kind.heal) {
+          if (lives < MAX_LIVES) lives++;
+          addParticles(it.x, it.y, '#ff8ac0');
+          sfx.heal();
+        } else {
+          score += it.kind.points;
+          addParticles(it.x, it.y, '#ffd54a');
+          if (it.kind.type === 'star') { invinc = 5; starsCollected++; sfx.star(); }
+          else sfx.catch(it.kind.points);
+        }
+      }
+      if (it.y > H + 40) it.dead = true;
+    }
+    items = items.filter(it => !it.dead);
+  }
+
+  function gameOver() {
+    state = STATE.OVER;
+    sfx.over();
+    const s = Math.floor(score);
+    if (s > best) { best = s; try { localStorage.setItem('pan-duck-best', best); } catch (e) {} }
+    fetchLeaderboard().then(() => {
+      document.getElementById('hsEntry').style.display = isHighScore(s) ? 'block' : 'none';
+    });
+    document.getElementById('goScore').textContent = s.toLocaleString();
+    document.getElementById('goStars').textContent = starsCollected;
+    document.getElementById('hsEntry').style.display = 'none';
+    document.getElementById('hsSubmitted').style.display = 'none';
+    let savedName = '';
+    try { savedName = localStorage.getItem('pan-duck-name') || ''; } catch (e) {}
+    document.getElementById('hsName').value = savedName;
+    scoreSubmitted = false;
+    setTimeout(() => document.getElementById('gameoverOverlay').classList.add('active'), 500);
+  }
+
+  // ---------- Draw ----------
+  function drawDuck(x, y) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.fillStyle = '#ffd83b';
+    ctx.beginPath(); ctx.ellipse(0, 6, 30, 24, 0, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(18, -14, 18, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(-28, 0); ctx.lineTo(-40, -8); ctx.lineTo(-26, 8); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#ff9d1c';
+    ctx.beginPath(); ctx.moveTo(32, -16); ctx.lineTo(48, -12); ctx.lineTo(32, -6); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#222';
+    ctx.beginPath(); ctx.arc(22, -18, 3.2, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = 'rgba(255,120,120,.5)';
+    ctx.beginPath(); ctx.arc(12, -8, 5, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+  function drawEmoji(emoji, x, y, size, rot) {
+    ctx.save();
+    ctx.translate(x, y); ctx.rotate(rot);
+    ctx.font = size + 'px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(emoji, 0, 0);
+    ctx.restore();
+  }
+
+  let waveT = 0;
+  function draw(now) {
+    // 空
+    const grad = ctx.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0, '#bfe9ff'); grad.addColorStop(0.55, '#eaf8ff'); grad.addColorStop(1, '#a7dcff');
+    ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
+
+    // 雲
+    ctx.fillStyle = 'rgba(255,255,255,.7)';
+    for (let i=0;i<3;i++){
+      const cx = ((elapsed*18 + i*W*0.4) % (W+120)) - 60;
+      const cy = 70 + i*54;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 22, 0, Math.PI*2); ctx.arc(cx+24, cy+6, 18, 0, Math.PI*2); ctx.arc(cx-22, cy+8, 16, 0, Math.PI*2);
+      ctx.fill();
+    }
+
+    // 水
+    waveT += 0.03;
+    ctx.fillStyle = 'rgba(80,180,255,.35)';
+    ctx.beginPath(); ctx.moveTo(0, H);
+    for (let x=0; x<=W; x+=20) ctx.lineTo(x, H - 46 + Math.sin(x*0.03 + waveT)*6);
+    ctx.lineTo(W, H); ctx.closePath(); ctx.fill();
+
+    // アイテム
+    for (const it of items) drawEmoji(it.kind.emoji, it.x, it.y, it.kind.r*2, it.rot);
+
+    // パーティクル
+    for (const p of particles) {
+      ctx.globalAlpha = Math.max(0, p.life / 0.5);
+      ctx.fillStyle = p.color;
+      ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, Math.PI*2); ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+
+    if (state === STATE.PLAY || state === STATE.OVER) {
+      drawDuck(duck.x, duck.y);
+      if (invinc > 0) {
+        ctx.save();
+        ctx.globalAlpha = 0.5 + 0.35 * Math.sin(now * 0.02);
+        ctx.strokeStyle = '#5fd0ff'; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.arc(duck.x, duck.y - 2, 46, 0, Math.PI*2); ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    // HUD
+    if (state === STATE.PLAY) {
+      ctx.fillStyle = '#1c4c6e';
+      ctx.font = 'bold 26px "Hiragino Kaku Gothic ProN", sans-serif';
+      ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+      ctx.fillText('スコア: ' + score, 20, 16);
+      ctx.textAlign = 'right';
+      ctx.fillText('❤️'.repeat(Math.max(0, lives)), W - 20, 14);
+      if (invinc > 0) {
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#1c8fd0';
+        ctx.font = 'bold 20px sans-serif';
+        ctx.fillText('⭐むてき ' + Math.ceil(invinc) + '秒', W/2, 18);
+      }
+    }
+  }
+
+  // ---------- Loop ----------
+  let last = performance.now();
+  function loop(now) {
+    const dt = Math.min((now - last) / 1000, 0.05);
+    last = now;
+    update(dt);
+    draw(now);
+    requestAnimationFrame(loop);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

@@ -1518,6 +1518,18 @@
           <button class="game-ranking-btn" data-api="/api/scores?game=dodge" data-type="dodge">ランキングを見る</button>
         </div>
       </div>
+      <div class="game-banner fade-up">
+        <h3>アヒルのパンキャッチ</h3>
+        <p>
+          空から落ちてくる🍞パンや🥐クロワッサンをキャッチ！<br>
+          ⭐スターで5秒むてき、💗ハートで回復、💣ばくだんに注意。<br>
+          ← → キー・マウス・指で遊べるキャッチアクション 🐤
+        </p>
+        <div class="game-buttons">
+          <a href="/pan.html" class="game-play-btn">あそぶ</a>
+          <button class="game-ranking-btn" data-api="/api/scores?game=pan" data-type="pan">ランキングを見る</button>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -1707,6 +1719,8 @@
             extra = e.maxCombo ? ` ${e.maxCombo}combo` : '';
           } else if (type === 'dodge') {
             extra = (e.stars ? ` ★${e.stars}` : '') + (e.maxCombo ? ` x${e.maxCombo}` : '');
+          } else if (type === 'pan') {
+            extra = e.stars ? ` ★${e.stars}` : '';
           } else if (type === 'solitaire') {
             const m = Math.floor((e.time||0)/60);
             const ss = String((e.time||0)%60).padStart(2,'0');

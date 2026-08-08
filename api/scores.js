@@ -5,6 +5,7 @@ import { kv } from '@vercel/kv';
 const GAMES = {
   onlyup: 'duck-only-up-leaderboard',
   dodge: 'duck-dodge-leaderboard',
+  pan: 'duck-pan-leaderboard',
 };
 const MAX_ENTRIES = 20;
 
@@ -50,6 +51,8 @@ export default async function handler(req, res) {
         entry.stars = typeof stars === 'number' ? Math.max(0, Math.floor(stars)) : 0;
         entry.maxCombo = typeof maxCombo === 'number' ? Math.max(0, Math.floor(maxCombo)) : 0;
         entry.time = typeof time === 'number' ? Math.max(0, Math.round(time * 10) / 10) : 0;
+      } else if (game === 'pan') {
+        entry.stars = typeof stars === 'number' ? Math.max(0, Math.floor(stars)) : 0;
       } else {
         entry.eggs = typeof eggs === 'number' ? Math.floor(eggs) : 0;
       }
